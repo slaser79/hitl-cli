@@ -155,4 +155,6 @@ result-*
 
 # Project specific
 .assistant_history
+.
 *secret*
+.ai_tasks.db
