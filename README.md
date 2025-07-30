@@ -8,12 +8,14 @@ A reference implementation of a command-line interface for Human-in-the-Loop (HI
 
 ## Features
 
-- 🔐 **Secure Authentication**: Google OAuth integration with JWT token management
-- 🤖 **Agent Management**: Create, list, and rename AI agents
+- 🔐 **Dual Authentication**: Traditional Google OAuth + new OAuth 2.1 dynamic client registration
+- ⚡ **Zero-Config Auth**: Dynamic client registration eliminates manual OAuth setup
+- 🛡️ **Enhanced Security**: PKCE (Proof Key for Code Exchange) support for OAuth 2.1
+- 🤖 **Agent Management**: Create, list, and rename AI agents with customizable names
 - 💬 **Human-in-the-Loop Requests**: Send requests for human decisions with customizable choices
 - 🔄 **MCP Integration**: Built-in support for Model Context Protocol (MCP) clients
 - 📊 **Request Tracking**: Monitor request status and receive human responses
-- 🛡️ **Secure Token Storage**: Platform-specific secure credential storage
+- 🔑 **Secure Token Storage**: Platform-specific secure credential storage with automatic refresh
 
 ## Installation
 
@@ -59,27 +61,75 @@ uv sync
 
 ## Configuration
 
-Before using the CLI, you need to configure the backend URL and Google OAuth client ID:
+### Quick Start (Recommended - OAuth 2.1)
+
+For the easiest setup with zero configuration:
 
 ```bash
 # Set the backend URL (required)
 export HITL_BACKEND_URL="https://your-backend-url.com"
 
-# Set Google OAuth client ID (required for login)
+# Login with automatic client registration
+hitl-cli login --dynamic --name "My Agent"
+```
+
+### Traditional Setup (Google OAuth 2.0)
+
+For traditional OAuth setup:
+
+```bash
+# Set the backend URL (required)
+export HITL_BACKEND_URL="https://your-backend-url.com"
+
+# Set Google OAuth client ID (required for traditional login)
 export GOOGLE_CLIENT_ID="your-client-id.apps.googleusercontent.com"
+
+# Login with traditional flow
+hitl-cli login
 ```
 
 ## Usage
 
 ### Authentication
 
-First, authenticate with your Google account:
+#### OAuth 2.1 Dynamic Registration (Recommended)
+
+Authenticate with zero configuration using dynamic client registration:
 
 ```bash
+# Login with automatic OAuth client setup
+hitl-cli login --dynamic --name "My Development Agent"
+```
+
+This will:
+1. Automatically register a new OAuth client with the server
+2. Open your browser for Google authentication with PKCE security
+3. Store the bearer token securely for future requests
+4. Set up your agent with the specified name
+
+#### Traditional Google OAuth 2.0
+
+Authenticate using traditional OAuth (requires manual client setup):
+
+```bash
+# Traditional login (requires GOOGLE_CLIENT_ID environment variable)
 hitl-cli login
 ```
 
-This will open your browser for Google authentication and securely store the access token.
+This will open your browser for Google authentication and exchange tokens with the backend server.
+
+#### Authentication Method Comparison
+
+| Feature | OAuth 2.1 Dynamic | Traditional OAuth 2.0 |
+|---------|-------------------|------------------------|
+| **Setup Required** | None (zero-config) | Manual client ID setup |
+| **Security** | PKCE + Dynamic registration | Standard OAuth 2.0 |
+| **Agent Management** | Automatic via `--name` | Manual via `agents` commands |
+| **Token Type** | Bearer tokens | JWT tokens |
+| **RFC Standards** | RFC 7591 + RFC 7636 | RFC 6749 |
+| **Recommended For** | New users, agents | Existing integrations |
+
+**Recommendation**: Use OAuth 2.1 dynamic registration (`--dynamic --name`) for new setups as it provides better security and requires no manual configuration.
 
 ### Managing Agents
 
@@ -100,20 +150,29 @@ hitl-cli agents rename <agent-id> --name "New Name"
 
 ### Sending HITL Requests
 
-Send a request for human input with choices:
+#### With OAuth 2.1 (Bearer Token Authentication)
+
 ```bash
+# Send a request with choices
 hitl-cli request --prompt "Should I proceed with the deployment?" \
   --choice "Yes" --choice "No" --choice "Ask me later"
-```
 
-Send a free-form text request:
-```bash
+# Send a free-form text request
 hitl-cli request --prompt "What should I name this file?"
+
+# Notify completion of a task
+hitl-cli notify-completion --summary "Task completed successfully. All tests passed."
 ```
 
-Notify completion of a task:
+#### With Traditional OAuth (Agent-Based)
+
 ```bash
-hitl-cli notify-completion --summary "Task completed successfully. All tests passed."
+# Send requests with specific agent ID
+hitl-cli request --prompt "Should I proceed?" --agent-id "agent-123"
+
+# Create agents first if needed
+hitl-cli agents create --name "My Assistant"
+hitl-cli agents list  # Get agent ID
 ```
 
 ### Other Commands
@@ -132,6 +191,45 @@ Get help:
 ```bash
 hitl-cli --help
 hitl-cli <command> --help
+```
+
+## Troubleshooting
+
+### OAuth 2.1 Issues
+
+**Problem**: Dynamic client registration fails
+```bash
+# Clear cached client data and retry
+rm ~/.hitl/oauth_client.json
+hitl-cli login --dynamic --name "My Agent"
+```
+
+**Problem**: Bearer token expired
+```bash
+# Token should refresh automatically, but if not:
+hitl-cli logout
+hitl-cli login --dynamic --name "My Agent"
+```
+
+### Traditional OAuth Issues
+
+**Problem**: Missing GOOGLE_CLIENT_ID
+```bash
+# Set the environment variable
+export GOOGLE_CLIENT_ID="your-client-id.apps.googleusercontent.com"
+hitl-cli login
+```
+
+### General Issues
+
+**Problem**: Connection errors
+```bash
+# Verify backend URL
+echo $HITL_BACKEND_URL
+curl -v $HITL_BACKEND_URL/health
+
+# Check authentication status
+hitl-cli status
 ```
 
 ## Development
@@ -175,22 +273,49 @@ python -m build
 
 The HITL CLI is structured as follows:
 
-- `hitl_cli/auth.py` - Google OAuth authentication and token management
+- `hitl_cli/auth.py` - Dual authentication system (OAuth 2.1 + traditional Google OAuth)
 - `hitl_cli/api_client.py` - HTTP client for backend API communication
-- `hitl_cli/mcp_client.py` - MCP client for human-in-the-loop requests
+- `hitl_cli/mcp_client.py` - MCP client with Bearer token and JWT authentication
 - `hitl_cli/commands.py` - CLI command implementations
-- `hitl_cli/config.py` - Configuration management
+- `hitl_cli/config.py` - Configuration management and secure token storage
 - `hitl_cli/main.py` - Entry point and CLI setup
+
+### Authentication Flows
+
+#### OAuth 2.1 Dynamic Registration Flow
+1. **Dynamic Registration**: CLI registers a new OAuth client automatically (RFC 7591)
+2. **PKCE Authorization**: Secure authorization with Proof Key for Code Exchange (RFC 7636)
+3. **Bearer Token**: Direct OAuth bearer token for MCP operations
+4. **Agent Context**: Agent name embedded in authentication headers
+
+#### Traditional OAuth 2.0 Flow
+1. **Google OAuth**: Standard Google OAuth 2.0 authentication
+2. **JWT Exchange**: Backend exchanges Google token for internal JWT
+3. **Agent Management**: Manual agent creation and management
+4. **API Authentication**: JWT-based API authentication
 
 ## Security
 
+### OAuth 2.1 Security Features
+- **PKCE (Proof Key for Code Exchange)**: Prevents authorization code interception attacks
+- **Dynamic Client Registration**: No hardcoded client credentials in source code
+- **State Parameter**: CSRF protection during OAuth flow
+- **Bearer Token Storage**: Secure file permissions (600) for token files
+- **Automatic Token Refresh**: Seamless token renewal without re-authentication
+
+### Platform Security
 - Tokens are stored securely using platform-specific credential storage:
   - macOS: Keychain
   - Linux: Secret Service API (e.g., GNOME Keyring)
   - Windows: Windows Credential Locker
 - All API communications use HTTPS
-- JWT tokens expire after a configurable period
-- Google OAuth tokens are never stored directly
+- OAuth 2.1 tokens expire after a configurable period
+- Google OAuth tokens are never stored directly in traditional flow
+
+### RFC Compliance
+- **RFC 7591**: OAuth 2.0 Dynamic Client Registration Protocol
+- **RFC 7636**: Proof Key for Code Exchange by OAuth Public Clients
+- **RFC 6749**: OAuth 2.0 Authorization Framework (traditional flow)
 
 ## Contributing
 
@@ -210,7 +335,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - Built with [Typer](https://typer.tiangolo.com/) for the CLI interface
 - Uses [FastMCP](https://github.com/jlowin/fastmcp) for MCP protocol support
-- Authentication powered by Google OAuth 2.0
+- Dual authentication: Google OAuth 2.0 (traditional) + OAuth 2.1 with PKCE (modern)
+- OAuth 2.1 implementation uses [Authlib](https://authlib.org/) for RFC compliance
+- Dynamic client registration following RFC 7591 standards
 
 ## Related Projects
 
