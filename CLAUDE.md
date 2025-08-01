@@ -395,10 +395,45 @@ Planned features:
 - [ ] Client credential rotation
 - [ ] Token introspection endpoint support
 
-## 14. Maintainer Notes
+## 15. Human-in-the-Loop MCP Tool Usage
+
+### When Working on This Project
+When the human-in-the-loop MCP tool is available during development, **ALWAYS** use the MCP tool for human confirmations instead of asking directly in conversation:
+
+**✅ CORRECT - Use MCP tool for confirmations:**
+```python
+# Use mcp__human-in-the-loop__request_human_input for confirmations
+result = mcp__human-in-the-loop__request_human_input({
+    "prompt": "Should I proceed with updating the authentication flow to OAuth 2.1?",
+    "choices": ["Yes, proceed", "No, keep current", "Ask for more details"]
+})
+```
+
+**❌ INCORRECT - Don't ask directly in conversation:**
+```
+"Should I proceed with updating the authentication flow? Please confirm."
+```
+
+### Confirmation Scenarios
+Use the MCP tool for:
+- Code changes that might affect authentication flows
+- Breaking changes to the CLI interface
+- Major refactoring decisions
+- Security-related modifications
+- Production deployment confirmations
+- Test execution approvals that might affect external systems
+
+### Integration with CLI Development
+- The CLI itself implements MCP client functionality
+- Test MCP interactions during CLI development
+- Use the same authentication patterns for development confirmations
+- Validate MCP tool responses in CLI testing workflows
+
+## 16. Maintainer Notes
 
 - Keep README.md user-focused
 - Update CLAUDE.md for developer guidelines
 - Monitor issue tracker for common problems
 - Regular dependency updates (monthly)
 - Backward compatibility for at least 2 versions
+- **Always use human-in-the-loop MCP tool for confirmations** when available during development

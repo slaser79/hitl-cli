@@ -160,7 +160,11 @@ hitl-cli request --prompt "Should I proceed with the deployment?" \
 # Send a free-form text request
 hitl-cli request --prompt "What should I name this file?"
 
-# Notify completion of a task
+# Send a one-way notification (fire-and-forget)
+hitl-cli notify --message "Task started: Processing data files"
+hitl-cli notify --message "Step 2 of 5: Analyzing dependencies"
+
+# Notify completion of a task (waits for response)
 hitl-cli notify-completion --summary "Task completed successfully. All tests passed."
 ```
 
@@ -174,6 +178,29 @@ hitl-cli request --prompt "Should I proceed?" --agent-id "agent-123"
 hitl-cli agents create --name "My Assistant"
 hitl-cli agents list  # Get agent ID
 ```
+
+### One-Way Notifications
+
+The `notify` command sends non-blocking notifications that don't require a response:
+
+```bash
+# Basic notification
+hitl-cli notify --message "Starting data processing..."
+
+# Progress updates
+hitl-cli notify --message "Processing: 50% complete"
+hitl-cli notify --message "Processing: 100% complete"
+
+# Status notifications
+hitl-cli notify --message "Server health check: All systems operational"
+hitl-cli notify --message "Warning: High memory usage detected"
+```
+
+**Key Features:**
+- Fire-and-forget: Returns immediately without waiting
+- No user interaction required
+- Appears as toast notification on mobile device
+- Ideal for progress updates and status messages
 
 ### Other Commands
 

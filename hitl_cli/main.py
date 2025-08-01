@@ -11,6 +11,7 @@ from .auth import (
     delete_oauth_tokens,
     delete_token,
     exchange_token_with_backend,
+    get_current_agent_id,
     is_logged_in,
     is_using_oauth,
     OAuthDynamicClient,
@@ -334,6 +335,36 @@ def notify_completion(
         except Exception as e:
             logger.error(f"Notification failed: {e}")
             typer.echo(f"❌ Notification failed: {e}")
+            raise typer.Exit(1)
+
+    # Run the async function using asyncio.run
+    asyncio.run(_async_notify())
+
+@app.command()
+def notify(
+    message: str = typer.Option(..., "--message", help="The notification message to send to the human")
+):
+    """Send a notification message to the human (fire-and-forget, non-blocking)"""
+    async def _async_notify():
+        client = MCPClient()
+
+        try:
+            typer.echo(f"Sending notification: {message}")
+
+            # Choose authentication method
+            if is_using_oauth():
+                # Use OAuth Bearer authentication - call tool without agent_id
+                response = await client.call_tool("notify_human", {"message": message})
+            else:
+                # Use traditional JWT authentication - call tool with agent_id from token
+                agent_id = get_current_agent_id()
+                response = await client.call_tool("notify_human", {"message": message}, agent_id)
+
+            typer.echo(f"{response}")
+
+        except Exception as e:
+            logger.error(f"Notification failed: {e}")
+            typer.echo(f"Notification failed: {e}")
             raise typer.Exit(1)
 
     # Run the async function using asyncio.run
