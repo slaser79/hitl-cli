@@ -11,6 +11,8 @@ A reference implementation of a command-line interface for Human-in-the-Loop (HI
 - 🔐 **Dual Authentication**: Traditional Google OAuth + new OAuth 2.1 dynamic client registration
 - ⚡ **Zero-Config Auth**: Dynamic client registration eliminates manual OAuth setup
 - 🛡️ **Enhanced Security**: PKCE (Proof Key for Code Exchange) support for OAuth 2.1
+- 🔒 **End-to-End Encryption**: Optional E2EE proxy mode for maximum privacy
+- 🛡️ **Cryptographic Guardian**: Transparent encryption between agents and humans
 - 🤖 **Agent Management**: Create, list, and rename AI agents with customizable names
 - 💬 **Human-in-the-Loop Requests**: Send requests for human decisions with customizable choices
 - 🔄 **MCP Integration**: Built-in support for Model Context Protocol (MCP) clients
@@ -220,6 +222,57 @@ hitl-cli --help
 hitl-cli <command> --help
 ```
 
+## End-to-End Encryption (E2EE) Proxy Mode
+
+For privacy-conscious users who require that the HITL server cannot decipher their messages, the CLI provides a **Cryptographic Guardian** proxy mode that enables transparent end-to-end encryption.
+
+### Quick Setup
+
+1. **Authenticate with E2EE**:
+```bash
+hitl-cli login --dynamic --name "My Secure Agent"
+```
+
+2. **Start the E2EE Proxy**:
+```bash
+hitl-cli proxy https://hitl-relay-193514263276.europe-west2.run.app/mcp-server/mcp/
+```
+
+3. **Configure Claude Desktop** (`claude_desktop_config.json`):
+```json
+{
+  "mcpServers": {
+    "hitl-shin-relay": {
+      "command": "hitl-cli",
+      "args": ["proxy", "https://hitl-relay-193514263276.europe-west2.run.app/mcp-server/mcp/"]
+    }
+  }
+}
+```
+
+### How E2EE Proxy Works
+
+1. **Transparent Operation**: Claude Desktop sees only standard plaintext tools
+2. **Automatic Encryption**: Proxy intercepts requests and encrypts them
+3. **Key Management**: Automatic keypair generation and secure storage
+4. **Mobile Integration**: Mobile app seamlessly decrypts and responds
+5. **Response Decryption**: Proxy decrypts responses before returning to Claude
+
+### Security Benefits
+
+- ✅ **Zero-Knowledge Server**: Server sees only encrypted blobs
+- ✅ **End-to-End Protection**: Only you and your devices can read messages
+- ✅ **Forward Secrecy**: Compromise of server doesn't reveal past messages
+- ✅ **Transparent to Claude**: No changes required to LLM behavior
+
+### Key Storage
+
+- **Agent Keys**: `~/.config/hitl-shin-relay/agent.key` (600 permissions)
+- **OAuth Tokens**: `~/.hitl/oauth_token.json` (600 permissions)
+- **Mobile Keys**: Device secure keychain (iOS/Android)
+
+For detailed E2EE setup instructions, see the [E2EE Onboarding Guide](../docs/onboarding_e2ee.md).
+
 ## Troubleshooting
 
 ### OAuth 2.1 Issues
@@ -257,6 +310,34 @@ curl -v $HITL_BACKEND_URL/health
 
 # Check authentication status
 hitl-cli status
+```
+
+### E2EE Proxy Issues
+
+**Problem**: Proxy not responding to Claude Desktop
+```bash
+# Check if proxy is running
+ps aux | grep "hitl-cli proxy"
+
+# Restart proxy
+hitl-cli proxy https://hitl-relay-193514263276.europe-west2.run.app/mcp-server/mcp/
+```
+
+**Problem**: "Encryption failed" errors
+```bash
+# Verify key generation
+ls -la ~/.config/hitl-shin-relay/agent.key
+
+# Regenerate keys if necessary
+rm ~/.config/hitl-shin-relay/agent.key
+hitl-cli login --dynamic --name "My Agent"
+```
+
+**Problem**: Mobile app shows encrypted text instead of decrypted content
+```bash
+# This indicates mobile app decryption failure
+# Check that mobile app is authenticated with same Google account
+# Force-close and restart mobile app to regenerate keys
 ```
 
 ## Development

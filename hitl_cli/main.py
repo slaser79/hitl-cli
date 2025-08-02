@@ -18,7 +18,9 @@ from .auth import (
     perform_oauth_flow,
     save_token,
 )
+from .crypto import ensure_agent_keypair
 from .mcp_client import MCPClient
+from .proxy_handler import ProxyHandler
 
 # Configure logging
 logging.basicConfig(
@@ -340,35 +342,33 @@ def notify_completion(
     # Run the async function using asyncio.run
     asyncio.run(_async_notify())
 
+
 @app.command()
-def notify(
-    message: str = typer.Option(..., "--message", help="The notification message to send to the human")
+def proxy(
+    backend_url: str = typer.Argument(..., help="Backend MCP server URL")
 ):
-    """Send a notification message to the human (fire-and-forget, non-blocking)"""
-    async def _async_notify():
-        client = MCPClient()
-
+    """Start MCP proxy with transparent end-to-end encryption"""
+    async def _async_proxy():
         try:
-            typer.echo(f"Sending notification: {message}")
-
-            # Choose authentication method
-            if is_using_oauth():
-                # Use OAuth Bearer authentication - call tool without agent_id
-                response = await client.call_tool("notify_human", {"message": message})
-            else:
-                # Use traditional JWT authentication - call tool with agent_id from token
-                agent_id = get_current_agent_id()
-                response = await client.call_tool("notify_human", {"message": message}, agent_id)
-
-            typer.echo(f"{response}")
-
+            # Ensure agent keypair exists
+            typer.echo("🔐 Initializing agent cryptographic keys...")
+            public_key, private_key = ensure_agent_keypair()
+            typer.echo("✅ Agent keys ready")
+            
+            # Create and start proxy handler
+            typer.echo(f"🚀 Starting MCP proxy for backend: {backend_url}")
+            typer.echo("📡 Listening for MCP requests on stdin...")
+            
+            handler = ProxyHandler(backend_url)
+            await handler.start_proxy_loop()
+            
         except Exception as e:
-            logger.error(f"Notification failed: {e}")
-            typer.echo(f"Notification failed: {e}")
+            logger.error(f"Proxy failed: {e}")
+            typer.echo(f"❌ Proxy failed: {e}")
             raise typer.Exit(1)
-
+    
     # Run the async function using asyncio.run
-    asyncio.run(_async_notify())
+    asyncio.run(_async_proxy())
 
 if __name__ == "__main__":
     app()

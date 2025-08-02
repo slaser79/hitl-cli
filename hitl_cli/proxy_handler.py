@@ -1,0 +1,495 @@
+"""
+MCP proxy handler for transparent end-to-end encryption.
+
+This module implements an MCP proxy that sits between Claude and the backend,
+providing transparent encryption/decryption of human-in-the-loop communications.
+"""
+
+import asyncio
+import base64
+import json
+import logging
+import sys
+from typing import Dict, List, Any, Optional
+
+import httpx
+from nacl.public import PrivateKey, PublicKey, Box
+from nacl.encoding import Base64Encoder
+
+from .auth import get_current_oauth_token, is_using_oauth
+from .crypto import load_agent_keypair
+
+logger = logging.getLogger(__name__)
+
+
+class ProxyHandler:
+    """
+    MCP proxy handler that provides transparent end-to-end encryption.
+    
+    Intercepts MCP requests from Claude, encrypts sensitive data, forwards
+    to backend, decrypts responses, and returns plaintext to Claude.
+    """
+    
+    def __init__(self, backend_url: str):
+        """
+        Initialize proxy handler.
+        
+        Args:
+            backend_url: URL of the backend MCP server
+        """
+        self.backend_url = backend_url.rstrip('/')
+        self.mcp_url = f"{self.backend_url}/mcp-server/mcp/"
+        
+        # Load agent keypair
+        self.public_key, self.private_key = load_agent_keypair()
+        self.agent_private_key = PrivateKey(self.private_key, encoder=Base64Encoder)
+        self.agent_public_key = PublicKey(self.public_key, encoder=Base64Encoder)
+        
+        logger.info(f"Proxy handler initialized for backend: {backend_url}")
+
+    async def start_proxy_loop(self) -> None:
+        """
+        Start the main proxy loop, listening for MCP requests on stdin.
+        
+        Reads JSON-RPC requests from stdin, processes them, and writes
+        responses to stdout. Terminates when stdin is closed.
+        """
+        logger.info("Starting MCP proxy loop")
+        
+        try:
+            while True:
+                # Read request from stdin
+                line = await asyncio.get_event_loop().run_in_executor(
+                    None, sys.stdin.readline
+                )
+                
+                if not line:
+                    # EOF - parent process terminated
+                    logger.info("Parent process terminated, exiting proxy")
+                    break
+                
+                line = line.strip()
+                if not line:
+                    continue
+                
+                # Process MCP request
+                try:
+                    response = await self.handle_mcp_request(line)
+                    
+                    # Write response to stdout
+                    response_json = json.dumps(response)
+                    print(response_json, flush=True)
+                    
+                except Exception as e:
+                    logger.error(f"Error processing MCP request: {e}")
+                    
+                    # Send error response
+                    error_response = {
+                        "jsonrpc": "2.0",
+                        "id": None,
+                        "error": {
+                            "code": -32603,
+                            "message": f"Internal error: {str(e)}"
+                        }
+                    }
+                    print(json.dumps(error_response), flush=True)
+                    
+        except Exception as e:
+            logger.error(f"Proxy loop error: {e}")
+            raise
+
+    async def handle_mcp_request(self, request_line: str) -> Dict[str, Any]:
+        """
+        Handle an MCP JSON-RPC request.
+        
+        Args:
+            request_line: JSON string containing the MCP request
+            
+        Returns:
+            MCP response dictionary
+        """
+        try:
+            request = json.loads(request_line)
+        except json.JSONDecodeError:
+            return {
+                "jsonrpc": "2.0",
+                "id": None,
+                "error": {
+                    "code": -32700,
+                    "message": "Parse error - Invalid JSON"
+                }
+            }
+        
+        # Validate basic JSON-RPC structure
+        if not isinstance(request, dict) or "method" not in request:
+            return {
+                "jsonrpc": "2.0",
+                "id": request.get("id"),
+                "error": {
+                    "code": -32600,
+                    "message": "Invalid Request - Missing method"
+                }
+            }
+        
+        method = request["method"]
+        
+        # Handle different MCP methods
+        if method == "tools/list":
+            return await self.handle_tools_list(request)
+        elif method == "tools/call":
+            tool_name = request.get("params", {}).get("name")
+            if tool_name == "request_human_input":
+                return await self.handle_request_human_input(request)
+            else:
+                # Forward other tool calls to backend
+                return await self.forward_to_backend(request)
+        else:
+            # Forward other methods to backend
+            return await self.forward_to_backend(request)
+
+    async def handle_tools_list(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Handle tools/list request by filtering out encrypted tool variants.
+        
+        Args:
+            request: MCP tools/list request
+            
+        Returns:
+            Filtered tools list response
+        """
+        try:
+            # Get tools from backend
+            backend_tools = await self.get_backend_tools()
+            
+            # Filter out encrypted variants (tools ending with _e2ee)
+            plaintext_tools = [
+                tool for tool in backend_tools
+                if not tool.get("name", "").endswith("_e2ee")
+            ]
+            
+            return {
+                "jsonrpc": "2.0",
+                "id": request.get("id"),
+                "result": {
+                    "tools": plaintext_tools
+                }
+            }
+            
+        except Exception as e:
+            logger.error(f"Error handling tools/list: {e}")
+            return {
+                "jsonrpc": "2.0",
+                "id": request.get("id"),
+                "error": {
+                    "code": -32603,
+                    "message": f"Failed to get tools: {str(e)}"
+                }
+            }
+
+    async def get_backend_tools(self) -> List[Dict[str, Any]]:
+        """
+        Retrieve tools list from backend MCP server.
+        
+        Returns:
+            List of tool definitions
+            
+        Raises:
+            Exception: If backend request fails
+        """
+        # Build MCP tools/list request
+        tools_request = {
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "tools/list",
+            "params": {}
+        }
+        
+        # Get authentication headers
+        headers = {"Content-Type": "application/json"}
+        
+        if is_using_oauth():
+            # Use OAuth Bearer authentication
+            oauth_token = await get_current_oauth_token()
+            headers["Authorization"] = f"Bearer {oauth_token}"
+        else:
+            # Use MCP token authentication (implementation would get MCP token)
+            # For now, assume OAuth is used in proxy mode
+            raise Exception("MCP proxy requires OAuth authentication")
+        
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            response = await client.post(
+                self.mcp_url,
+                json=tools_request,
+                headers=headers
+            )
+            
+            if response.status_code != 200:
+                raise Exception(f"Failed to get tools from backend: {response.status_code} - {response.text}")
+            
+            result = response.json()
+            if "error" in result:
+                raise Exception(f"Backend error: {result['error']}")
+            
+            return result.get("result", {}).get("tools", [])
+
+    async def handle_request_human_input(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Handle request_human_input by encrypting arguments and calling _e2ee variant.
+        
+        Args:
+            request: MCP request_human_input call
+            
+        Returns:
+            Decrypted response from backend
+        """
+        try:
+            # Get arguments from request
+            arguments = request.get("params", {}).get("arguments", {})
+            
+            # Get device public keys
+            device_public_keys = await self.get_device_public_keys()
+            
+            if not device_public_keys:
+                return {
+                    "jsonrpc": "2.0",
+                    "id": request.get("id"),
+                    "error": {
+                        "code": -32603,
+                        "message": "No device public keys available for encryption"
+                    }
+                }
+            
+            # Encrypt arguments
+            encrypted_payload = self.encrypt_arguments(arguments, device_public_keys)
+            
+            # Create _e2ee request
+            e2ee_request = {
+                "jsonrpc": "2.0",
+                "id": request.get("id"),
+                "method": "tools/call",
+                "params": {
+                    "name": "request_human_input_e2ee",
+                    "arguments": {
+                        "encrypted_payload": encrypted_payload
+                    }
+                }
+            }
+            
+            # Forward to backend
+            encrypted_response = await self.forward_to_backend(e2ee_request)
+            
+            # Decrypt response
+            if "result" in encrypted_response:
+                # Assume first device key was used for response encryption
+                device_public_key = device_public_keys[0]
+                decrypted_response = self.process_encrypted_response(
+                    encrypted_response, device_public_key
+                )
+                return decrypted_response
+            else:
+                # Return error response unchanged
+                return encrypted_response
+                
+        except Exception as e:
+            logger.error(f"Error handling request_human_input: {e}")
+            return {
+                "jsonrpc": "2.0",
+                "id": request.get("id"),
+                "error": {
+                    "code": -32603,
+                    "message": f"Failed to process encrypted request: {str(e)}"
+                }
+            }
+
+    async def get_device_public_keys(self) -> List[str]:
+        """
+        Retrieve public keys of user's mobile devices from backend.
+        
+        Returns:
+            List of base64-encoded device public keys
+            
+        Raises:
+            Exception: If backend request fails
+        """
+        # Get authentication headers
+        headers = {"Content-Type": "application/json"}
+        
+        if is_using_oauth():
+            oauth_token = await get_current_oauth_token()
+            headers["Authorization"] = f"Bearer {oauth_token}"
+        else:
+            raise Exception("MCP proxy requires OAuth authentication")
+        
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            response = await client.get(
+                f"{self.backend_url}/api/v1/devices/public-keys",
+                headers=headers
+            )
+            
+            if response.status_code != 200:
+                raise Exception(f"Failed to get device public keys: {response.status_code} - {response.text}")
+            
+            result = response.json()
+            return result.get("public_keys", [])
+
+    def encrypt_arguments(self, arguments: Dict[str, Any], device_public_keys: List[str]) -> str:
+        """
+        Encrypt arguments for multiple device recipients.
+        
+        Args:
+            arguments: Dictionary of arguments to encrypt
+            device_public_keys: List of base64-encoded device public keys
+            
+        Returns:
+            Base64-encoded encrypted payload
+            
+        Raises:
+            ValueError: If no device keys provided
+        """
+        if not device_public_keys:
+            raise ValueError("No device public keys provided for encryption")
+        
+        # Serialize arguments to JSON
+        arguments_json = json.dumps(arguments)
+        arguments_bytes = arguments_json.encode('utf-8')
+        
+        # For simplicity, encrypt for first device key
+        # In production, would implement multi-recipient encryption
+        device_public_key = PublicKey(device_public_keys[0], encoder=Base64Encoder)
+        
+        # Create encryption box (agent -> device)
+        box = Box(self.agent_private_key, device_public_key)
+        
+        # Encrypt the arguments
+        encrypted_bytes = box.encrypt(arguments_bytes)
+        
+        # Return base64-encoded result
+        return base64.b64encode(encrypted_bytes).decode()
+
+    def decrypt_response(self, encrypted_data: str, device_public_key: str) -> str:
+        """
+        Decrypt response from device.
+        
+        Args:
+            encrypted_data: Base64-encoded encrypted response
+            device_public_key: Base64-encoded device public key
+            
+        Returns:
+            Decrypted plaintext string
+            
+        Raises:
+            Exception: If decryption fails
+        """
+        try:
+            # Decode base64
+            encrypted_bytes = base64.b64decode(encrypted_data)
+            
+            # Get device public key
+            device_pub_key = PublicKey(device_public_key, encoder=Base64Encoder)
+            
+            # Create decryption box (device -> agent)
+            box = Box(self.agent_private_key, device_pub_key)
+            
+            # Decrypt
+            decrypted_bytes = box.decrypt(encrypted_bytes)
+            
+            return decrypted_bytes.decode('utf-8')
+            
+        except Exception as e:
+            raise Exception(f"Failed to decrypt response: {e}")
+
+    def process_encrypted_response(self, response: Dict[str, Any], device_public_key: str) -> Dict[str, Any]:
+        """
+        Process encrypted response by decrypting content.
+        
+        Args:
+            response: Encrypted MCP response
+            device_public_key: Device public key used for encryption
+            
+        Returns:
+            Response with decrypted content
+        """
+        try:
+            if "error" in response:
+                # Return error responses unchanged
+                return response
+            
+            result = response.get("result", {})
+            content = result.get("content", [])
+            
+            if not content:
+                return response
+            
+            # Decrypt text content items
+            decrypted_content = []
+            for item in content:
+                if item.get("type") == "text":
+                    encrypted_text = item.get("text", "")
+                    try:
+                        decrypted_text = self.decrypt_response(encrypted_text, device_public_key)
+                        decrypted_content.append({
+                            "type": "text",
+                            "text": decrypted_text
+                        })
+                    except Exception as e:
+                        logger.error(f"Failed to decrypt content item: {e}")
+                        # Return error for this specific decryption failure
+                        return {
+                            "jsonrpc": "2.0",
+                            "id": response.get("id"),
+                            "error": {
+                                "code": -32603,
+                                "message": f"Failed to decrypt response: {str(e)}"
+                            }
+                        }
+                else:
+                    # Non-text content passes through unchanged
+                    decrypted_content.append(item)
+            
+            # Return response with decrypted content
+            decrypted_response = response.copy()
+            decrypted_response["result"]["content"] = decrypted_content
+            
+            return decrypted_response
+            
+        except Exception as e:
+            logger.error(f"Error processing encrypted response: {e}")
+            return {
+                "jsonrpc": "2.0",
+                "id": response.get("id"),
+                "error": {
+                    "code": -32603,
+                    "message": f"Failed to process encrypted response: {str(e)}"
+                }
+            }
+
+    async def forward_to_backend(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Forward MCP request to backend server.
+        
+        Args:
+            request: MCP request to forward
+            
+        Returns:
+            Backend response
+        """
+        # Get authentication headers
+        headers = {"Content-Type": "application/json"}
+        
+        if is_using_oauth():
+            oauth_token = await get_current_oauth_token()
+            headers["Authorization"] = f"Bearer {oauth_token}"
+        else:
+            raise Exception("MCP proxy requires OAuth authentication")
+        
+        async with httpx.AsyncClient(timeout=300.0) as client:  # 5 minute timeout for human responses
+            response = await client.post(
+                self.mcp_url,
+                json=request,
+                headers=headers
+            )
+            
+            if response.status_code != 200:
+                raise Exception(f"Backend request failed: {response.status_code} - {response.text}")
+            
+            return response.json()
