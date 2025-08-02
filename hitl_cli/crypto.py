@@ -161,16 +161,56 @@ async def register_public_key_with_backend(public_key: str) -> bool:
         True if registration successful, False otherwise
     """
     try:
-        client = ApiClient()
+        import httpx
+        from .auth import get_current_oauth_token, is_using_oauth, get_current_token, get_current_agent_id
+        from .config import BACKEND_BASE_URL
         
+        # Get agent ID for registration
+        agent_id = get_current_agent_id()
+        if not agent_id:
+            logger.error("No agent ID available for key registration")
+            return False
+        
+        # Determine authentication method
+        headers = {"Content-Type": "application/json"}
+        
+        if is_using_oauth():
+            # Use OAuth Bearer authentication
+            oauth_token = get_current_oauth_token()
+            if oauth_token:
+                headers["Authorization"] = f"Bearer {oauth_token}"
+            else:
+                logger.error("OAuth token not available for key registration")
+                return False
+        else:
+            # Use traditional JWT authentication
+            try:
+                jwt_token = get_current_token()
+                headers["Authorization"] = f"Bearer {jwt_token}"
+            except Exception:
+                logger.error("No authentication token available for key registration")
+                return False
+        
+        # Use correct endpoint and request format
         registration_data = {
+            "entity_type": "agent",
+            "entity_id": agent_id,
             "public_key": public_key
         }
         
-        result = await client.post("/api/v1/agents/public-key", registration_data)
-        
-        logger.info("Successfully registered public key with backend")
-        return True
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            response = await client.post(
+                f"{BACKEND_BASE_URL}/api/v1/keys/register",
+                json=registration_data,
+                headers=headers
+            )
+            
+            if response.status_code == 200:
+                logger.info("Successfully registered public key with backend")
+                return True
+            else:
+                logger.error(f"Failed to register public key: HTTP {response.status_code} - {response.text}")
+                return False
         
     except Exception as e:
         logger.error(f"Failed to register public key with backend: {e}")

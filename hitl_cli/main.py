@@ -18,7 +18,7 @@ from .auth import (
     perform_oauth_flow,
     save_token,
 )
-from .crypto import ensure_agent_keypair
+from .crypto import ensure_agent_keypair, load_agent_keypair
 from .mcp_client import MCPClient
 from .proxy_handler import ProxyHandler
 
@@ -89,9 +89,25 @@ def login(
             access_token, agent_name = asyncio.run(oauth_client.perform_dynamic_oauth_flow(name))
             
             typer.echo("✅ OAuth 2.1 dynamic authentication successful!")
+            
+            # Generate E2EE keys and register with server during login
+            typer.echo("🔐 Generating end-to-end encryption keys...")
+            public_key, private_key = ensure_agent_keypair()
+            typer.echo("✅ E2EE keys generated and registered with server")
+            
             typer.echo()
-            typer.echo(f"🤖 Agent '{agent_name}' is ready for use.")
-            typer.echo("💡 Use 'hitl-cli request --prompt \"<your prompt>\"' to interact.")
+            typer.echo(f"🤖 Agent '{agent_name}' is ready for secure E2EE communication.")
+            typer.echo("💡 Use Claude Desktop with MCP configuration to interact securely.")
+            typer.echo()
+            typer.echo("📋 Claude Desktop MCP Configuration:")
+            typer.echo('   {')
+            typer.echo('     "mcpServers": {')
+            typer.echo('       "hitl": {')
+            typer.echo('         "command": "hitl-cli",')
+            typer.echo('         "args": ["proxy", "https://hitl-relay-193514263276.europe-west2.run.app/mcp-server/mcp/"]')
+            typer.echo('       }')
+            typer.echo('     }')
+            typer.echo('   }')
             
         except Exception as e:
             logger.error(f"OAuth 2.1 login failed: {e}")
@@ -108,6 +124,11 @@ def login(
 
             # Save both JWT and Google ID tokens
             save_token(jwt_token, google_id_token)
+
+            # Generate E2EE keys and register with server during login
+            typer.echo("🔐 Generating end-to-end encryption keys...")
+            public_key, private_key = ensure_agent_keypair()
+            typer.echo("✅ E2EE keys generated and registered with server")
 
             typer.echo("✅ Login successful!")
             typer.echo()
@@ -350,14 +371,24 @@ def proxy(
     """Start MCP proxy with transparent end-to-end encryption"""
     async def _async_proxy():
         try:
-            # Ensure agent keypair exists
-            typer.echo("🔐 Initializing agent cryptographic keys...")
-            public_key, private_key = ensure_agent_keypair()
-            typer.echo("✅ Agent keys ready")
+            # Verify authentication and keys exist (should be created during login)
+            if not is_logged_in() and not is_using_oauth():
+                typer.echo("❌ Not logged in. Please run 'hitl-cli login --dynamic --name \"Agent Name\"' first.")
+                raise typer.Exit(1)
+            
+            # Load existing agent keypair (should exist from login)
+            typer.echo("🔐 Loading agent cryptographic keys...")
+            try:
+                public_key, private_key = load_agent_keypair()
+                typer.echo("✅ Agent keys loaded successfully")
+            except FileNotFoundError:
+                typer.echo("❌ E2EE keys not found. Please run 'hitl-cli login --dynamic --name \"Agent Name\"' to generate keys.")
+                raise typer.Exit(1)
             
             # Create and start proxy handler
             typer.echo(f"🚀 Starting MCP proxy for backend: {backend_url}")
             typer.echo("📡 Listening for MCP requests on stdin...")
+            typer.echo("🔐 End-to-end encryption active - server will only see encrypted data")
             
             handler = ProxyHandler(backend_url)
             await handler.start_proxy_loop()

@@ -28,8 +28,9 @@
             fi
             source .venv/bin/activate
             
-            # Sync dependencies
+            # Sync dependencies and install the CLI in editable mode
             uv sync
+            uv pip install -e .
             
             echo ""
             echo "Virtual environment activated. Run 'hitl-cli --help' to get started."

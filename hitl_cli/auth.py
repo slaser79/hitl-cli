@@ -154,7 +154,15 @@ def get_current_token() -> str:
 def get_current_agent_id() -> Optional[str]:
     """Get current user's agent ID from JWT token"""
     try:
-        token = get_current_token()
+        # Use OAuth token if in OAuth mode, otherwise use traditional token
+        if is_using_oauth():
+            token = get_current_oauth_token()
+        else:
+            token = get_current_token()
+            
+        if not token:
+            return None
+            
         # Decode JWT without verification to get the payload
         # Using PyJWT for robust decoding
         payload_data = jwt.decode(token, options={"verify_signature": False})

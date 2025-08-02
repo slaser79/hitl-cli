@@ -13,6 +13,7 @@ import sys
 from typing import Dict, List, Any, Optional
 
 import httpx
+from fastmcp import Client
 from nacl.public import PrivateKey, PublicKey, Box
 from nacl.encoding import Base64Encoder
 
@@ -38,7 +39,12 @@ class ProxyHandler:
             backend_url: URL of the backend MCP server
         """
         self.backend_url = backend_url.rstrip('/')
-        self.mcp_url = f"{self.backend_url}/mcp-server/mcp/"
+        
+        # Use the provided URL directly if it's already the full MCP endpoint
+        if backend_url.endswith('/mcp-server/mcp') or backend_url.endswith('/mcp-server/mcp/'):
+            self.mcp_url = backend_url if backend_url.endswith('/') else backend_url + '/'
+        else:
+            self.mcp_url = f"{self.backend_url}/mcp-server/mcp/"
         
         # Load agent keypair
         self.public_key, self.private_key = load_agent_keypair()
@@ -188,7 +194,7 @@ class ProxyHandler:
 
     async def get_backend_tools(self) -> List[Dict[str, Any]]:
         """
-        Retrieve tools list from backend MCP server.
+        Retrieve tools list from backend MCP server using FastMCP Client.
         
         Returns:
             List of tool definitions
@@ -196,41 +202,43 @@ class ProxyHandler:
         Raises:
             Exception: If backend request fails
         """
-        # Build MCP tools/list request
-        tools_request = {
-            "jsonrpc": "2.0",
-            "id": 1,
-            "method": "tools/list",
-            "params": {}
-        }
-        
-        # Get authentication headers
-        headers = {"Content-Type": "application/json"}
-        
-        if is_using_oauth():
-            # Use OAuth Bearer authentication
-            oauth_token = await get_current_oauth_token()
-            headers["Authorization"] = f"Bearer {oauth_token}"
-        else:
-            # Use MCP token authentication (implementation would get MCP token)
-            # For now, assume OAuth is used in proxy mode
+        if not is_using_oauth():
             raise Exception("MCP proxy requires OAuth authentication")
         
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            response = await client.post(
-                self.mcp_url,
-                json=tools_request,
-                headers=headers
-            )
-            
-            if response.status_code != 200:
-                raise Exception(f"Failed to get tools from backend: {response.status_code} - {response.text}")
-            
-            result = response.json()
-            if "error" in result:
-                raise Exception(f"Backend error: {result['error']}")
-            
-            return result.get("result", {}).get("tools", [])
+        oauth_token = get_current_oauth_token()
+        if not oauth_token:
+            raise Exception("No OAuth token available")
+        
+        # Create Bearer auth for FastMCP Client
+        class BearerAuth(httpx.Auth):
+            def __init__(self, token: str):
+                self.token = token
+            def auth_flow(self, request):
+                request.headers["Authorization"] = f"Bearer {self.token}"
+                yield request
+        
+        auth = BearerAuth(oauth_token)
+        
+        try:
+            async with Client(self.mcp_url, auth=auth, timeout=30.0) as client:
+                tools = await client.list_tools()
+                
+                # Convert FastMCP Tool objects to dictionary format
+                tools_list = []
+                for tool in tools:
+                    tool_dict = {
+                        "name": tool.name,
+                        "description": tool.description
+                    }
+                    if hasattr(tool, 'inputSchema'):
+                        tool_dict["inputSchema"] = tool.inputSchema
+                    tools_list.append(tool_dict)
+                
+                return tools_list
+                
+        except Exception as e:
+            logger.error(f"Failed to get tools from backend: {e}")
+            raise Exception(f"Failed to get tools from backend: {e}")
 
     async def handle_request_human_input(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -312,10 +320,13 @@ class ProxyHandler:
             Exception: If backend request fails
         """
         # Get authentication headers
-        headers = {"Content-Type": "application/json"}
+        headers = {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream"
+        }
         
         if is_using_oauth():
-            oauth_token = await get_current_oauth_token()
+            oauth_token = get_current_oauth_token()
             headers["Authorization"] = f"Bearer {oauth_token}"
         else:
             raise Exception("MCP proxy requires OAuth authentication")
@@ -474,10 +485,13 @@ class ProxyHandler:
             Backend response
         """
         # Get authentication headers
-        headers = {"Content-Type": "application/json"}
+        headers = {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream"
+        }
         
         if is_using_oauth():
-            oauth_token = await get_current_oauth_token()
+            oauth_token = get_current_oauth_token()
             headers["Authorization"] = f"Bearer {oauth_token}"
         else:
             raise Exception("MCP proxy requires OAuth authentication")
