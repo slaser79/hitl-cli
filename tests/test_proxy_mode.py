@@ -37,8 +37,14 @@ class TestProxyCommand:
 
     def test_proxy_command_accepts_backend_url(self):
         """Test that proxy command accepts backend_url argument."""
-        with patch('hitl_cli.proxy_handler.ProxyHandler') as mock_handler:
-            mock_handler.return_value.start_proxy_loop = AsyncMock()
+        with patch('hitl_cli.proxy_handler_v2.create_fastmcp_proxy_server') as mock_create_server, \
+             patch('hitl_cli.crypto.load_agent_keypair') as mock_load_keys:
+            
+            # Mock the FastMCP server creation
+            mock_server = MagicMock()
+            mock_server.run_stdio_async = AsyncMock()
+            mock_create_server.return_value = mock_server
+            mock_load_keys.return_value = ("test_public", "test_private")
             
             result = self.runner.invoke(app, ["proxy", "https://test-backend.com"])
             

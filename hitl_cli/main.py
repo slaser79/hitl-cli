@@ -21,6 +21,7 @@ from .auth import (
 from .crypto import ensure_agent_keypair, load_agent_keypair
 from .mcp_client import MCPClient
 from .proxy_handler import ProxyHandler
+from .proxy_handler_v2 import create_fastmcp_proxy_server
 
 # Configure logging
 logging.basicConfig(
@@ -377,21 +378,22 @@ def proxy(
                 raise typer.Exit(1)
             
             # Load existing agent keypair (should exist from login)
-            typer.echo("🔐 Loading agent cryptographic keys...")
+            # typer.echo("🔐 Loading agent cryptographic keys...")
             try:
                 public_key, private_key = load_agent_keypair()
-                typer.echo("✅ Agent keys loaded successfully")
+                # typer.echo("✅ Agent keys loaded successfully")
             except FileNotFoundError:
                 typer.echo("❌ E2EE keys not found. Please run 'hitl-cli login --dynamic --name \"Agent Name\"' to generate keys.")
                 raise typer.Exit(1)
             
-            # Create and start proxy handler
-            typer.echo(f"🚀 Starting MCP proxy for backend: {backend_url}")
-            typer.echo("📡 Listening for MCP requests on stdin...")
-            typer.echo("🔐 End-to-end encryption active - server will only see encrypted data")
+            # Create and start FastMCP proxy server
+            # typer.echo(f"🚀 Starting FastMCP proxy for backend: {backend_url}")
+            # typer.echo("📡 Listening for MCP requests on stdin...")
+            # typer.echo("🔐 End-to-end encryption active - server will only see encrypted data")
             
-            handler = ProxyHandler(backend_url)
-            await handler.start_proxy_loop()
+            # Use new FastMCP-based proxy server
+            server = create_fastmcp_proxy_server(backend_url)
+            await server.run_stdio_async()
             
         except Exception as e:
             logger.error(f"Proxy failed: {e}")
