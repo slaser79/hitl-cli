@@ -249,6 +249,11 @@ hitl-cli proxy https://hitl-relay-193514263276.europe-west2.run.app/mcp-server/m
   }
 }
 ```
+4. ** Configure for Claude Code**
+```bash
+claude mcp add human-in-the-loop-e2ee -- /Users/yourUser/lab/hitl/hitl-cli/result/bin/hitl-cli proxy https://hitl-relay-193514263276.europe-west2.run.app/mcp-server/mcp/
+```
+
 
 ### How E2EE Proxy Works
 
