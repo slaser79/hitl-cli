@@ -429,7 +429,107 @@ Use the MCP tool for:
 - Use the same authentication patterns for development confirmations
 - Validate MCP tool responses in CLI testing workflows
 
-## 16. Maintainer Notes
+## 16. Mandatory TDD Protocol
+
+### **🚨 CRITICAL: All CLI Development MUST Follow TDD**
+
+**Zero tolerance for regressions**. Every code change must follow this protocol:
+
+#### **Step 1: Baseline Assessment (MANDATORY)**
+```bash
+cd hitl-cli/
+nix develop -c pytest tests/ --tb=no -q > baseline_tests.txt
+echo "Baseline recorded: $(grep -E 'failed|passed|error' baseline_tests.txt)"
+```
+**Record exact numbers**: "X passed, Y failed, Z errors"
+
+#### **Step 2: Test-First Development (MANDATORY)**
+```bash
+# Write failing test first
+nix develop -c python -m pytest tests/test_new_feature.py::test_my_new_functionality -v
+# Should FAIL initially (proves test works)
+```
+
+**Test Requirements**:
+- **Independent unit tests** - no external dependencies
+- **Outcome-focused** - test what should happen, not how
+- **Descriptive names** - test should read like documentation
+- **Arrange-Act-Assert pattern**
+
+#### **Step 3: Implementation (MANDATORY)**
+- Write **minimal code** to make tests pass
+- **No feature creep** beyond test requirements
+- Keep all existing tests passing
+
+#### **Step 4: Regression Prevention (MANDATORY)**
+```bash
+nix develop -c pytest tests/ --tb=no -q > final_tests.txt
+# Compare results - MUST have same failure count as baseline
+diff baseline_tests.txt final_tests.txt
+```
+
+**Success Criteria**:
+- ✅ Baseline failure count unchanged
+- ✅ New tests pass  
+- ✅ No new failures introduced
+
+### **CLI-Specific Testing Guidelines**
+
+#### **OAuth 2.1 Testing**
+```python
+def test_oauth_dynamic_registration_should_create_client():
+    # Test the outcome: client created successfully
+    result = oauth_client.register("Test Agent")
+    assert result.status == "success"
+    assert result.client_id is not None
+```
+
+#### **E2EE Proxy Testing**
+```python  
+def test_proxy_should_encrypt_human_input_requests():
+    # Test the outcome: requests are encrypted
+    proxy = ProxyHandler()
+    encrypted_request = proxy.handle_request_human_input(plaintext_request)
+    assert encrypted_request.contains_encrypted_payload()
+    assert not encrypted_request.contains_plaintext()
+```
+
+#### **MCP Client Testing**
+```python
+def test_mcp_client_should_handle_authentication_errors():
+    # Test the behavior: proper error handling
+    client = MCPClient()
+    with pytest.raises(AuthenticationError):
+        client.call_tool_with_invalid_token("request_human_input", {})
+```
+
+### **Common CLI Test Patterns**
+
+#### **Mock External Services**
+```python
+@patch('hitl_cli.api_client.httpx.post')
+def test_api_call_should_retry_on_network_error(mock_post):
+    # Arrange
+    mock_post.side_effect = [ConnectionError(), MockResponse(200, {"status": "ok"})]
+    
+    # Act  
+    result = api_client.make_request("/test")
+    
+    # Assert
+    assert result.status_code == 200
+    assert mock_post.call_count == 2  # Verify retry happened
+```
+
+#### **Test CLI Commands**
+```python
+def test_login_command_should_show_success_message():
+    runner = CliRunner()
+    result = runner.invoke(login, ['--dynamic', '--name', 'Test'])
+    assert result.exit_code == 0
+    assert "✅ Login successful" in result.output
+```
+
+## 17. Maintainer Notes
 
 - Keep README.md user-focused
 - Update CLAUDE.md for developer guidelines
@@ -437,3 +537,4 @@ Use the MCP tool for:
 - Regular dependency updates (monthly)
 - Backward compatibility for at least 2 versions
 - **Always use human-in-the-loop MCP tool for confirmations** when available during development
+- **MANDATORY: Follow TDD protocol for ALL code changes**
