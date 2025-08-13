@@ -1,0 +1,8 @@
+MACRO add_repository
+    add_file @flake.nix
+    add_file @README.md
+    add_file @pyproject.toml
+    add_dir  @hitl_cli
+    add_dir  @tests
+ENDMACRO
+

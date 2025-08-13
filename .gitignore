@@ -158,3 +158,9 @@ result-*
 .
 *secret*
 .ai_tasks.db
+*.txt
+.ai_rules/task.md
+.ai_rules/task_context.lm
+.ai_worktrees/
+log/
+logs/

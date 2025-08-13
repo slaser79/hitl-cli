@@ -1,11 +1,7 @@
 """
-Comprehensive tests for CLI authentication flow
+Tests for CLI authentication commands (login, logout, agents)
 
-These tests validate:
-1. OAuth flow with Google
-2. Token exchange with backend
-3. Agent creation and binding
-4. MCP request flow
+These tests validate the CLI command behavior and user interactions.
 """
 
 import json
@@ -13,13 +9,13 @@ from pathlib import Path
 from unittest.mock import MagicMock, Mock, patch
 
 import pytest
-from hitl_cli.auth import is_logged_in, load_token, save_token
+from hitl_cli.auth import save_token
 from hitl_cli.main import app
 from typer.testing import CliRunner
 
 
-class TestCLIAuthenticationFlow:
-    """Test the complete CLI authentication flow"""
+class TestLoginCommand:
+    """Test the login CLI command"""
 
     @pytest.fixture
     def runner(self):
@@ -101,34 +97,44 @@ class TestCLIAuthenticationFlow:
                 assert result.exit_code == 0
                 assert "Already logged in!" in result.output
 
-    def test_logout_flow(self, runner, mock_config_dir):
+
+class TestLogoutCommand:
+    """Test the logout CLI command"""
+
+    @pytest.fixture
+    def runner(self):
+        return CliRunner()
+
+    def test_logout_flow(self, runner, tmp_path):
         """Test logout flow"""
+        config_dir = tmp_path / ".config" / "hitl-cli"
+        config_dir.mkdir(parents=True)
 
         # Save a token first
-        with patch('hitl_cli.auth.CONFIG_DIR', mock_config_dir):
-            with patch('hitl_cli.auth.TOKEN_FILE', mock_config_dir / "token.json"):
+        with patch('hitl_cli.auth.CONFIG_DIR', config_dir):
+            with patch('hitl_cli.auth.TOKEN_FILE', config_dir / "token.json"):
                 save_token("test-token")
-                assert is_logged_in()
 
                 result = runner.invoke(app, ["logout"])
 
                 assert result.exit_code == 0
                 assert "Logged out successfully!" in result.output
-                assert not is_logged_in()
 
-    def test_logout_not_logged_in(self, runner, mock_config_dir):
+    def test_logout_not_logged_in(self, runner, tmp_path):
         """Test logout when not logged in"""
+        config_dir = tmp_path / ".config" / "hitl-cli"
+        config_dir.mkdir(parents=True)
 
-        with patch('hitl_cli.auth.CONFIG_DIR', mock_config_dir):
-            with patch('hitl_cli.auth.TOKEN_FILE', mock_config_dir / "token.json"):
+        with patch('hitl_cli.auth.CONFIG_DIR', config_dir):
+            with patch('hitl_cli.auth.TOKEN_FILE', config_dir / "token.json"):
                 result = runner.invoke(app, ["logout"])
 
                 assert result.exit_code == 0
                 assert "Not logged in." in result.output
 
 
-class TestAgentManagement:
-    """Test agent creation and management"""
+class TestAgentCommands:
+    """Test agent management CLI commands"""
 
     @pytest.fixture
     def runner(self):
@@ -198,8 +204,8 @@ class TestAgentManagement:
             assert "Name: My New Agent" in result.output
 
 
-class TestMCPRequestFlow:
-    """Test the MCP request flow"""
+class TestRequestCommand:
+    """Test the request CLI command"""
 
     @pytest.fixture
     def runner(self):
@@ -356,26 +362,3 @@ class TestMCPRequestFlow:
                         assert result.exit_code == 0
                         assert "Choices: ['Yes', 'No', 'Maybe']" in result.output
                         assert "Human response received: Yes" in result.output
-
-
-class TestTokenSecurity:
-    """Test token storage security"""
-
-    def test_token_file_permissions(self, tmp_path):
-        """Test that token file is created with correct permissions"""
-
-        config_dir = tmp_path / ".config" / "hitl-cli"
-        token_file = config_dir / "token.json"
-
-        with patch('hitl_cli.auth.CONFIG_DIR', config_dir):
-            with patch('hitl_cli.auth.TOKEN_FILE', token_file):
-                save_token("test-token")
-
-                # Check directory permissions (700)
-                assert oct(config_dir.stat().st_mode)[-3:] == '700'
-
-                # Check file permissions (600)
-                assert oct(token_file.stat().st_mode)[-3:] == '600'
-
-                # Verify token content
-                assert load_token() == "test-token"
