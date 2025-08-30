@@ -88,6 +88,8 @@
           inputsFrom = [ hitl-cli-package ];
           
           shellHook = ''
+            # Disable OPIK tracing
+            export OPIK_TRACK_DISABLE="true"
             echo "HITL CLI Development Environment"
             echo "Python: $(python --version)"
             echo "uv: $(uv --version)"
