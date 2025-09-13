@@ -1,0 +1,36 @@
+run @.ai_rules/task_settings.lm
+
+guide = rf @../hitl-shin-relay/specs/phase21_api_keys.md
+
+
+add_context "API GUIDE" ${guide}
+add_context "MCP_TESTING_GUIDE" (rf @docs/mcp/fastmcp-testing-guide.md)
+
+
+SET  task <<EOF
+
+
+The human in the loop server has a now implementated SDK/API version
+for non-interactive background agents to include hitl notifications and confirmations
+
+You task is to build python sdk versions that uses API keys.
+Furthermore the cli entry point should support API-KEY authentication
+in addition to the standard MCP server/OAUTH.
+
+
+
+#Constraint and Tips
+
+* Ensure to update any relevant documentation
+* All tests should pass (Focus on behavioural testing)
+
+
+
+
+EOF
+
+add_goal ${task}
+count_tokens
+SLEEP 10
+
+ai_add_feature ${context}
