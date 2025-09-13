@@ -138,7 +138,8 @@ class TestApiClientSyncWrapperHandling:
         client = ApiClient()
 
         with patch('httpx.AsyncClient') as mock_client_class:
-            mock_client = MagicMock()
+            from unittest.mock import AsyncMock
+            mock_client = AsyncMock()
             mock_client_class.return_value.__aenter__.return_value = mock_client
             mock_client_class.return_value.__aexit__.return_value = None
 
@@ -147,10 +148,7 @@ class TestApiClientSyncWrapperHandling:
             mock_response.status_code = 401
             mock_response.json.return_value = {"detail": "Auth failed"}
 
-            # Make the post method return a coroutine that yields the mock response
-            async def mock_post(*args, **kwargs):
-                return mock_response
-            mock_client.post = mock_post
+            mock_client.post.return_value = mock_response
 
             # Call post_sync
             result = client.post_sync("/test", {"data": "test"})
@@ -169,7 +167,8 @@ class TestApiClientSyncWrapperHandling:
         client = ApiClient()
 
         with patch('httpx.AsyncClient') as mock_client_class:
-            mock_client = MagicMock()
+            from unittest.mock import AsyncMock
+            mock_client = AsyncMock()
             mock_client_class.return_value.__aenter__.return_value = mock_client
 
             # Mock successful response
@@ -177,10 +176,7 @@ class TestApiClientSyncWrapperHandling:
             mock_response.status_code = 200
             mock_response.json.return_value = {"status": "success", "id": "123"}
 
-            # Make the post method return a coroutine
-            async def mock_post(*args, **kwargs):
-                return mock_response
-            mock_client.post = mock_post
+            mock_client.post.return_value = mock_response
 
             # Call post_sync
             result = client.post_sync("/test", {"data": "test"})
@@ -226,7 +222,8 @@ class TestApiClientAuthentication:
         client = ApiClient()
 
         with patch('httpx.AsyncClient') as mock_client_class:
-            mock_client = MagicMock()
+            from unittest.mock import AsyncMock
+            mock_client = AsyncMock()
             mock_client_class.return_value.__aenter__.return_value = mock_client
 
             # Mock successful response
@@ -234,20 +231,10 @@ class TestApiClientAuthentication:
             mock_response.status_code = 200
             mock_response.json.return_value = {"status": "success"}
 
-            # Make all methods return coroutines
-            async def mock_get(*args, **kwargs):
-                return mock_response
-            async def mock_post(*args, **kwargs):
-                return mock_response
-            async def mock_put(*args, **kwargs):
-                return mock_response
-            async def mock_delete(*args, **kwargs):
-                return mock_response
-
-            mock_client.get = mock_get
-            mock_client.post = mock_post
-            mock_client.put = mock_put
-            mock_client.delete = mock_delete
+            mock_client.get.return_value = mock_response
+            mock_client.post.return_value = mock_response
+            mock_client.put.return_value = mock_response
+            mock_client.delete.return_value = mock_response
 
             # Test all methods
             import asyncio
@@ -257,9 +244,9 @@ class TestApiClientAuthentication:
             asyncio.run(client.delete("/test"))
 
             # Verify all calls used auth headers
-            for call in [mock_client.get, mock_client.post, mock_client.put, mock_client.delete]:
-                call.assert_called_once()
-                call_args = call.call_args
+            for method in [mock_client.get, mock_client.post, mock_client.put, mock_client.delete]:
+                method.assert_awaited_once()
+                call_args = method.await_args
                 headers = call_args[1]["headers"]
                 assert headers["Authorization"] == "Bearer test-jwt-token"
                 assert headers["Content-Type"] == "application/json"

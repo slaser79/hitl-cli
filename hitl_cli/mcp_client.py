@@ -9,10 +9,8 @@ from .auth import (
     get_current_oauth_token,
     is_oauth_token_expired,
     is_using_oauth,
-    load_google_id_token, 
     load_oauth_client,
     load_oauth_token,
-    perform_oauth_flow,
     refresh_oauth_token,
     save_oauth_token
 )
@@ -28,37 +26,8 @@ class MCPClient:
         self._mcp_token_cache = {}  # Cache MCP tokens to avoid repeated OAuth
 
     async def get_mcp_token(self, agent_id: str) -> str:
-        """Get MCP-specific JWT token for the agent"""
-        # Check cache first
-        if agent_id in self._mcp_token_cache:
-            return self._mcp_token_cache[agent_id]
-
-        # Try to use stored Google ID token first
-        google_id_token = load_google_id_token()
-        if not google_id_token:
-            # Fallback to OAuth flow if no stored token
-            google_id_token = perform_oauth_flow()
-            # Save the newly obtained Google ID token
-            from .auth import load_token, save_token
-            current_jwt = load_token()
-            save_token(current_jwt, google_id_token)
-
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            response = await client.post(
-                f"{self.base_url}/api/v1/auth/mcp",
-                json={"id_token": google_id_token, "agent_id": agent_id},
-                headers={"Content-Type": "application/json"}
-            )
-
-            if response.status_code != 200:
-                raise Exception(f"MCP token exchange failed: {response.status_code} - {response.text}")
-
-            result = response.json()
-            mcp_token = result["access_token"]
-
-            # Cache the token
-            self._mcp_token_cache[agent_id] = mcp_token
-            return mcp_token
+        """Get MCP-specific JWT token for the agent - DEPRECATED: Use OAuth instead"""
+        raise Exception("Traditional OAuth flow is no longer supported. Please use OAuth dynamic registration.")
 
     async def create_agent_for_mcp(self, agent_name: str) -> str:
         """Create an agent and return its ID"""
@@ -86,38 +55,39 @@ class MCPClient:
         token_data = load_oauth_token()
         if not token_data:
             raise Exception("No OAuth token found - please login with --dynamic")
-        
+
         # Check if token is expired
         if is_oauth_token_expired(token_data):
             # Try to refresh the token
             refresh_token = token_data.get('refresh_token')
             if not refresh_token:
-                raise Exception("OAuth token expired and no refresh token available - please login again")
-            
+                # Fallback: use current token as-is
+                return token_data['access_token']
+
             client_data = load_oauth_client()
             if not client_data:
                 raise Exception("OAuth client data not found - please login again")
-            
+
             try:
                 # Refresh the token
                 new_token_data = await refresh_oauth_token(
                     refresh_token,
                     client_data['client_id'],
-                    client_data['client_secret']
+                    client_data.get('client_secret')
                 )
-                
+
                 # Preserve refresh token if not provided in response
                 if 'refresh_token' not in new_token_data:
                     new_token_data['refresh_token'] = refresh_token
-                
+
                 # Save updated token
                 save_oauth_token(new_token_data)
-                
+
                 return new_token_data['access_token']
-                
+
             except Exception as e:
                 raise Exception(f"Failed to refresh OAuth token: {e}")
-        
+
         return token_data['access_token']
 
     async def call_tool(self, tool_name: str, arguments: Dict[str, Any], agent_id: Optional[str] = None) -> str:
@@ -283,4 +253,3 @@ class MCPClient:
         # Make the MCP tool call using OAuth Bearer auth
         result = await self.call_tool("notify_human_completion", arguments)
         return result
-

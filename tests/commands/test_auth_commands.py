@@ -6,7 +6,7 @@ These tests validate the CLI command behavior and user interactions.
 
 import json
 from pathlib import Path
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
 import pytest
 from hitl_cli.auth import save_token
@@ -29,60 +29,35 @@ class TestLoginCommand:
         config_dir.mkdir(parents=True)
 
         # Patch the config module to use temp directory
-        with patch('hitl_cli.auth.CONFIG_DIR', config_dir):
-            with patch('hitl_cli.auth.TOKEN_FILE', config_dir / "token.json"):
-                yield config_dir
+        with patch('hitl_cli.auth.CONFIG_DIR', config_dir), \
+             patch('hitl_cli.auth.TOKEN_FILE', config_dir / "token.json"), \
+             patch('hitl_cli.auth.OAUTH_TOKEN_FILE', config_dir / "oauth_token.json"):
+            from hitl_cli.auth import delete_token, delete_oauth_tokens
+            delete_token()
+            delete_oauth_tokens()
+            yield config_dir
 
-    @pytest.fixture
-    def mock_client_secret(self, tmp_path):
-        """Create a mock client_secret_desktop.json file"""
-        secret_file = tmp_path / "client_secret_desktop.json"
-        secret_data = {
-            "installed": {
-                "client_id": "test-client-id.apps.googleusercontent.com",
-                "client_secret": "test-client-secret",
-                "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-                "token_uri": "https://oauth2.googleapis.com/token"
-            }
-        }
-        secret_file.write_text(json.dumps(secret_data))
 
-        with patch('hitl_cli.auth.CLIENT_SECRET_FILE', secret_file):
-            yield secret_file
-
-    def test_login_flow_success(self, runner, mock_config_dir, mock_client_secret):
+    def test_login_flow_success(self, runner, mock_config_dir):
         """Test successful login flow"""
 
-        # Mock the OAuth flow
-        mock_credentials = Mock()
-        mock_credentials.id_token = "fake-google-id-token"
+        with patch('hitl_cli.main.OAuthDynamicClient') as mock_oauth_client_cls, \
+             patch('hitl_cli.main.ensure_agent_keypair') as mock_ensure_keys:
+            inst = mock_oauth_client_cls.return_value
+            inst.perform_dynamic_oauth_flow = AsyncMock(return_value=("fake-access-token", "HITL CLI Agent"))
+            mock_ensure_keys.return_value = ("public_key", "private_key")
 
-        with patch('hitl_cli.auth.InstalledAppFlow.from_client_secrets_file') as mock_flow_factory:
-            mock_flow = Mock()
-            mock_flow.run_local_server.return_value = mock_credentials
-            mock_flow_factory.return_value = mock_flow
+            # Run the login command
+            result = runner.invoke(app, ["login", "--name", "Test Agent"])
 
-            # Mock the token exchange
-            with patch('httpx.AsyncClient.post') as mock_post:
-                mock_response = Mock()
-                mock_response.status_code = 200
-                mock_response.json.return_value = {"access_token": "fake-jwt-token"}
-                mock_post.return_value = mock_response
+            assert result.exit_code == 0
+            assert "OAuth 2.1 dynamic authentication successful!" in result.output
 
-                # Run the login command
-                result = runner.invoke(app, ["login"])
+            # Verify OAuth client was created and flow was called
+            inst.perform_dynamic_oauth_flow.assert_awaited_once_with("Test Agent")
 
-                assert result.exit_code == 0
-                assert "Login successful!" in result.output
-
-                # Verify OAuth flow was called
-                mock_flow.run_local_server.assert_called_once_with(port=0)
-
-                # Verify token exchange was called
-                mock_post.assert_called_once()
-                call_args = mock_post.call_args
-                assert call_args[0][0] == "http://127.0.0.1:8000/api/v1/auth/google"
-                assert call_args[1]["json"]["id_token"] == "fake-google-id-token"
+            # Verify keys were ensured
+            mock_ensure_keys.assert_called_once()
 
     def test_login_already_logged_in(self, runner, mock_config_dir):
         """Test login when already logged in"""
@@ -147,12 +122,10 @@ class TestAgentCommands:
         config_dir.mkdir(parents=True)
         token_file = config_dir / "token.json"
 
-        with patch('hitl_cli.auth.CONFIG_DIR', config_dir):
-            with patch('hitl_cli.auth.TOKEN_FILE', token_file):
-                with patch('hitl_cli.api_client.CONFIG_DIR', config_dir):
-                    with patch('hitl_cli.api_client.TOKEN_FILE', token_file):
-                        save_token("test-jwt-token")
-                        yield
+        with patch('hitl_cli.auth.CONFIG_DIR', config_dir), \
+             patch('hitl_cli.auth.TOKEN_FILE', token_file):
+            save_token("test-jwt-token")
+            yield
 
     def test_agents_list_success(self, runner, mock_auth):
         """Test listing agents"""
@@ -218,147 +191,77 @@ class TestRequestCommand:
         config_dir.mkdir(parents=True)
         token_file = config_dir / "token.json"
 
-        with patch('hitl_cli.auth.CONFIG_DIR', config_dir):
-            with patch('hitl_cli.auth.TOKEN_FILE', token_file):
-                with patch('hitl_cli.api_client.CONFIG_DIR', config_dir):
-                    with patch('hitl_cli.api_client.TOKEN_FILE', token_file):
-                        with patch('hitl_cli.mcp_client.CONFIG_DIR', config_dir):
-                            with patch('hitl_cli.mcp_client.TOKEN_FILE', token_file):
-                                save_token("test-jwt-token")
-                                yield
+        with patch('hitl_cli.auth.CONFIG_DIR', config_dir), \
+             patch('hitl_cli.auth.TOKEN_FILE', token_file):
+            save_token("test-jwt-token")
+            yield
 
     def test_request_with_new_agent(self, runner, mock_auth):
         """Test making a request that creates a new agent"""
 
-        # Mock OAuth flow for MCP token
-        mock_credentials = Mock()
-        mock_credentials.id_token = "fake-google-id-token"
+        with patch('hitl_cli.mcp_client.MCPClient.request_human_input', new_callable=AsyncMock) as mock_request_human_input:
+            mock_request_human_input.return_value = "User approved"
 
-        with patch('hitl_cli.mcp_client.InstalledAppFlow.from_client_secrets_file') as mock_flow_factory:
-            mock_flow = Mock()
-            mock_flow.run_local_server.return_value = mock_credentials
-            mock_flow_factory.return_value = mock_flow
+            with patch('hitl_cli.auth.get_current_agent_id', return_value=None):
+                result = runner.invoke(app, ["request", "--prompt", "Approve deployment?"])
 
-            # Mock client secret file
-            with patch('hitl_cli.mcp_client.CLIENT_SECRET_FILE', Path("fake-secret.json")):
-                with patch('hitl_cli.mcp_client.CLIENT_SECRET_FILE.exists', return_value=True):
+                assert result.exit_code == 0
+                assert "Sending request: Approve deployment?" in result.output
+                assert "Waiting for human response..." in result.output
+                assert "Human response received: User approved" in result.output
 
-                    # Mock the async HTTP calls
-                    with patch('httpx.AsyncClient') as mock_client_class:
-                        mock_client = MagicMock()
-                        mock_client_class.return_value.__aenter__.return_value = mock_client
-
-                        # Mock agent creation
-                        agent_response = Mock()
-                        agent_response.status_code = 200
-                        agent_response.json.return_value = {"id": "new-agent-id", "name": "hitl-cli-12345678"}
-
-                        # Mock MCP token exchange
-                        mcp_token_response = Mock()
-                        mcp_token_response.status_code = 200
-                        mcp_token_response.json.return_value = {"access_token": "mcp-jwt-token"}
-
-                        # Mock MCP tool call
-                        mcp_call_response = Mock()
-                        mcp_call_response.status_code = 200
-                        mcp_call_response.json.return_value = {"result": "User approved"}
-
-                        # Set up the mock responses in order
-                        mock_client.post.side_effect = [agent_response, mcp_token_response, mcp_call_response]
-
-                        result = runner.invoke(app, ["request", "--prompt", "Approve deployment?"])
-
-                        assert result.exit_code == 0
-                        assert "Sending request: Approve deployment?" in result.output
-                        assert "Waiting for human response..." in result.output
-                        assert "Human response received: User approved" in result.output
+                mock_request_human_input.assert_awaited_once_with(
+                    prompt='Approve deployment?',
+                    choices=None,
+                    placeholder_text=None,
+                    agent_id=None
+                )
 
     def test_request_with_existing_agent(self, runner, mock_auth):
         """Test making a request with an existing agent ID"""
 
-        # Mock OAuth flow for MCP token
-        mock_credentials = Mock()
-        mock_credentials.id_token = "fake-google-id-token"
+        with patch('hitl_cli.mcp_client.MCPClient.request_human_input', new_callable=AsyncMock) as mock_request_human_input:
+            mock_request_human_input.return_value = "User denied"
 
-        with patch('hitl_cli.mcp_client.InstalledAppFlow.from_client_secrets_file') as mock_flow_factory:
-            mock_flow = Mock()
-            mock_flow.run_local_server.return_value = mock_credentials
-            mock_flow_factory.return_value = mock_flow
+            with patch('hitl_cli.auth.get_current_agent_id', return_value="existing-agent-id"):
+                result = runner.invoke(app, [
+                    "request",
+                    "--prompt", "Approve deployment?",
+                    "--agent-id", "existing-agent-id"
+                ])
 
-            # Mock client secret file
-            with patch('hitl_cli.mcp_client.CLIENT_SECRET_FILE', Path("fake-secret.json")):
-                with patch('hitl_cli.mcp_client.CLIENT_SECRET_FILE.exists', return_value=True):
+                assert result.exit_code == 0
+                assert "Human response received: User denied" in result.output
 
-                    # Mock the async HTTP calls
-                    with patch('httpx.AsyncClient') as mock_client_class:
-                        mock_client = MagicMock()
-                        mock_client_class.return_value.__aenter__.return_value = mock_client
-
-                        # Mock MCP token exchange
-                        mcp_token_response = Mock()
-                        mcp_token_response.status_code = 200
-                        mcp_token_response.json.return_value = {"access_token": "mcp-jwt-token"}
-
-                        # Mock MCP tool call
-                        mcp_call_response = Mock()
-                        mcp_call_response.status_code = 200
-                        mcp_call_response.json.return_value = {"result": "User denied"}
-
-                        mock_client.post.side_effect = [mcp_token_response, mcp_call_response]
-
-                        result = runner.invoke(app, [
-                            "request",
-                            "--prompt", "Approve deployment?",
-                            "--agent-id", "existing-agent-id"
-                        ])
-
-                        assert result.exit_code == 0
-                        assert "Human response received: User denied" in result.output
+                mock_request_human_input.assert_awaited_once_with(
+                    prompt='Approve deployment?',
+                    choices=None,
+                    placeholder_text=None,
+                    agent_id='existing-agent-id'
+                )
 
     def test_request_with_choices(self, runner, mock_auth):
         """Test making a request with multiple choice options"""
 
-        # Mock OAuth flow for MCP token
-        mock_credentials = Mock()
-        mock_credentials.id_token = "fake-google-id-token"
+        with patch('hitl_cli.mcp_client.MCPClient.request_human_input', new_callable=AsyncMock) as mock_request_human_input:
+            mock_request_human_input.return_value = "Yes"
 
-        with patch('hitl_cli.mcp_client.InstalledAppFlow.from_client_secrets_file') as mock_flow_factory:
-            mock_flow = Mock()
-            mock_flow.run_local_server.return_value = mock_credentials
-            mock_flow_factory.return_value = mock_flow
+            with patch('hitl_cli.auth.get_current_agent_id', return_value=None):
+                result = runner.invoke(app, [
+                    "request",
+                    "--prompt", "Continue with operation?",
+                    "--choice", "Yes",
+                    "--choice", "No",
+                    "--choice", "Maybe"
+                ])
 
-            # Mock client secret file
-            with patch('hitl_cli.mcp_client.CLIENT_SECRET_FILE', Path("fake-secret.json")):
-                with patch('hitl_cli.mcp_client.CLIENT_SECRET_FILE.exists', return_value=True):
+                assert result.exit_code == 0
+                assert "Choices: ['Yes', 'No', 'Maybe']" in result.output
+                assert "Human response received: Yes" in result.output
 
-                    # Mock the async HTTP calls
-                    with patch('httpx.AsyncClient') as mock_client_class:
-                        mock_client = MagicMock()
-                        mock_client_class.return_value.__aenter__.return_value = mock_client
-
-                        # Mock responses
-                        agent_response = Mock()
-                        agent_response.status_code = 200
-                        agent_response.json.return_value = {"id": "new-agent-id"}
-
-                        mcp_token_response = Mock()
-                        mcp_token_response.status_code = 200
-                        mcp_token_response.json.return_value = {"access_token": "mcp-jwt-token"}
-
-                        mcp_call_response = Mock()
-                        mcp_call_response.status_code = 200
-                        mcp_call_response.json.return_value = {"result": "Yes"}
-
-                        mock_client.post.side_effect = [agent_response, mcp_token_response, mcp_call_response]
-
-                        result = runner.invoke(app, [
-                            "request",
-                            "--prompt", "Continue with operation?",
-                            "--choice", "Yes",
-                            "--choice", "No",
-                            "--choice", "Maybe"
-                        ])
-
-                        assert result.exit_code == 0
-                        assert "Choices: ['Yes', 'No', 'Maybe']" in result.output
-                        assert "Human response received: Yes" in result.output
+                mock_request_human_input.assert_awaited_once_with(
+                    prompt='Continue with operation?',
+                    choices=['Yes', 'No', 'Maybe'],
+                    placeholder_text=None,
+                    agent_id=None
+                )

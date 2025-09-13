@@ -8,15 +8,16 @@ Uses PyNaCl for cryptographic operations.
 import os
 import tempfile
 from pathlib import Path
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch, MagicMock, AsyncMock
 
 import pytest
+pytest.importorskip("nacl")
 from nacl.public import PrivateKey, PublicKey
 from nacl.encoding import Base64Encoder
 
 from hitl_cli.crypto import (
     generate_agent_keypair,
-    save_agent_keypair, 
+    save_agent_keypair,
     load_agent_keypair,
     ensure_agent_keypair,
     get_agent_keys_path,
@@ -240,46 +241,51 @@ class TestBackendRegistration:
     """Test suite for backend public key registration."""
 
     @pytest.mark.asyncio
-    @patch('hitl_cli.api_client.ApiClient')
-    async def test_register_public_key_with_backend_success(self, mock_api_client):
+    @patch('hitl_cli.crypto.get_current_agent_id', return_value='test-agent-id')
+    @patch('hitl_cli.crypto.is_using_oauth', return_value=True)
+    @patch('hitl_cli.crypto.get_current_oauth_token', return_value='test-oauth-token')
+    async def test_register_public_key_with_backend_success(self, mock_get_token, mock_is_oauth, mock_get_agent_id):
         """Test successful public key registration with backend."""
-        # Mock successful API response
-        mock_client_instance = mock_api_client.return_value
-        mock_client_instance.post = MagicMock(return_value={"status": "registered"})
-        
-        public_key = "test_public_key_base64"
-        result = await register_public_key_with_backend(public_key)
-        
-        assert result is True
-        
-        # Should call the correct API endpoint
-        mock_client_instance.post.assert_called_once_with(
-            "/api/v1/agents/public-key",
-            {"public_key": public_key}
-        )
+        with patch('httpx.AsyncClient') as mock_client_class:
+            mock_client = AsyncMock()
+            mock_client_class.return_value.__aenter__.return_value = mock_client
+            mock_client_class.return_value.__aexit__.return_value = None
+
+            mock_response = MagicMock()
+            mock_response.status_code = 200
+            mock_client.post.return_value = mock_response
+
+            public_key = "test_public_key_base64"
+            result = await register_public_key_with_backend(public_key)
+
+            assert result is True
+            mock_client.post.assert_awaited_once()
+            call_args = mock_client.post.call_args
+            assert "/api/v1/keys/register" in call_args[0][0]
+            assert call_args[1]['json'] == {
+                "entity_type": "agent",
+                "entity_id": "test-agent-id",
+                "public_key": public_key
+            }
+            assert call_args[1]['headers']['Authorization'] == 'Bearer test-oauth-token'
 
     @pytest.mark.asyncio
-    @patch('hitl_cli.api_client.ApiClient')
-    async def test_register_public_key_with_backend_failure(self, mock_api_client):
-        """Test public key registration failure handling."""
-        # Mock API failure
-        mock_client_instance = mock_api_client.return_value
-        mock_client_instance.post = MagicMock(side_effect=Exception("API Error"))
-        
+    @patch('hitl_cli.crypto.get_current_agent_id', return_value=None)
+    async def test_register_public_key_with_backend_failure(self, mock_get_agent_id):
+        """Test public key registration failure when no agent ID."""
         public_key = "test_public_key_base64"
         result = await register_public_key_with_backend(public_key)
-        
+
         assert result is False
 
     @pytest.mark.asyncio
-    @patch('hitl_cli.api_client.ApiClient')
-    async def test_register_public_key_with_backend_http_error(self, mock_api_client):
-        """Test public key registration with HTTP error response."""
-        # Mock HTTP error response
-        mock_client_instance = mock_api_client.return_value
-        mock_client_instance.post = MagicMock(side_effect=Exception("400 Bad Request"))
-        
-        public_key = "test_public_key_base64"
-        result = await register_public_key_with_backend(public_key)
-        
-        assert result is False
+    @patch('hitl_cli.crypto.get_current_agent_id', return_value='test-agent-id')
+    @patch('hitl_cli.crypto.is_using_oauth', return_value=True)
+    @patch('hitl_cli.crypto.get_current_oauth_token', return_value='test-oauth-token')
+    async def test_register_public_key_with_backend_http_error(self, mock_get_token, mock_is_oauth, mock_get_agent_id):
+        """Test public key registration with HTTP error."""
+        with patch('httpx.AsyncClient.post', side_effect=Exception("HTTP Error")):
+            public_key = "test_public_key_base64"
+            result = await register_public_key_with_backend(public_key)
+
+            assert result is False

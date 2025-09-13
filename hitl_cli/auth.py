@@ -17,13 +17,10 @@ import httpx
 import jwt
 import typer
 from authlib.oauth2 import OAuth2Error
-from google_auth_oauthlib.flow import InstalledAppFlow
 
 from .config import (
     BACKEND_BASE_URL,
-    CLIENT_SECRET_FILE,
     CONFIG_DIR,
-    GOOGLE_OAUTH_SCOPES,
     OAUTH_CLIENT_FILE,
     OAUTH_TOKEN_FILE,
     TOKEN_FILE,
@@ -79,63 +76,10 @@ def load_token() -> Optional[str]:
         return None
 
 
-def load_google_id_token() -> Optional[str]:
-    """Load Google ID token from secure storage"""
-    if not TOKEN_FILE.exists():
-        return None
-
-    try:
-        with open(TOKEN_FILE, "r") as f:
-            token_data = json.load(f)
-            return token_data.get("google_id_token")
-    except (json.JSONDecodeError, KeyError, FileNotFoundError):
-        return None
-
-
 def delete_token():
     """Delete the stored token file"""
     if TOKEN_FILE.exists():
         TOKEN_FILE.unlink()
-
-
-async def exchange_google_token_for_jwt(google_id_token: str) -> str:
-    """Exchange Google ID token for internal JWT"""
-    async with httpx.AsyncClient() as client:
-        response = await client.post(
-            f"{BACKEND_BASE_URL}/api/v1/auth/google",
-            json={"id_token": google_id_token},
-            headers={"Content-Type": "application/json"}
-        )
-
-        if response.status_code != 200:
-            raise typer.Exit(f"Token exchange failed: {response.status_code} - {response.text}")
-
-        result = response.json()
-        return result["access_token"]
-
-
-def perform_oauth_flow() -> str:
-    """Perform OAuth 2.0 flow and return Google ID token"""
-    if not CLIENT_SECRET_FILE.exists():
-        typer.echo(f"Error: {CLIENT_SECRET_FILE} not found!")
-        typer.echo("Please obtain a client_secret_desktop.json file from Google Cloud Console")
-        typer.echo("and place it in the root of the hitl-cli directory.")
-        raise typer.Exit(1)
-
-    # Create OAuth flow
-    flow = InstalledAppFlow.from_client_secrets_file(
-        str(CLIENT_SECRET_FILE),
-        scopes=GOOGLE_OAUTH_SCOPES
-    )
-
-    # Run the OAuth flow
-    typer.echo("Opening browser for Google Sign-In...")
-    try:
-        credentials = flow.run_local_server(port=0)
-        return credentials.id_token
-    except Exception as e:
-        typer.echo(f"OAuth flow failed: {e}")
-        raise typer.Exit(1)
 
 
 def is_logged_in() -> bool:
@@ -152,40 +96,18 @@ def get_current_token() -> str:
 
 
 def get_current_agent_id() -> Optional[str]:
-    """Get current user's agent ID from JWT token"""
+    """Get current user's agent ID from OAuth token"""
     try:
-        # Use OAuth token if in OAuth mode, otherwise use traditional token
-        if is_using_oauth():
-            token = get_current_oauth_token()
-        else:
-            token = get_current_token()
-            
+        token = get_current_oauth_token() or get_current_token()
         if not token:
             return None
-            
+
         # Decode JWT without verification to get the payload
         # Using PyJWT for robust decoding
         payload_data = jwt.decode(token, options={"verify_signature": False})
         return payload_data.get('agent_id')
     except Exception:
         return None
-
-
-# Aliases for test compatibility
-def exchange_token_with_backend(google_id_token: str) -> str:
-    """Exchange Google ID token for JWT token (sync wrapper)"""
-    import asyncio
-    return asyncio.run(exchange_google_token_for_jwt(google_id_token))
-
-
-def store_jwt_token(token: str):
-    """Store JWT token securely (alias for save_token)"""
-    return save_token(token)
-
-
-def get_stored_jwt_token() -> Optional[str]:
-    """Get stored JWT token (alias for load_token)"""
-    return load_token()
 
 
 # OAuth 2.1 Dynamic Client Registration Implementation
@@ -275,43 +197,47 @@ class OAuthDynamicClient:
             "token_endpoint_auth_method": "client_secret_post",
             "scope": "openid profile email"
         }
-        
+
         typer.echo(f"📤 Sending registration request to: {self.base_url}/api/v1/oauth/register")
         typer.echo(f"📋 Registration data: {json.dumps(registration_data, indent=2)}")
-        
+
         async with httpx.AsyncClient(timeout=30.0) as client:
             response = await client.post(
                 f"{self.base_url}/api/v1/oauth/register",
                 json=registration_data,
                 headers={"Content-Type": "application/json"}
             )
-            
+
             typer.echo(f"📥 Registration response status: {response.status_code}")
-            typer.echo(f"📥 Registration response headers: {dict(response.headers)}")
-            
+            try:
+                hdrs = dict(response.headers)
+            except Exception:
+                hdrs = {}
+            typer.echo(f"📥 Registration response headers: {hdrs}")
+
             if response.status_code != 201:
                 typer.echo(f"❌ Registration failed with status: {response.status_code}")
                 typer.echo(f"❌ Response body: {response.text}")
                 raise Exception(f"Client registration failed: {response.status_code} - {response.text}")
-            
+
             response_data = response.json()
             typer.echo(f"✅ Registration successful! Response: {json.dumps(response_data, indent=2)}")
-            
+
             # Validate required fields in response
             required_fields = ["client_id"]
             for field in required_fields:
                 if field not in response_data:
                     raise Exception(f"Missing required field '{field}' in registration response")
-            
+
             typer.echo(f"🔑 Generated client_id: {response_data['client_id']}")
-            
+
             # Handle both confidential and public clients
             if "client_secret" in response_data:
                 typer.echo(f"🔒 Generated client_secret: {'*' * len(response_data.get('client_secret', ''))}")
                 typer.echo("📋 Registered as confidential client")
             else:
                 typer.echo("📋 Registered as public client (no secret required)")
-            
+
             return response_data
     
     def _start_callback_server(self, callback_data: Dict) -> socketserver.TCPServer:
@@ -349,10 +275,10 @@ class OAuthDynamicClient:
         return authorization_url
     
     async def _exchange_authorization_code(
-        self, 
-        client_id: str, 
+        self,
+        client_id: str,
         client_secret: Optional[str],
-        authorization_code: str, 
+        authorization_code: str,
         code_verifier: str,
         agent_name: str
     ) -> Dict[str, str]:
@@ -364,41 +290,45 @@ class OAuthDynamicClient:
             "client_id": client_id,
             "code_verifier": code_verifier
         }
-        
+
         # Only add client_secret if provided (for confidential clients)
         if client_secret:
             token_data["client_secret"] = client_secret
-        
+
         headers = {
             "Content-Type": "application/x-www-form-urlencoded",
             "X-MCP-Agent-Name": agent_name
         }
-        
+
         typer.echo(f"🔄 Token exchange request:")
         typer.echo(f"   - URL: {self.base_url}/api/v1/oauth/token")
         typer.echo(f"   - client_id: {client_id}")
         typer.echo(f"   - code: {authorization_code[:20]}...")
         typer.echo(f"   - agent_name: {agent_name}")
-        
+
         async with httpx.AsyncClient(timeout=30.0) as client:
             response = await client.post(
                 f"{self.base_url}/api/v1/oauth/token",
                 data=token_data,
                 headers=headers
             )
-            
+
             typer.echo(f"📥 Token exchange response status: {response.status_code}")
-            typer.echo(f"📥 Token exchange response headers: {dict(response.headers)}")
-            
+            try:
+                hdrs = dict(response.headers)
+            except Exception:
+                hdrs = {}
+            typer.echo(f"📥 Token exchange response headers: {hdrs}")
+
             if response.status_code != 200:
                 typer.echo(f"❌ Token exchange failed with status: {response.status_code}")
                 typer.echo(f"❌ Response body: {response.text}")
                 raise Exception(f"Token exchange failed: {response.status_code} - {response.text}")
-            
+
             response_data = response.json()
             typer.echo("✅ Token exchange successful!")
             typer.echo(f"📋 Response keys: {list(response_data.keys())}")
-            
+
             return response_data
     
     async def perform_dynamic_oauth_flow(self, agent_name: str) -> Tuple[str, str]:

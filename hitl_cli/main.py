@@ -4,21 +4,21 @@ import asyncio
 import logging
 from typing import List, Optional
 
+import httpx
 import typer
 
 from .api_client import ApiClient
 from .auth import (
     delete_oauth_tokens,
     delete_token,
-    exchange_token_with_backend,
-    get_current_agent_id,
+    get_current_oauth_token,
     is_logged_in,
     is_using_oauth,
     OAuthDynamicClient,
-    perform_oauth_flow,
     save_token,
 )
-from .crypto import ensure_agent_keypair, load_agent_keypair
+from .config import BACKEND_BASE_URL
+from .crypto import ensure_agent_keypair
 from .mcp_client import MCPClient
 from .proxy_handler import ProxyHandler
 from .proxy_handler_v2 import create_fastmcp_proxy_server
@@ -33,28 +33,6 @@ logger = logging.getLogger(__name__)
 app = typer.Typer(help="HITL CLI - Command-line interface for hitl-shin-relay service")
 
 
-def perform_oauth_and_token_exchange(purpose: str = "authentication") -> tuple[str, str]:
-    """Perform OAuth flow and token exchange - reusable helper function"""
-    typer.echo(f"🔐 {purpose.title()} Required")
-    typer.echo(f"Please sign in to complete {purpose}...")
-
-    try:
-        # Perform OAuth flow
-        typer.echo("🌐 Starting Google OAuth flow...")
-        google_id_token = perform_oauth_flow()
-        typer.echo("✅ Google authentication successful!")
-
-        # Exchange for JWT
-        typer.echo("🔄 Exchanging token with backend...")
-        jwt_token = exchange_token_with_backend(google_id_token)
-        typer.echo("✅ Token exchange successful!")
-
-        return jwt_token, google_id_token
-    except Exception as e:
-        logger.error(f"{purpose.title()} failed: {e}")
-        typer.echo(f"❌ {purpose.title()} failed: {e}")
-        raise typer.Exit(1)
-
 def main():
     """Main entry point for the CLI application"""
     # Typer handles async commands automatically when they're defined
@@ -68,82 +46,46 @@ app.add_typer(admin_app, name="admin")
 
 @app.command()
 def login(
-    dynamic: bool = typer.Option(False, "--dynamic", help="Use OAuth 2.1 dynamic client registration"),
-    name: Optional[str] = typer.Option(None, "--name", help="Agent name for dynamic client registration")
+    name: Optional[str] = typer.Option(None, "--name", help="Agent name for dynamic registration")
 ):
-    """Login to the HITL service using Google OAuth 2.0 or OAuth 2.1 dynamic registration"""
+    """Login to the HITL service using OAuth 2.1 dynamic registration"""
     
-    # Check if already logged in (either method)
+    # Check if already logged in
     if is_logged_in() or is_using_oauth():
         typer.echo("✅ Already logged in!")
         return
 
-    # Validate flags
-    if dynamic and not name:
-        typer.echo("❌ --name is required when using --dynamic")
+    # Use OAuth 2.1 dynamic client registration
+    try:
+        default_name = name or "HITL CLI Agent"
+        oauth_client = OAuthDynamicClient()
+        access_token, agent_name = asyncio.run(oauth_client.perform_dynamic_oauth_flow(default_name))
+        
+        typer.echo("✅ OAuth 2.1 dynamic authentication successful!")
+        
+        # Generate E2EE keys and register with server during login
+        typer.echo("🔐 Generating end-to-end encryption keys...")
+        public_key, private_key = ensure_agent_keypair()
+        typer.echo("✅ E2EE keys generated and registered with server")
+        
+        typer.echo()
+        typer.echo(f"🤖 Agent '{agent_name}' is ready for secure E2EE communication.")
+        typer.echo("💡 Use Claude Desktop with MCP configuration to interact securely.")
+        typer.echo()
+        typer.echo("📋 Claude Desktop MCP Configuration:")
+        typer.echo('   {')
+        typer.echo('     "mcpServers": {')
+        typer.echo('       "hitl": {')
+        typer.echo('         "command": "hitl-cli",')
+        typer.echo('         "args": ["proxy", "https://hitl-relay-193514263276.europe-west2.run.app/mcp-server/mcp/"]')
+        typer.echo('       }')
+        typer.echo('     }')
+        typer.echo('   }')
+        
+    except Exception as e:
+        logger.error(f"OAuth 2.1 login failed: {e}")
+        typer.echo(f"❌ OAuth 2.1 login failed: {e}")
         raise typer.Exit(1)
-
-    if dynamic:
-        # Use OAuth 2.1 dynamic client registration
-        try:
-            oauth_client = OAuthDynamicClient()
-            access_token, agent_name = asyncio.run(oauth_client.perform_dynamic_oauth_flow(name))
-            
-            typer.echo("✅ OAuth 2.1 dynamic authentication successful!")
-            
-            # Generate E2EE keys and register with server during login
-            typer.echo("🔐 Generating end-to-end encryption keys...")
-            public_key, private_key = ensure_agent_keypair()
-            typer.echo("✅ E2EE keys generated and registered with server")
-            
-            typer.echo()
-            typer.echo(f"🤖 Agent '{agent_name}' is ready for secure E2EE communication.")
-            typer.echo("💡 Use Claude Desktop with MCP configuration to interact securely.")
-            typer.echo()
-            typer.echo("📋 Claude Desktop MCP Configuration:")
-            typer.echo('   {')
-            typer.echo('     "mcpServers": {')
-            typer.echo('       "hitl": {')
-            typer.echo('         "command": "hitl-cli",')
-            typer.echo('         "args": ["proxy", "https://hitl-relay-193514263276.europe-west2.run.app/mcp-server/mcp/"]')
-            typer.echo('       }')
-            typer.echo('     }')
-            typer.echo('   }')
-            
-        except Exception as e:
-            logger.error(f"OAuth 2.1 login failed: {e}")
-            typer.echo(f"❌ OAuth 2.1 login failed: {e}")
-            raise typer.Exit(1)
-    else:
-        # Use traditional Google OAuth + JWT flow
-        typer.echo("🔐 HITL CLI Login")
-        typer.echo("=" * 30)
-
-        try:
-            # Use the helper function to perform OAuth and token exchange
-            jwt_token, google_id_token = perform_oauth_and_token_exchange("login")
-
-            # Save both JWT and Google ID tokens
-            save_token(jwt_token, google_id_token)
-
-            # Generate E2EE keys and register with server during login
-            typer.echo("🔐 Generating end-to-end encryption keys...")
-            public_key, private_key = ensure_agent_keypair()
-            typer.echo("✅ E2EE keys generated and registered with server")
-
-            typer.echo("✅ Login successful!")
-            typer.echo()
-            typer.echo("🤖 Your agent has been automatically created/updated.")
-            typer.echo("💡 Use 'hitl-cli agents list' to see your agents.")
-
-        except Exception as e:
-            logger.error(f"Login failed: {e}")
-            typer.echo(f"❌ Login failed: {e}")
-            typer.echo()
-            if "Unknown or inactive client" in str(e):
-                typer.echo("💡 This is unexpected - the CLI client should be auto-registered.")
-                typer.echo("   Please check that the backend server is running properly.")
-            raise typer.Exit(1)
 
 @app.command()
 def logout():
@@ -225,48 +167,54 @@ def admin_register_client(
     typer.echo(f"📋 Agent Template: {agent_name}")
     typer.echo()
 
-    # Perform OAuth flow to get admin credentials
-    try:
-        jwt_token, google_token = perform_oauth_and_token_exchange("admin authentication")
-    except Exception as e:
-        logger.error(f"Admin authentication failed: {e}")
-        typer.echo(f"❌ Admin authentication failed: {e}")
-        raise typer.Exit(1)
+    if is_using_oauth():
+        token = get_current_oauth_token()
+        if not token:
+            typer.echo("No OAuth token available. Please log in again.")
+            raise typer.Exit(1)
 
-    # Register the client
-    typer.echo()
-    typer.echo("📝 Registering OAuth Client...")
-
-    # Create API client with admin token
-    api_client = ApiClient()
-
-    # Store the admin token temporarily
-    save_token(jwt_token)
-
-    try:
-        registration_data = {
-            "client_id": client_id,
-            "client_name": client_name,
-            "client_type": client_type,
-            "agent_name": agent_name
-        }
-
-        result = asyncio.run(api_client.post("/api/v1/oauth/clients/register", registration_data))
-
-        typer.echo("✅ OAuth client registered successfully!")
-        typer.echo(f"   Client ID: {result['client_id']}")
-        typer.echo(f"   Client Type: {result['client_type']}")
-        typer.echo(f"   Agent Template: {result['agent_name']}")
-        typer.echo(f"   Status: {'Active' if result['is_active'] else 'Inactive'}")
+        # Register the client
         typer.echo()
-        typer.echo("🎉 Registration complete!")
-        typer.echo("The client application can now authenticate users.")
+        typer.echo("📝 Registering OAuth Client...")
 
-    except Exception as e:
-        logger.error(f"OAuth client registration failed: {e}")
-        typer.echo(f"❌ OAuth client registration failed: {e}")
-        typer.echo()
-        typer.echo("💡 Make sure you have admin privileges and the backend is running.")
+        try:
+            registration_data = {
+                "client_id": client_id,
+                "client_name": client_name,
+                "client_type": client_type,
+                "agent_name": agent_name
+            }
+
+            headers = {
+                "Authorization": f"Bearer {token}",
+                "Content-Type": "application/json"
+            }
+
+            response = httpx.post(f"{BACKEND_BASE_URL}/api/v1/oauth/clients/register", json=registration_data, headers=headers)
+
+            if response.status_code not in (200, 201):
+                typer.echo(f"❌ Registration failed: {response.status_code} - {response.text}")
+                raise typer.Exit(1)
+
+            result = response.json()
+
+            typer.echo("✅ OAuth client registered successfully!")
+            typer.echo(f"   Client ID: {result['client_id']}")
+            typer.echo(f"   Client Type: {result['client_type']}")
+            typer.echo(f"   Agent Template: {result['agent_name']}")
+            typer.echo(f"   Status: {'Active' if result.get('is_active', True) else 'Inactive'}")
+            typer.echo()
+            typer.echo("🎉 Registration complete!")
+            typer.echo("The client application can now authenticate users.")
+
+        except Exception as e:
+            logger.error(f"OAuth client registration failed: {e}")
+            typer.echo(f"❌ OAuth client registration failed: {e}")
+            typer.echo()
+            typer.echo("💡 Make sure you have admin privileges and the backend is running.")
+            raise typer.Exit(1)
+    else:
+        typer.echo('Please run "hitl-cli login --name \'<Agent Name>\'" to log in.')
         raise typer.Exit(1)
 
 
@@ -374,16 +322,16 @@ def proxy(
         try:
             # Verify authentication and keys exist (should be created during login)
             if not is_logged_in() and not is_using_oauth():
-                typer.echo("❌ Not logged in. Please run 'hitl-cli login --dynamic --name \"Agent Name\"' first.")
+                typer.echo("❌ Not logged in. Please run 'hitl-cli login --name \"Agent Name\"' first.")
                 raise typer.Exit(1)
             
-            # Load existing agent keypair (should exist from login)
-            # typer.echo("🔐 Loading agent cryptographic keys...")
+            # Ensure agent keypair exists (generate if needed)
+            # typer.echo("🔐 Ensuring agent cryptographic keys...")
             try:
-                public_key, private_key = load_agent_keypair()
-                # typer.echo("✅ Agent keys loaded successfully")
-            except FileNotFoundError:
-                typer.echo("❌ E2EE keys not found. Please run 'hitl-cli login --dynamic --name \"Agent Name\"' to generate keys.")
+                public_key, private_key = ensure_agent_keypair()
+                # typer.echo("✅ Agent keys ready")
+            except Exception as e:
+                typer.echo("❌ E2EE keys not available. Please run 'hitl-cli login --name \"Agent Name\"' to generate keys.")
                 raise typer.Exit(1)
             
             # Create and start FastMCP proxy server

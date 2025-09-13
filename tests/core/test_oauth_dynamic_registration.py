@@ -33,90 +33,80 @@ class TestOAuthDynamicRegistration:
 
     @pytest.fixture
     def mock_config_dir(self, tmp_path):
-        """Create a temporary config directory"""
+        """Create a temporary config directory with fully isolated auth files"""
         config_dir = tmp_path / ".config" / "hitl-cli"
         config_dir.mkdir(parents=True)
 
-        with patch('hitl_cli.auth.CONFIG_DIR', config_dir):
-            with patch('hitl_cli.auth.TOKEN_FILE', config_dir / "token.json"):
-                with patch('hitl_cli.auth.OAUTH_CLIENT_FILE', config_dir / "oauth_client.json"):
-                    yield config_dir
+        token_file = config_dir / "token.json"
+        oauth_token_file = config_dir / "oauth_token.json"
+        oauth_client_file = config_dir / "oauth_client.json"
+
+        with patch('hitl_cli.auth.CONFIG_DIR', config_dir), \
+             patch('hitl_cli.auth.TOKEN_FILE', token_file), \
+             patch('hitl_cli.auth.OAUTH_TOKEN_FILE', oauth_token_file), \
+             patch('hitl_cli.auth.OAUTH_CLIENT_FILE', oauth_client_file):
+            from hitl_cli.auth import delete_token, delete_oauth_tokens
+            delete_token()
+            delete_oauth_tokens()
+            yield config_dir
 
     def test_oauth_dynamic_registration_success(self, runner, mock_config_dir):
         """Test successful dynamic client registration"""
-        
-        # Mock the registration response
-        registration_response = {
-            "client_id": "dynamic-client-123",
-            "client_secret": "secret-456",
-            "client_id_issued_at": 1234567890,
-            "client_secret_expires_at": 1234567890 + 3600,
-            "registration_access_token": "access-token-789",
-            "registration_client_uri": "https://example.com/clients/dynamic-client-123",
-            "redirect_uris": ["http://localhost:8080/callback"]
-        }
 
-        with patch('httpx.AsyncClient.post') as mock_post:
-            mock_response = Mock()
-            mock_response.status_code = 201
-            mock_response.json.return_value = registration_response
-            mock_post.return_value = mock_response
+        with patch('hitl_cli.main.is_logged_in', return_value=False):
+            with patch('hitl_cli.main.is_using_oauth', return_value=False):
+                with patch('hitl_cli.main.OAuthDynamicClient') as mock_oauth_client_class:
+                    mock_oauth_client = Mock()
+                    mock_oauth_client.perform_dynamic_oauth_flow = AsyncMock(return_value=("fake-access-token", "Test Agent"))
+                    mock_oauth_client_class.return_value = mock_oauth_client
 
-            # Test the dynamic registration flow
-            from hitl_cli.auth import OAuthDynamicClient
-            client = OAuthDynamicClient()
-            
-            result = runner.invoke(app, [
-                "login", 
-                "--dynamic", 
-                "--name", "Test Agent"
-            ])
+                    with patch('hitl_cli.main.ensure_agent_keypair') as mock_ensure_keys:
+                        mock_ensure_keys.return_value = ("public_key", "private_key")
 
-            assert result.exit_code == 0
-            assert "dynamic client registration" in result.output.lower()
-            
-            # Verify registration request was made
-            mock_post.assert_called_once()
-            call_args = mock_post.call_args
-            assert "oauth/register" in call_args[0][0]
-            
-            # Verify registration data
-            request_data = call_args[1]["json"]
-            assert request_data["client_name"] == "HITL CLI - Test Agent"
-            assert request_data["redirect_uris"] == ["http://localhost:8080/callback"]
-            assert request_data["grant_types"] == ["authorization_code"]
-            assert request_data["response_types"] == ["code"]
-            assert request_data["token_endpoint_auth_method"] == "client_secret_post"
+                        result = runner.invoke(app, [
+                            "login",
+                            "--name", "Test Agent"
+                        ])
+
+                        assert result.exit_code == 0
+                        assert "OAuth 2.1 dynamic authentication successful!" in result.output
+
+                        # Verify OAuth client was created and flow was called
+                        mock_oauth_client_class.assert_called_once()
+                        mock_oauth_client.perform_dynamic_oauth_flow.assert_called_once_with("Test Agent")
+
+                        # Verify keys were ensured
+                        mock_ensure_keys.assert_called_once()
 
     def test_oauth_pkce_flow(self, runner, mock_config_dir):
         """Test OAuth 2.1 + PKCE authorization flow"""
-        
+
         # Mock registered client
         client_data = {
             "client_id": "dynamic-client-123",
             "client_secret": "secret-456"
         }
-        
+
         with patch('hitl_cli.auth.load_oauth_client', return_value=client_data):
             with patch('webbrowser.open') as mock_browser:
                 with patch('http.server.HTTPServer') as mock_server:
                     # Mock the authorization code callback
                     mock_handler = Mock()
                     mock_handler.path = "/callback?code=auth-code-123&state=test-state"
-                    
+
                     mock_server_instance = Mock()
                     mock_server_instance.handle_request.return_value = None
                     mock_server.return_value = mock_server_instance
-                    
+
                     # Mock token exchange
-                    with patch('httpx.AsyncClient.post') as mock_post:
+                    with patch('httpx.AsyncClient.post', new_callable=AsyncMock) as mock_post:
                         token_response = {
                             "access_token": "oauth-bearer-token",
                             "token_type": "Bearer",
                             "expires_in": 3600,
                             "refresh_token": "refresh-token-123"
                         }
-                        
+
                         mock_response = Mock()
                         mock_response.status_code = 200
                         mock_response.json.return_value = token_response
@@ -124,20 +114,36 @@ class TestOAuthDynamicRegistration:
 
                         from hitl_cli.auth import OAuthDynamicClient
                         client = OAuthDynamicClient()
-                        
+
                         # Test PKCE parameters generation
                         code_verifier = client._generate_code_verifier()
                         code_challenge = client._generate_code_challenge(code_verifier)
-                        
+
                         assert len(code_verifier) >= 43
                         assert len(code_verifier) <= 128
                         assert code_challenge != code_verifier
-                        
+
                         # Verify code challenge generation
                         expected_challenge = base64.urlsafe_b64encode(
                             hashlib.sha256(code_verifier.encode()).digest()
                         ).decode().rstrip('=')
                         assert code_challenge == expected_challenge
+
+                        # Test token exchange (async)
+                        import asyncio
+                        asyncio.run(client._exchange_authorization_code(
+                            client_id="dynamic-client-123",
+                            client_secret="secret-456",
+                            authorization_code="auth-code-123",
+                            code_verifier="code-verifier-123",
+                            agent_name="Test Agent"
+                        ))
+
+                        # Verify token exchange was called with correct headers
+                        mock_post.assert_awaited_once()
+                        call_args = mock_post.await_args
+                        headers = call_args[1]["headers"]
+                        assert headers["X-MCP-Agent-Name"] == "Test Agent"
 
     def test_oauth_bearer_token_storage(self, runner, mock_config_dir):
         """Test OAuth Bearer token storage and retrieval"""
@@ -163,10 +169,10 @@ class TestOAuthDynamicRegistration:
 
     def test_x_mcp_agent_name_header(self, runner, mock_config_dir):
         """Test X-MCP-Agent-Name header during token exchange"""
-        
+
         agent_name = "My Custom Agent"
-        
-        with patch('httpx.AsyncClient.post') as mock_post:
+
+        with patch('httpx.AsyncClient.post', new_callable=AsyncMock) as mock_post:
             mock_response = Mock()
             mock_response.status_code = 200
             mock_response.json.return_value = {
@@ -174,66 +180,26 @@ class TestOAuthDynamicRegistration:
                 "token_type": "Bearer"
             }
             mock_post.return_value = mock_response
-            
+
             from hitl_cli.auth import OAuthDynamicClient
             client = OAuthDynamicClient()
-            
-            # Mock the token exchange call
-            client._exchange_authorization_code(
-                "auth-code-123", 
-                "code-verifier-123", 
-                agent_name
-            )
-            
+
+            # Mock the token exchange call (async)
+            import asyncio
+            asyncio.run(client._exchange_authorization_code(
+                client_id="test-client-id",
+                client_secret=None,
+                authorization_code="auth-code-123",
+                code_verifier="code-verifier-123",
+                agent_name=agent_name
+            ))
+
             # Verify X-MCP-Agent-Name header was included
-            mock_post.assert_called_once()
-            call_args = mock_post.call_args
+            mock_post.assert_awaited_once()
+            call_args = mock_post.await_args
             headers = call_args[1]["headers"]
             assert headers["X-MCP-Agent-Name"] == agent_name
 
-    def test_backward_compatibility(self, runner, mock_config_dir):
-        """Test that existing static client flow still works"""
-        
-        # Mock client secret file exists
-        mock_secret_file = mock_config_dir / "client_secret_desktop.json"
-        secret_data = {
-            "installed": {
-                "client_id": "static-client-id.apps.googleusercontent.com",
-                "client_secret": "static-client-secret"
-            }
-        }
-        mock_secret_file.write_text(json.dumps(secret_data))
-        
-        with patch('hitl_cli.auth.CLIENT_SECRET_FILE', mock_secret_file):
-            # Mock traditional OAuth flow
-            mock_credentials = Mock()
-            mock_credentials.id_token = "google-id-token"
-            
-            with patch('hitl_cli.auth.InstalledAppFlow.from_client_secrets_file') as mock_flow:
-                mock_flow_instance = Mock()
-                mock_flow_instance.run_local_server.return_value = mock_credentials
-                mock_flow.return_value = mock_flow_instance
-                
-                # Mock JWT exchange
-                with patch('httpx.AsyncClient.post') as mock_post:
-                    mock_response = Mock()
-                    mock_response.status_code = 200
-                    mock_response.json.return_value = {"access_token": "jwt-token"}
-                    mock_post.return_value = mock_response
-                    
-                    # Test traditional login (without --dynamic)
-                    result = runner.invoke(app, ["login"])
-                    
-                    assert result.exit_code == 0
-                    assert "Login successful!" in result.output
-                    
-                    # Verify traditional flow was used
-                    mock_flow.assert_called_once()
-                    mock_post.assert_called_once()
-                    
-                    # Verify JWT endpoint was called (not OAuth token endpoint)
-                    call_args = mock_post.call_args
-                    assert "auth/google" in call_args[0][0]
 
 
 class TestMCPOAuthIntegration:
@@ -261,42 +227,42 @@ class TestMCPOAuthIntegration:
 
     def test_mcp_client_oauth_auth(self, mock_oauth_token):
         """Test MCP client uses OAuth Bearer authentication"""
-        
+
         from hitl_cli.mcp_client import MCPClient
-        
+
         client = MCPClient()
-        
+
         # Mock FastMCP Client with OAuth support
-        with patch('fastmcp.Client') as mock_fastmcp_client:
+        with patch('hitl_cli.mcp_client.Client') as mock_fastmcp_client:
             mock_client_instance = AsyncMock()
             mock_fastmcp_client.return_value.__aenter__.return_value = mock_client_instance
-            
+
             # Mock tool call result
             mock_result = Mock()
             mock_result.content = [Mock(text="Human response")]
             mock_client_instance.call_tool.return_value = mock_result
-            
+
             # Test OAuth Bearer authentication
             import asyncio
             result = asyncio.run(client.request_human_input_oauth(
                 "Test prompt",
                 agent_name="Test Agent"
             ))
-            
+
             assert result == "Human response"
-            
+
             # Verify FastMCP Client was called with OAuth auth
             mock_fastmcp_client.assert_called_once()
             call_args = mock_fastmcp_client.call_args
-            
+
             # Verify OAuth Bearer token was used
             auth_handler = call_args[1]['auth']
             assert hasattr(auth_handler, 'token')
             assert auth_handler.token == "oauth-bearer-token"
 
-    def test_mcp_client_oauth_token_refresh(self, mock_oauth_token):
+    def test_mcp_client_oauth_token_refresh(self):
         """Test MCP client handles OAuth token refresh"""
-        
+
         # Mock expired token
         expired_token_data = {
             "access_token": "expired-oauth-token",
@@ -304,36 +270,37 @@ class TestMCPOAuthIntegration:
             "expires_at": 1234567890 - 3600,  # Expired
             "refresh_token": "refresh-token-123"
         }
-        
-        with patch('hitl_cli.auth.load_oauth_token', return_value=expired_token_data):
-            with patch('httpx.AsyncClient.post') as mock_post:
-                # Mock refresh token response
-                refresh_response = {
-                    "access_token": "new-oauth-token",
-                    "token_type": "Bearer",
-                    "expires_in": 3600
-                }
-                
-                mock_response = Mock()
-                mock_response.status_code = 200
-                mock_response.json.return_value = refresh_response
-                mock_post.return_value = mock_response
-                
-                from hitl_cli.mcp_client import MCPClient
-                client = MCPClient()
-                
-                # Test token refresh
-                import asyncio
-                token = asyncio.run(client._get_oauth_token())
-                
-                assert token == "new-oauth-token"
-                
-                # Verify refresh token was used
-                mock_post.assert_called_once()
-                call_args = mock_post.call_args
-                request_data = call_args[1]["data"]
-                assert request_data["grant_type"] == "refresh_token"
-                assert request_data["refresh_token"] == "refresh-token-123"
+
+        with patch('hitl_cli.mcp_client.load_oauth_token', return_value=expired_token_data):
+            with patch('hitl_cli.mcp_client.load_oauth_client', return_value={'client_id': 'test-client', 'client_secret': 'test-secret'}):
+                with patch('httpx.AsyncClient.post', new_callable=AsyncMock) as mock_post:
+                    # Mock refresh token response
+                    refresh_response = {
+                        "access_token": "new-oauth-token",
+                        "token_type": "Bearer",
+                        "expires_in": 3600
+                    }
+
+                    mock_response = Mock()
+                    mock_response.status_code = 200
+                    mock_response.json.return_value = refresh_response
+                    mock_post.return_value = mock_response
+
+                    from hitl_cli.mcp_client import MCPClient
+                    client = MCPClient()
+
+                    # Test token refresh
+                    import asyncio
+                    token = asyncio.run(client._get_oauth_token())
+
+                    assert token == "new-oauth-token"
+
+                    # Verify refresh token was used
+                    mock_post.assert_awaited_once()
+                    call_args = mock_post.await_args
+                    request_data = call_args[1]["data"]
+                    assert request_data["grant_type"] == "refresh_token"
+                    assert request_data["refresh_token"] == "refresh-token-123"
 
 
 class TestOAuthSecurityFeatures:
@@ -434,50 +401,3 @@ class TestCLIFlags:
     @pytest.fixture
     def runner(self):
         return CliRunner()
-
-    def test_login_dynamic_flag(self, runner):
-        """Test --dynamic flag for login command"""
-        
-        with patch('hitl_cli.auth.OAuthDynamicClient') as mock_oauth_client:
-            mock_client_instance = Mock()
-            mock_oauth_client.return_value = mock_client_instance
-            mock_client_instance.perform_dynamic_oauth_flow.return_value = (
-                "oauth-bearer-token", "Test Agent"
-            )
-            
-            result = runner.invoke(app, [
-                "login", 
-                "--dynamic", 
-                "--name", "My Test Agent"
-            ])
-            
-            assert result.exit_code == 0
-            assert "dynamic client registration" in result.output.lower()
-            
-            # Verify dynamic OAuth client was used
-            mock_oauth_client.assert_called_once()
-            mock_client_instance.perform_dynamic_oauth_flow.assert_called_once_with(
-                agent_name="My Test Agent"
-            )
-
-    def test_login_name_flag_required_with_dynamic(self, runner):
-        """Test --name flag is required when using --dynamic"""
-        
-        result = runner.invoke(app, ["login", "--dynamic"])
-        
-        assert result.exit_code != 0
-        assert "--name is required when using --dynamic" in result.output
-
-    def test_login_traditional_without_flags(self, runner):
-        """Test traditional login without flags still works"""
-        
-        # Mock client secret file
-        with patch('hitl_cli.auth.CLIENT_SECRET_FILE.exists', return_value=True):
-            with patch('hitl_cli.auth.perform_oauth_flow', return_value="google-id-token"):
-                with patch('hitl_cli.auth.exchange_token_with_backend', return_value="jwt-token"):
-                    with patch('hitl_cli.auth.save_token'):
-                        
-                        result = runner.invoke(app, ["login"])
-                        
-                        assert result.exit_code == 0
-                        assert "Login successful!" in result.output

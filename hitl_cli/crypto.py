@@ -14,6 +14,8 @@ from nacl.public import PrivateKey, PublicKey
 from nacl.encoding import Base64Encoder
 
 from .api_client import ApiClient
+from .auth import get_current_oauth_token, is_using_oauth, get_current_token, get_current_agent_id
+
 
 logger = logging.getLogger(__name__)
 
@@ -132,48 +134,41 @@ def ensure_agent_keypair() -> Tuple[str, str]:
         # Generate new keys
         logger.info("Generating new agent keypair")
         public_key, private_key = generate_agent_keypair()
-        
-        # Save keys
         save_agent_keypair(public_key, private_key, keys_path)
         
-        # Register public key with backend
-        import asyncio
+        # Attempt to register the public key with the backend
         try:
-            success = asyncio.run(register_public_key_with_backend(public_key))
-            if success:
-                logger.info("Public key registered with backend")
-            else:
-                logger.warning("Failed to register public key with backend")
+            import asyncio
+            asyncio.run(register_public_key_with_backend(public_key))
         except Exception as e:
-            logger.warning(f"Could not register public key with backend: {e}")
-        
+            logger.error(f"Failed to register public key with backend: {e}")
+            
         return public_key, private_key
 
 
 async def register_public_key_with_backend(public_key: str) -> bool:
     """
     Register agent's public key with the backend server.
-    
+
     Args:
         public_key: Base64-encoded public key
-        
+
     Returns:
         True if registration successful, False otherwise
     """
     try:
         import httpx
-        from .auth import get_current_oauth_token, is_using_oauth, get_current_token, get_current_agent_id
         from .config import BACKEND_BASE_URL
-        
+
         # Get agent ID for registration
         agent_id = get_current_agent_id()
         if not agent_id:
             logger.error("No agent ID available for key registration")
             return False
-        
+
         # Determine authentication method
         headers = {"Content-Type": "application/json"}
-        
+
         if is_using_oauth():
             # Use OAuth Bearer authentication
             oauth_token = get_current_oauth_token()
@@ -190,28 +185,28 @@ async def register_public_key_with_backend(public_key: str) -> bool:
             except Exception:
                 logger.error("No authentication token available for key registration")
                 return False
-        
+
         # Use correct endpoint and request format
         registration_data = {
             "entity_type": "agent",
             "entity_id": agent_id,
             "public_key": public_key
         }
-        
+
         async with httpx.AsyncClient(timeout=30.0) as client:
             response = await client.post(
                 f"{BACKEND_BASE_URL}/api/v1/keys/register",
                 json=registration_data,
                 headers=headers
             )
-            
+
             if response.status_code == 200:
                 logger.info("Successfully registered public key with backend")
                 return True
             else:
                 logger.error(f"Failed to register public key: HTTP {response.status_code} - {response.text}")
                 return False
-        
+
     except Exception as e:
         logger.error(f"Failed to register public key with backend: {e}")
         return False
