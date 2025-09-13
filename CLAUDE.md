@@ -176,7 +176,7 @@ python oauth_integration_demo.py
 ## 7. Configuration
 
 ### Environment Variables
-- `HITL_BACKEND_URL`: Backend API base URL (required for both flows)
+- `HITL_SERVER_URL`: Backend API base URL (required for both flows)
 - `GOOGLE_CLIENT_ID`: Google OAuth client ID (required for traditional flow only)
 - `HITL_LOG_LEVEL`: Logging level (optional, default: INFO)
 
@@ -235,7 +235,7 @@ The implementation expects these backend endpoints:
 - Check backend URL configuration
 - Verify network connectivity
 - Implement retry logic with exponential backoff
-- Test with curl: `curl -v $HITL_BACKEND_URL/health`
+- Test with curl: `curl -v $HITL_SERVER_URL/health`
 
 ### MCP Client Issues
 **Problem**: MCP requests not being received

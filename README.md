@@ -69,7 +69,7 @@ For the easiest setup with zero configuration:
 
 ```bash
 # Set the backend URL (required)
-export HITL_BACKEND_URL="https://your-backend-url.com"
+export HITL_SERVER_URL="https://your-backend-url.com"
 
 # Login with automatic client registration
 hitl-cli login --dynamic --name "My Agent"
@@ -81,7 +81,7 @@ For traditional OAuth setup:
 
 ```bash
 # Set the backend URL (required)
-export HITL_BACKEND_URL="https://your-backend-url.com"
+export HITL_SERVER_URL="https://your-backend-url.com"
 
 # Set Google OAuth client ID (required for traditional login)
 export GOOGLE_CLIENT_ID="your-client-id.apps.googleusercontent.com"
@@ -310,8 +310,8 @@ hitl-cli login
 **Problem**: Connection errors
 ```bash
 # Verify backend URL
-echo $HITL_BACKEND_URL
-curl -v $HITL_BACKEND_URL/health
+echo $HITL_SERVER_URL
+curl -v $HITL_SERVER_URL/health
 
 # Check authentication status
 hitl-cli status
