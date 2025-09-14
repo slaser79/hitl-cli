@@ -4,7 +4,7 @@ from typing import Any, Dict, Optional
 import httpx
 import typer
 
-from .auth import NotLoggedInError, get_current_token
+from .auth import NotLoggedInError, get_current_token, is_using_api_key, get_api_key
 from .config import BACKEND_BASE_URL
 
 logger = logging.getLogger(__name__)
@@ -19,16 +19,23 @@ class ApiClient:
 
     def _get_headers(self) -> Dict[str, str]:
         """Get headers with authentication token"""
-        try:
-            token = get_current_token()
+        if is_using_api_key():
+            api_key = get_api_key()
             return {
-                "Authorization": f"Bearer {token}",
+                "X-API-Key": api_key,
                 "Content-Type": "application/json"
             }
-        except NotLoggedInError:
-            logger.error("Not logged in - authentication token missing")
-            typer.echo("Error: Not logged in. Please run 'hitl-cli login' first.")
-            raise typer.Exit(1)
+        else:
+            try:
+                token = get_current_token()
+                return {
+                    "Authorization": f"Bearer {token}",
+                    "Content-Type": "application/json"
+                }
+            except NotLoggedInError:
+                logger.error("Not logged in - authentication token missing")
+                typer.echo("Error: Not logged in. Please run 'hitl-cli login' first.")
+                raise typer.Exit(1)
 
     async def get(self, path: str) -> Dict[str, Any]:
         """Make GET request to API"""

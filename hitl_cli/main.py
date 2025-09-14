@@ -77,7 +77,7 @@ def login(
         typer.echo('     "mcpServers": {')
         typer.echo('       "hitl": {')
         typer.echo('         "command": "hitl-cli",')
-        typer.echo('         "args": ["proxy", "https://hitl-relay-193514263276.europe-west2.run.app/mcp-server/mcp/"]')
+        typer.echo('         "args": ["proxy", "https://hitlrelay.app/mcp-server/mcp/"]')
         typer.echo('       }')
         typer.echo('     }')
         typer.echo('   }')

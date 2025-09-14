@@ -1,10 +1,14 @@
+clear_context
+llm_clear
 run @.ai_rules/task_settings.lm
 
 guide = rf @../hitl-shin-relay/specs/phase21_api_keys.md
 
 
 add_context "API GUIDE" ${guide}
+add_context "FAST_MCP_INTRO" (rf @docs/mcp/fastmcp-intro.md)
 add_context "MCP_TESTING_GUIDE" (rf @docs/mcp/fastmcp-testing-guide.md)
+add_context "FAST_MCP_BEARER_AUTH" (rf @docs/mcp/fastmcp-bearer-auth.md)
 
 
 SET  task <<EOF
@@ -21,8 +25,15 @@ in addition to the standard MCP server/OAUTH.
 
 #Constraint and Tips
 
+* Remember this is an alternative way and not the default way users need to opt in to using API_KEY auth + provide HITL_API_KEY
+* You only implement the reference CLI client 
+* The user will set an environment_variable HITL_API_KEY and if this is set will use this API KEY to call the MCP server
 * Ensure to update any relevant documentation
 * All tests should pass (Focus on behavioural testing)
+* REMEMBER MCP is not in your internal knowledge so do not make assumptions read the provided documentation
+* Implement using TDD approach (Red, Green , Refactor)
+* DRY (review how other tests are structured)
+* Remind editor to always use nix develop -c <cmd>
 
 
 

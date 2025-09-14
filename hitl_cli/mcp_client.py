@@ -2,17 +2,20 @@ from typing import Any, Dict, List, Optional
 
 import httpx
 from fastmcp import Client
+from fastmcp.client.transports import StreamableHttpTransport
 
 from .api_client import ApiClient
 from .auth import (
-    get_current_agent_id, 
+    get_current_agent_id,
     get_current_oauth_token,
     is_oauth_token_expired,
+    is_using_api_key,
     is_using_oauth,
     load_oauth_client,
     load_oauth_token,
     refresh_oauth_token,
-    save_oauth_token
+    save_oauth_token,
+    get_api_key
 )
 from .config import BACKEND_BASE_URL
 
@@ -92,8 +95,42 @@ class MCPClient:
 
     async def call_tool(self, tool_name: str, arguments: Dict[str, Any], agent_id: Optional[str] = None) -> str:
         """Make an MCP tool call using FastMCP Client with streamable HTTP transport"""
-        
-        # Determine authentication method and token
+
+        # Check if using API key authentication
+        if is_using_api_key():
+            api_key = get_api_key()
+            mcp_url = f"{self.base_url}/mcp-server/mcp/"
+            headers = {"X-API-Key": api_key}
+            transport = StreamableHttpTransport(mcp_url, headers=headers)
+
+            try:
+                async with Client(transport=transport, timeout=self.timeout) as client:
+                    result = await client.call_tool(tool_name, arguments)
+
+                # Extract text content from the result
+                if hasattr(result, 'content'):
+                    # Handle MCP content format
+                    if isinstance(result.content, list) and len(result.content) > 0:
+                        content_item = result.content[0]
+                        if hasattr(content_item, 'text'):
+                            return content_item.text
+                        elif isinstance(content_item, dict) and 'text' in content_item:
+                            return content_item['text']
+                    elif hasattr(result.content, 'text'):
+                        return result.content.text
+
+                # Fallback: try to get text directly from result
+                if hasattr(result, 'text'):
+                    return result.text
+                elif isinstance(result, str):
+                    return result
+                else:
+                    return str(result)
+
+            except Exception as e:
+                raise Exception(f"MCP tool call failed: {e}")
+
+        # Determine authentication method and token (OAuth or traditional)
         if is_using_oauth():
             # Use OAuth Bearer authentication
             oauth_token = await self._get_oauth_token()
@@ -104,7 +141,7 @@ class MCPClient:
                 agent_id = get_current_agent_id()
                 if not agent_id:
                     raise Exception("No agent_id provided and none found in JWT token")
-            
+
             auth_token = await self.get_mcp_token(agent_id)
 
         # Create MCP client URL (streamable HTTP endpoint)

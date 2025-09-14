@@ -110,6 +110,16 @@ def get_current_agent_id() -> Optional[str]:
         return None
 
 
+def is_using_api_key() -> bool:
+    """Check if API key authentication is being used"""
+    return bool(os.environ.get("HITL_API_KEY"))
+
+
+def get_api_key() -> Optional[str]:
+    """Get the API key from environment variable"""
+    return os.environ.get("HITL_API_KEY")
+
+
 # OAuth 2.1 Dynamic Client Registration Implementation
 
 

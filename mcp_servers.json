@@ -48,7 +48,7 @@
     {
         "name": "human-in-the-loop",
         "type": "stdio",
-        "identifier": "npx -y mcp-remote@latest https://hitl-relay-193514263276.europe-west2.run.app/mcp-server/mcp/ --header X-MCP-Agent-Name: ai-assistant-hitl-cli",
+        "identifier": "npx -y mcp-remote@latest https://hitlrelay.app/mcp-server/mcp/ --header X-MCP-Agent-Name: ai-assistant-hitl-cli",
         "notes": "A human-in-the-loop MCP server that allows you to interact with a human for clarificatiosn and task completions"
     }
 

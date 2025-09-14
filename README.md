@@ -85,6 +85,21 @@ nix develop -c export HITL_SERVER_URL="https://your-backend-url.com"
 nix develop -c export GOOGLE_CLIENT_ID="your-client-id.apps.googleusercontent.com"
 
 # Login with traditional flow
+### API Key Authentication (for non-interactive use)
+
+For non-interactive environments like scripts, background services, or CI/CD pipelines, you can authenticate using an API key. This method bypasses the interactive `hitl-cli login` flow.
+
+```bash
+# Set the backend URL (required)
+nix develop -c export HITL_SERVER_URL="https://your-backend-url.com"
+
+# Set the API Key (replaces login)
+nix develop -c export HITL_API_KEY="your-secret-api-key"
+
+# Now you can use the CLI directly
+nix develop -c hitl-cli request --prompt "This is a test from a script."
+```
+**Note**: When `HITL_API_KEY` is set, it takes precedence over any existing OAuth tokens.
 nix develop -c hitl-cli login
 ```
 
@@ -120,14 +135,14 @@ This will open your browser for Google authentication and exchange tokens with t
 
 #### Authentication Method Comparison
 
-| Feature | OAuth 2.1 Dynamic | Traditional OAuth 2.0 |
-|---------|-------------------|------------------------|
-| **Setup Required** | None (zero-config) | Manual client ID setup |
-| **Security** | PKCE + Dynamic registration | Standard OAuth 2.0 |
-| **Agent Management** | Automatic via `--name` | Manual via `agents` commands |
-| **Token Type** | Bearer tokens | JWT tokens |
-| **RFC Standards** | RFC 7591 + RFC 7636 | RFC 6749 |
-| **Recommended For** | New users, agents | Existing integrations |
+| Feature | OAuth 2.1 Dynamic | Traditional OAuth 2.0 | API Key |
+|---------|-------------------|------------------------|---------|
+| **Setup Required** | None (zero-config) | Manual client ID setup | Environment variable (`HITL_API_KEY`) |
+| **Security** | PKCE + Dynamic registration | Standard OAuth 2.0 | Bearer token (long-lived) |
+| **Agent Management** | Automatic via `--name` | Manual via `agents` commands | N/A (uses user's default agent) |
+| **Token Type** | Bearer tokens | JWT tokens | Static API Key |
+| **RFC Standards** | RFC 7591 + RFC 7636 | RFC 6749 | N/A |
+| **Recommended For** | New users, agents | Existing integrations | Scripts, CI/CD, background services |
 
 **Recommendation**: Use OAuth 2.1 dynamic registration (`--dynamic --name`) for new setups as it provides better security and requires no manual configuration.
 
