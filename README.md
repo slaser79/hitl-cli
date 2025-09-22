@@ -235,6 +235,83 @@ hitl-cli --help
 hitl-cli <command> --help
 ```
 
+## Interactive `Stop` Hook for Remote Review and Continuation
+
+This feature allows users to review Claude's output on their phone and provide follow-up instructions without interacting with the terminal.
+
+**1. Installation and Login**
+
+Ensure you have the latest version of `hitl-cli` installed and are logged in:
+
+```bash
+uv pip install --upgrade hitl-cli
+hitl-cli login --dynamic --name "Claude Code Interactive Session"
+```
+
+**2. Configure the Claude Code `Stop` Hook**
+
+To enable the interactive review-and-continue workflow, add the following `hooks` configuration to your `.claude/settings.json` file. **This is the only hook needed for this workflow.**
+
+```json
+{
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "hitl-hook-review-and-continue",
+            "timeout": 600
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+> **Note:** The `timeout` is set to 600 seconds (10 minutes) to give you ample time to review the request on your phone and respond without the hook timing out. Adjust as needed.
+
+---
+
+**3. The User Experience in Action**
+
+With this setup, a typical interaction will flow like this:
+
+1.  **You:** (In Claude Code terminal) `Okay, please refactor the auth.py module to use the new UserStore class.`
+2.  **Claude:** (Performs a series of `Read`, `Edit`, `Write` actions, which you can see in the terminal). When it believes it's finished, it stops.
+3.  **`Stop` Hook Triggers:** Your terminal pauses.
+4.  **Your Phone:** You receive a notification from the HITL app. You open it and see a message like:
+    ```
+    Claude has completed its task. Please review the final actions below.
+
+    Click 'Approve' to finish, or reply with new instructions to continue.
+
+    --- Turn -2 ---
+    {
+      "type": "tool_code",
+      "tool_name": "Read",
+      "tool_input": {
+        "file_path": "hitl_cli/auth.py"
+      }
+    }
+
+    --- Turn -1 ---
+    {
+      "type": "tool_code",
+      "tool_name": "Write",
+      "tool_input": {
+        "file_path": "hitl_cli/auth.py",
+        "content": "# ... new, refactored code here ..."
+      }
+    }
+    ```
+5.  **You Decide:**
+    *   **Scenario A (Approval):** The code looks perfect. You tap the `Approve` button. The `hitl-cli` command in the terminal prints "Approve" and exits. Your Claude Code session cleanly ends its turn and waits for your next typed command.
+    *   **Scenario B (Continuation):** You notice Claude forgot to add docstrings. You type a reply directly into the HITL app: `Looks great, but please add docstrings to the new methods.` You hit send. The `hitl-cli` command in the terminal prints that exact string and exits. The hook script tells Claude to block the stop and uses your reply as the new instruction.
+6.  **Claude:** The terminal becomes active again, and Claude says something like: `Understood. I will add docstrings to the new methods in auth.py.` and continues working.
+
+This creates a powerful, seamless loop for remote-controlling complex tasks.
+
 ## End-to-End Encryption (E2EE) Proxy Mode
 
 For privacy-conscious users who require that the HITL server cannot decipher their messages, the CLI provides a **Cryptographic Guardian** proxy mode that enables transparent end-to-end encryption.

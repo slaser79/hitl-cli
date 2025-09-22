@@ -47,7 +47,7 @@ hitl-cli/
 ├── hitl_cli/
 │   ├── __init__.py          # Package initialization
 │   ├── main.py              # CLI entry point
-│   ├── auth.py              # Google OAuth authentication
+│   ├── auth.py              # Firebase/OAuth authentication
 │   ├── api_client.py        # Backend API client
 │   ├── mcp_client.py        # MCP protocol client
 │   ├── commands.py          # CLI command implementations
@@ -153,17 +153,17 @@ python oauth_integration_demo.py
    - Token expiry validation before requests
    - Secure deletion on logout
 
-### Traditional OAuth 2.0 Flow (Legacy)
+### Traditional Firebase Auth Flow (Legacy)
 
-1. **Google OAuth Login**:
+1. **Firebase Authentication**:
    - User runs `hitl-cli login`
-   - Requires GOOGLE_CLIENT_ID environment variable
-   - Browser opens for Google authentication
-   - OAuth callback provides tokens
+   - Supports multiple providers: Google, Apple, Email
+   - Browser opens for authentication
+   - Firebase ID token obtained
    - Tokens stored securely in platform keyring
 
 2. **Backend JWT Exchange**:
-   - Exchange Google token for backend JWT
+   - Exchange Firebase ID token for backend JWT
    - JWT contains user and agent context
    - Include JWT in all API requests
    - Handle token expiration gracefully
