@@ -325,7 +325,7 @@ hitl-cli login --dynamic --name "My Secure Agent"
 
 2. **Start the E2EE Proxy**:
 ```bash
-hitl-cli proxy https://hitl-relay.app/mcp-server/mcp/
+hitl-cli proxy https://hitlrelay.app/mcp-server/mcp/
 ```
 
 3. **Configure Claude Desktop** (`claude_desktop_config.json`):
