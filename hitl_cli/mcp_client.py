@@ -19,6 +19,9 @@ from .auth import (
 )
 from .config import BACKEND_BASE_URL
 
+from .models import HumanResponse, FileAttachment
+import json
+# Note: typing import already present at top; skipped to avoid duplicate
 
 class MCPClient:
     """Client for making MCP calls using FastMCP streamable HTTP transport"""
@@ -290,3 +293,132 @@ class MCPClient:
         # Make the MCP tool call using OAuth Bearer auth
         result = await self.call_tool("notify_human_completion", arguments)
         return result
+
+    def parse_result_to_human_response(self, result: Any) -> HumanResponse:
+        """
+        Parse FastMCP result object into HumanResponse with optional attachments.
+        Backward compatible: extracts text from same sources as current logic,
+        and additionally tries to parse structured JSON content for attachments.
+        """
+        text_parts: List[str] = []
+        attachments: List[FileAttachment] = []
+        approved: Optional[bool] = None
+
+        def try_parse_attachment_obj(obj: Dict[str, Any]):
+            nonlocal attachments, approved, text_parts
+            if not isinstance(obj, dict):
+                return
+            # Approved may be present
+            if "approved" in obj and approved is None:
+                try:
+                    approved = bool(obj["approved"])
+                except Exception:
+                    pass
+            # Text may be present (prefer explicit over inferred)
+            if "text" in obj and isinstance(obj["text"], str):
+                text_parts.append(obj["text"])
+
+            # Accept single or multiple
+            if "file_attachment" in obj and obj["file_attachment"]:
+                fa = obj["file_attachment"]
+                try:
+                    attachments.append(FileAttachment(**fa))
+                except Exception:
+                    # ignore invalid attachment objects
+                    pass
+            if "attachments" in obj and obj["attachments"]:
+                for fa in obj["attachments"]:
+                    try:
+                        attachments.append(FileAttachment(**fa))
+                    except Exception:
+                        pass
+
+        # 1) Handle FastMCP 'content' attribute (list or object with .text)
+        content = getattr(result, "content", None)
+        if content is not None:
+            # List of content items
+            if isinstance(content, list):
+                for item in content:
+                    # item may be object with .text attr
+                    if hasattr(item, "text") and isinstance(getattr(item, "text"), str):
+                        text_parts.append(getattr(item, "text"))
+                    # item may be dict-like
+                    if isinstance(item, dict):
+                        # direct text
+                        if "text" in item and isinstance(item["text"], str):
+                            text_parts.append(item["text"])
+                        # JSONish payload
+                        # Common shapes: {"type":"json","json":{...}} or {"type":"application/json","data":"{...}"}
+                        obj = None
+                        if "json" in item and isinstance(item["json"], (dict, list)):
+                            obj = item["json"]
+                        elif item.get("type") in ("json", "application/json"):
+                            data = item.get("data")
+                            if isinstance(data, (str, bytes)):
+                                try:
+                                    obj = json.loads(data)
+                                except Exception:
+                                    obj = None
+                        # Sometimes the content item may directly include fields
+                        if obj is None and any(k in item for k in ("file_attachment", "attachments", "approved")):
+                            obj = item
+                        if isinstance(obj, dict):
+                            try_parse_attachment_obj(obj)
+            else:
+                # Single content object with .text
+                if hasattr(content, "text") and isinstance(content.text, str):
+                    text_parts.append(content.text)
+
+        # 2) Fallbacks on result-level attributes
+        # If result has .text (string) and we didn't capture text yet
+        if hasattr(result, "text") and isinstance(result.text, str):
+            text_parts.append(result.text)
+        # If result is a string
+        if isinstance(result, str):
+            # Attempt JSON parse for attachments, otherwise treat as plain text
+            try:
+                parsed = json.loads(result)
+                if isinstance(parsed, dict):
+                    try_parse_attachment_obj(parsed)
+                else:
+                    # Not an object, fall back to text
+                    text_parts.append(result)
+            except Exception:
+                text_parts.append(result)
+
+        text = "\n".join([t for t in text_parts if t]).strip()
+
+        return HumanResponse(text=text, approved=approved, attachments=attachments)
+
+    # New structured-return method for human input (OAuth or API key handled in call_tool)
+    async def request_human_input_structured(
+        self,
+        prompt: str,
+        choices: Optional[List[str]] = None,
+        placeholder_text: Optional[str] = None,
+        agent_id: Optional[str] = None,
+        agent_name: Optional[str] = None
+    ) -> HumanResponse:
+        arguments = {"prompt": prompt}
+        if choices:
+            arguments["choices"] = choices
+        if placeholder_text:
+            arguments["placeholder_text"] = placeholder_text
+        if agent_name:
+            arguments["agent_name"] = agent_name
+
+        result = await self.call_tool("request_human_input", arguments, agent_id)
+        return self.parse_result_to_human_response(result)
+
+    async def notify_task_completion_structured(
+        self,
+        summary: str,
+        agent_id: Optional[str] = None,
+        agent_name: Optional[str] = None
+    ) -> HumanResponse:
+        arguments = {"summary": summary}
+        if agent_name:
+            arguments["agent_name"] = agent_name
+
+        result = await self.call_tool("notify_human_completion", arguments, agent_id)
+        return self.parse_result_to_human_response(result)

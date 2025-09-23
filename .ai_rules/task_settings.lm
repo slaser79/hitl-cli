@@ -4,7 +4,7 @@ llm_clear
 set_reasoning_effort "High"
 
 SET AGENT_CTXT_EDITOR_MODEL "openrouter/x-ai/grok-4-fast:free"
-SET AGENT_CTXT_PLANNER_MODEL "openrouter/x-ai/grok-4-fast:free"
+SET AGENT_CTXT_PLANNER_MODEL "gpt-5"
 SET AGENT_CTXT_MAX_EDITOR_ITERATIONS 12
 
 SET AGENT_CTXT_CONTEXT_SELECTION_AGENTIC False
