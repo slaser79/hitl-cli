@@ -44,9 +44,6 @@ def main():
     try:
         input_data = json.load(sys.stdin)
         
-        # Per Claude docs, check this to prevent infinite stop-hook loops.
-        if input_data.get("stop_hook_active"):
-            sys.exit(0)
         
         transcript_path = input_data.get("transcript_path")
         if not transcript_path:
@@ -58,16 +55,14 @@ def main():
         
         prompt_for_human = (
             "Claude has completed its task. Please review the final actions below.\n\n"
-            "Click 'Approve' to finish, or reply with new instructions to continue.\n\n"
-            f"{review_payload}"
+            f"```json{review_payload}```"
         )
         
         # 2. Send the blocking request to the user
         completed_process = subprocess.run(
             [
-                "hitl-cli", "request",
-                "--prompt", prompt_for_human,
-                "--choice", "Approve"
+                "hitl-cli", "notify-completion",
+                "--summary", prompt_for_human,
             ],
             check=True,
             capture_output=True,
