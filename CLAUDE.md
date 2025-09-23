@@ -31,7 +31,7 @@ nix develop
 ### Manual Setup (without Nix)
 ```bash
 # Create virtual environment
-python -m venv .venv
+uv venv
 source .venv/bin/activate
 
 # Install dependencies
@@ -86,37 +86,37 @@ hitl-cli/
 #### OAuth 2.1 Tests
 ```bash
 # Run OAuth 2.1 specific tests
-pytest tests/test_oauth_dynamic_registration.py -v
+uv run pytest tests/test_oauth_dynamic_registration.py -v  # or nix develop -c pytest tests/test_oauth_dynamic_registration.py -v
 
 # Test PKCE implementation
-pytest tests/test_oauth_dynamic_registration.py::test_pkce_code_generation -v
+uv run pytest tests/test_oauth_dynamic_registration.py::test_pkce_code_generation -v
 
 # Test dynamic client registration
-pytest tests/test_oauth_dynamic_registration.py::test_dynamic_client_registration -v
+uv run pytest tests/test_oauth_dynamic_registration.py::test_dynamic_client_registration -v
 ```
 
 #### General Tests
 ```bash
 # Run all tests
-pytest
+uv run pytest   # or nix develop -c pytest
 
 # Run with coverage
-pytest --cov=hitl_cli --cov-report=term-missing
+uv run pytest --cov=hitl_cli --cov-report=term-missing
 
 # Run specific test
-pytest tests/test_auth_flow.py -v
+uv run pytest tests/test_auth_flow.py -v
 
 # Test both authentication flows
-pytest tests/test_auth_flow.py tests/test_oauth_dynamic_registration.py -v
+uv run pytest tests/test_auth_flow.py tests/test_oauth_dynamic_registration.py -v
 ```
 
 #### Manual Testing OAuth 2.1
 ```bash
 # Test complete OAuth 2.1 flow
-python test_oauth_implementation.py
+uv run python test_oauth_implementation.py
 
 # Test integration with backend
-python oauth_integration_demo.py
+uv run python oauth_integration_demo.py
 ```
 
 ### Error Handling
@@ -310,16 +310,16 @@ hitl-cli --debug <command>
 ### Common Debug Commands
 ```bash
 # Test OAuth 2.1 flow
-hitl-cli login --dynamic --name "Debug Agent" --debug
+uv run hitl-cli login --dynamic --name "Debug Agent" --debug
 
 # Test traditional flow
-hitl-cli login --debug
+uv run hitl-cli login --debug
 
 # Check authentication status
-hitl-cli status --debug
+uv run hitl-cli status --debug
 
 # Test MCP request with debug
-hitl-cli request --prompt "Debug test" --debug
+uv run hitl-cli request --prompt "Debug test" --debug
 
 # Clear all tokens for fresh start
 hitl-cli logout
