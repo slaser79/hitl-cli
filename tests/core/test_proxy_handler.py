@@ -28,10 +28,16 @@ class TestToolListInterception:
         """Set up test fixtures."""
         self.backend_url = "https://test-backend.com"
 
+    @pytest.mark.asyncio
     @patch('hitl_cli.proxy_handler.load_agent_keypair')
     async def test_tools_list_request_intercepted(self, mock_load_keys):
         """Test that tools/list requests are intercepted by proxy."""
-        mock_load_keys.return_value = ("public_key", "private_key")
+        agent_private_key = PrivateKey.generate()
+        agent_public_key = agent_private_key.public_key
+        mock_load_keys.return_value = (
+            agent_public_key.encode(Base64Encoder).decode(),
+            agent_private_key.encode(Base64Encoder).decode()
+        )
 
         handler = ProxyHandler(self.backend_url)
 
@@ -53,10 +59,16 @@ class TestToolListInterception:
             assert response["jsonrpc"] == "2.0"
             assert response["id"] == 1
 
+    @pytest.mark.asyncio
     @patch('hitl_cli.proxy_handler.load_agent_keypair')
     async def test_non_tools_list_forwarded_to_backend(self, mock_load_keys):
         """Test that non-tools/list requests are forwarded to backend."""
-        mock_load_keys.return_value = ("public_key", "private_key")
+        agent_private_key = PrivateKey.generate()
+        agent_public_key = agent_private_key.public_key
+        mock_load_keys.return_value = (
+            agent_public_key.encode(Base64Encoder).decode(),
+            agent_private_key.encode(Base64Encoder).decode()
+        )
 
         handler = ProxyHandler(self.backend_url)
 
@@ -77,10 +89,16 @@ class TestToolListInterception:
             mock_forward.assert_called_once()
             assert response["jsonrpc"] == "2.0"
 
+    @pytest.mark.asyncio
     @patch('hitl_cli.proxy_handler.load_agent_keypair')
     async def test_tools_list_only_shows_plaintext_tools(self, mock_load_keys):
         """Test that tools/list only advertises plaintext tools to Claude."""
-        mock_load_keys.return_value = ("public_key", "private_key")
+        agent_private_key = PrivateKey.generate()
+        agent_public_key = agent_private_key.public_key
+        mock_load_keys.return_value = (
+            agent_public_key.encode(Base64Encoder).decode(),
+            agent_private_key.encode(Base64Encoder).decode()
+        )
 
         handler = ProxyHandler(self.backend_url)
 
@@ -130,6 +148,7 @@ class TestRequestInterception:
         self.device_private_key = PrivateKey.generate()
         self.device_public_key = self.device_private_key.public_key
 
+    @pytest.mark.asyncio
     @patch('hitl_cli.proxy_handler.load_agent_keypair')
     async def test_request_human_input_intercepted(self, mock_load_keys):
         """Test that request_human_input calls are intercepted."""
@@ -163,6 +182,7 @@ class TestRequestInterception:
             mock_handle.assert_called_once()
             assert response["result"] == "Intercepted"
 
+    @pytest.mark.asyncio
     @patch('hitl_cli.proxy_handler.load_agent_keypair')
     async def test_request_encryption_with_device_keys(self, mock_load_keys):
         """Test that requests are encrypted for each device public key."""
@@ -205,6 +225,7 @@ class TestRequestInterception:
                 assert forwarded_request["params"]["name"] == "request_human_input_e2ee"
                 assert "encrypted_payload" in forwarded_request["params"]["arguments"]
 
+    @pytest.mark.asyncio
     @patch('hitl_cli.proxy_handler.load_agent_keypair')
     async def test_request_falls_back_to_plaintext_if_no_device_keys(self, mock_load_keys):
         """Test that requests fall back to plaintext if no device keys available."""
@@ -237,10 +258,16 @@ class TestRequestInterception:
             assert "error" in response
             assert "No device public keys available" in response["error"]["message"]
 
+    @pytest.mark.asyncio
     @patch('hitl_cli.proxy_handler.load_agent_keypair')
     async def test_non_request_human_input_not_intercepted(self, mock_load_keys):
         """Test that non-request_human_input calls are not intercepted."""
-        mock_load_keys.return_value = ("public_key", "private_key")
+        agent_private_key = PrivateKey.generate()
+        agent_public_key = agent_private_key.public_key
+        mock_load_keys.return_value = (
+            agent_public_key.encode(Base64Encoder).decode(),
+            agent_private_key.encode(Base64Encoder).decode()
+        )
 
         handler = ProxyHandler(self.backend_url)
 
@@ -283,6 +310,7 @@ class TestResponseDecryption:
         self.device_private_key = PrivateKey.generate()
         self.device_public_key = self.device_private_key.public_key
 
+    @pytest.mark.asyncio
     @patch('hitl_cli.proxy_handler.load_agent_keypair')
     async def test_encrypted_response_decrypted(self, mock_load_keys):
         """Test that encrypted responses are decrypted before returning to Claude."""
@@ -319,10 +347,16 @@ class TestResponseDecryption:
 
         assert decrypted_text == plaintext_response
 
+    @pytest.mark.asyncio
     @patch('hitl_cli.proxy_handler.load_agent_keypair')
     async def test_plaintext_response_returned_unchanged(self, mock_load_keys):
         """Test that plaintext responses are returned unchanged."""
-        mock_load_keys.return_value = ("public_key", "private_key")
+        agent_private_key = PrivateKey.generate()
+        agent_public_key = agent_private_key.public_key
+        mock_load_keys.return_value = (
+            agent_public_key.encode(Base64Encoder).decode(),
+            agent_private_key.encode(Base64Encoder).decode()
+        )
 
         handler = ProxyHandler(self.backend_url)
 
@@ -352,6 +386,7 @@ class TestResponseDecryption:
             # Should return plaintext unchanged
             assert response["result"] == plaintext_response
 
+    @pytest.mark.asyncio
     @patch('hitl_cli.proxy_handler.load_agent_keypair')
     async def test_decryption_error_handling(self, mock_load_keys):
         """Test handling of decryption errors."""
@@ -395,6 +430,7 @@ class TestProxyHandlerIntegration:
         self.device_private_key = PrivateKey.generate()
         self.device_public_key = self.device_private_key.public_key
 
+    @pytest.mark.asyncio
     @patch('hitl_cli.proxy_handler.load_agent_keypair')
     async def test_end_to_end_encryption_flow(self, mock_load_keys):
         """Test complete E2EE flow from request to response."""
@@ -423,7 +459,7 @@ class TestProxyHandlerIntegration:
                 mock_forward.return_value = {
                     "jsonrpc": "2.0",
                     "id": 1,
-                    "result": encrypted_response.decode()
+                    "result": {"content": [{"type": "text", "text": encrypted_response.decode()}]}
                 }
 
                 # Make request
@@ -450,10 +486,16 @@ class TestProxyHandlerIntegration:
                 # Verify response was decrypted
                 assert response["result"] == plaintext_response
 
+    @pytest.mark.asyncio
     @patch('hitl_cli.proxy_handler.load_agent_keypair')
     async def test_proxy_handler_error_handling(self, mock_load_keys):
         """Test proxy handler error handling in various scenarios."""
-        mock_load_keys.return_value = ("public_key", "private_key")
+        agent_private_key = PrivateKey.generate()
+        agent_public_key = agent_private_key.public_key
+        mock_load_keys.return_value = (
+            agent_public_key.encode(Base64Encoder).decode(),
+            agent_private_key.encode(Base64Encoder).decode()
+        )
 
         handler = ProxyHandler(self.backend_url)
 
