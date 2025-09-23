@@ -5,6 +5,7 @@ from pathlib import Path
 
 import httpx
 import pytest
+from unittest.mock import patch
 from hitl_cli.models import FileAttachment
 from hitl_cli.services.file_service import (
     FileDownloadError,
@@ -105,7 +106,8 @@ class TestUtils:
 
     def test_is_expired_now(self):
         now = datetime.now(timezone.utc)
-        assert not is_expired(now)  # Not expired yet
+        with patch('time.time', return_value=now.timestamp()):
+            assert not is_expired(now)  # Not expired yet
 
     def test_safe_join_sanitization(self, tmp_path):
         dest_dir = tmp_path / "downloads"

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import warnings
 from datetime import datetime, timezone
+import time
 from pathlib import Path
 from typing import Optional, Union
 
@@ -37,7 +38,12 @@ class FileContentTypeMismatchWarning(Warning):
 
 def is_expired(expires_at: datetime) -> bool:
     """Check if the expiration datetime is in the past (UTC)."""
-    return expires_at < datetime.now(timezone.utc)
+    if expires_at is None:
+        return True
+    if expires_at.tzinfo is None:
+        # Assume UTC if naive
+        expires_at = expires_at.replace(tzinfo=timezone.utc)
+    return expires_at.timestamp() < time.time()  # strict less-than via timestamps
 
 
 SAFE_NAME_RE = re.compile(r'[^A-Za-z0-9 ._ -]')

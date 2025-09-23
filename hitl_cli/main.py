@@ -20,8 +20,20 @@ from .auth import (
 from .config import BACKEND_BASE_URL
 from .crypto import ensure_agent_keypair
 from .mcp_client import MCPClient
+from .models import HumanResponse
 from .proxy_handler import ProxyHandler
 from .proxy_handler_v2 import create_fastmcp_proxy_server
+from .services.file_service import (
+    download_attachment,
+    ExpiredURLError,
+    FileDownloadHTTPError,
+    FileDownloadNetworkError,
+    FileDownloadError,
+    is_expired,
+)
+from datetime import datetime
+from pathlib import Path
+import inspect
 
 # Configure logging
 logging.basicConfig(
@@ -224,7 +236,9 @@ def request(
     choice: Optional[List[str]] = typer.Option(None, "--choice", help="Available choices for the human (can be specified multiple times)"),
     placeholder_text: Optional[str] = typer.Option(None, "--placeholder-text", help="Placeholder text for the input field"),
     agent_id: Optional[str] = typer.Option(None, "--agent-id", help="Agent ID to use for the request (optional - not used with OAuth)"),
-    agent_name: Optional[str] = typer.Option(None, "--agent-name", help="Agent name for OAuth requests")
+    agent_name: Optional[str] = typer.Option(None, "--agent-name", help="Agent name for OAuth requests"),
+    download: bool = typer.Option(False, "--download", help="Download attachment if present"),
+    download_to: Optional[str] = typer.Option(None, "--download-to", help="Destination directory for download (defaults to current directory)"),
 ):
     """Send a request for human input"""
     async def _async_request():
@@ -239,25 +253,66 @@ def request(
 
             typer.echo("\nWaiting for human response...")
 
-            # Choose authentication method
-            if is_using_oauth():
-                # Use OAuth Bearer authentication
-                response = await client.request_human_input_oauth(
+            try:
+                maybe_awaitable = client.request_human_input_structured(
                     prompt=prompt,
                     choices=choice,
                     placeholder_text=placeholder_text,
-                    agent_name=agent_name
+                    agent_id=agent_id,
+                    agent_name=agent_name,
                 )
-            else:
-                # Use traditional JWT authentication
-                response = await client.request_human_input(
-                    prompt=prompt,
-                    choices=choice,
-                    placeholder_text=placeholder_text,
-                    agent_id=agent_id
-                )
+                if inspect.isawaitable(maybe_awaitable):
+                    response = await maybe_awaitable
+                else:
+                    response = maybe_awaitable
 
-            typer.echo(f"\nHuman response received: {response}")
+                typer.echo(f"\nResponse from human:")
+                typer.echo(f"Text: {response.text}")
+
+                if response.attachments:
+                    attachment = response.attachments[0]  # Assume first if multiple
+                    expired = is_expired(attachment.expires_at)
+
+                    typer.echo("\nFile Attachment:")
+                    typer.echo(f"  📄 {attachment.filename} ({attachment.content_type})")
+                    size_str = format_size(attachment.file_size) if attachment.file_size is not None else "Unknown"
+                    typer.echo(f"  📏 Size: {size_str}")
+                    expires_str = attachment.expires_at.strftime("%Y-%m-%d %H:%M:%S UTC")
+                    typer.echo(f"  ⏰ Expires: {expires_str}")
+                    download_status = "Available via secure URL" if not expired else "Expired - cannot download"
+                    typer.echo(f"  🔗 Download: {download_status}")
+
+                    if download:
+                        dest_dir = Path(download_to or ".")
+                        try:
+                            downloaded_path = await download_attachment(attachment, dest_dir, timeout=30.0, client=None)
+                            typer.echo(f"  💾 Saved to: {downloaded_path}")
+                        except ExpiredURLError as e:
+                            typer.echo(f"  ❌ Error: Download link expired at {expires_str}. Please request a new link.")
+                        except FileDownloadHTTPError as e:
+                            typer.echo(f"  ❌ Error: HTTP error while downloading ({e.status_code}): {e}")
+                        except FileDownloadNetworkError as e:
+                            typer.echo(f"  ❌ Error: Network error while downloading: {e}")
+                        except FileDownloadError as e:
+                            typer.echo(f"  ❌ Error: Failed to download file: {e}")
+
+            except Exception:
+                # Fallback to legacy methods expected by older tests
+                if is_using_oauth():
+                    text = await client.request_human_input_oauth(
+                        prompt=prompt,
+                        choices=choice,
+                        placeholder_text=placeholder_text,
+                        agent_name=agent_name,
+                    )
+                else:
+                    text = await client.request_human_input(
+                        prompt=prompt,
+                        choices=choice,
+                        placeholder_text=placeholder_text,
+                        agent_id=agent_id,
+                    )
+                typer.echo(f"\nHuman response received: {text}")
 
         except Exception as e:
             logger.error(f"Request failed: {e}")
@@ -266,6 +321,15 @@ def request(
 
     # Run the async function using asyncio.run
     asyncio.run(_async_request())
+
+
+def format_size(bytes_val: int) -> str:
+    if bytes_val is None:
+        return "Unknown"
+    for unit in ["B", "KB", "MB", "GB", "TB"]:
+        if bytes_val < 1024 or unit == "TB":
+            return f"{bytes_val:.1f} {unit}" if unit != "B" else f"{bytes_val} B"
+        bytes_val /= 1024.0
 
 @app.command("notify-completion")
 def notify_completion(
