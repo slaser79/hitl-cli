@@ -5,6 +5,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional, Union
 
+import re
+
 import httpx
 from hitl_cli.models import FileAttachment
 
@@ -38,13 +40,23 @@ def is_expired(expires_at: datetime) -> bool:
     return expires_at < datetime.now(timezone.utc)
 
 
+SAFE_NAME_RE = re.compile(r'[^A-Za-z0-9 ._ -]')
+
 def safe_join(dest_dir: Path, filename: str) -> Path:
     """Safely join filename to dest_dir, sanitizing to prevent path traversal."""
-    # Basic sanitization: keep alphanumeric, spaces, -, _, .
-    safe_filename = "".join(c for c in filename if c.isalnum() or c in (" ", "-", "_", ".")).rstrip()
-    if not safe_filename:
-        safe_filename = "unnamed_file"
-    return dest_dir / safe_filename
+    raw = filename or ""
+    if (not raw
+        or ".." in raw
+        or "/" in raw
+        or "\\" in raw
+        or Path(raw).is_absolute()):
+        safe_name = "unnamed_file"
+    else:
+        base = Path(raw).name
+        safe_name = SAFE_NAME_RE.sub("_", base)
+        if safe_name.strip(".") == "":
+            safe_name = "unnamed_file"
+    return Path(dest_dir) / safe_name
 
 
 async def download_attachment(
