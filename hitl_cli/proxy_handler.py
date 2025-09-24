@@ -459,7 +459,7 @@ class ProxyHandler:
         else:
             raise Exception("MCP proxy requires OAuth authentication")
         
-        async with httpx.AsyncClient(timeout=300.0) as client:  # 5 minute timeout for human responses
+        async with httpx.AsyncClient(timeout=900.0) as client:  # 15 minute timeout for human responses
             response = await client.post(
                 self.mcp_url,
                 json=request,

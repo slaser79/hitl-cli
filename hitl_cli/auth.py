@@ -393,7 +393,7 @@ class OAuthDynamicClient:
             typer.echo("⏳ Waiting for authorization callback...")
             
             # Wait for callback with timeout
-            timeout = 300  # 5 minutes
+            timeout = 900  # 15 minutes
             start_time = time.time()
             
             while not callback_data and (time.time() - start_time) < timeout:
