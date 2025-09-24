@@ -25,7 +25,7 @@ class MCPClient:
 
     def __init__(self):
         self.base_url = BACKEND_BASE_URL
-        self.timeout = 300.0  # 5 minutes for human responses
+        self.timeout = 900.0  # 15 minutes for human responses
         self._mcp_token_cache = {}  # Cache MCP tokens to avoid repeated OAuth
 
     async def get_mcp_token(self, agent_id: str) -> str:

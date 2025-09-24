@@ -129,7 +129,7 @@ class BackendMCPClient:
         auth = BearerAuth(oauth_token)
         
         try:
-            async with Client(self.mcp_url, auth=auth, timeout=300.0) as client:  # 5 minute timeout for human responses
+            async with Client(self.mcp_url, auth=auth, timeout=900.0) as client:  # 15 minute timeout for human responses
                 result = await client.call_tool(tool_name, arguments)
                 return result
                 
