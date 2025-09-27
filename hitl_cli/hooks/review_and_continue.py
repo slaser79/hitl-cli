@@ -95,7 +95,7 @@ def format_turn_for_human(turn_data: dict, turn_number: int) -> str:
 
                 return f"--- Turn {turn_number} (User) ---\n" \
                        f"⏰ Time: {timestamp}\n" \
-                       f"💬 Message: {user_text[:300]}..."
+                       f"💬 Message: {user_text[:2000]}..."
 
     elif turn_type == "assistant":
         # Handle assistant messages
@@ -111,8 +111,8 @@ def format_turn_for_human(turn_data: dict, turn_number: int) -> str:
                     assistant_text += item.get("text", "")
 
         # Truncate long responses
-        if len(assistant_text) > 400:
-            assistant_text = assistant_text[:400] + "..."
+        if len(assistant_text) > 2000:
+            assistant_text = assistant_text[:2000] + "..."
 
         # Get usage info if available
         usage = message.get("usage", {})
@@ -129,7 +129,7 @@ def format_turn_for_human(turn_data: dict, turn_number: int) -> str:
         # Fallback for unknown turn types
         return f"--- Turn {turn_number} ({turn_type}) ---\n" \
                f"⏰ Time: {timestamp}\n" \
-               f"📄 Raw data: {str(turn_data)[:200]}..."
+               f"📄 Raw data: {str(turn_data)[:2000]}..."
 
 def main():
     """
