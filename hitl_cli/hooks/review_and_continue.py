@@ -19,6 +19,9 @@ def get_last_turns(transcript_path: str, num_turns: int = 2) -> str:
         for i, line in enumerate(last_lines):
             try:
                 turn_data = json.loads(line)
+                if not isinstance(turn_data, dict):
+                    formatted_turns.append(f"--- Turn {-len(last_lines) + i} (invalid data) ---\n{line.strip()}")
+                    continue
                 turn_number = -len(last_lines) + i
                 formatted_turn = format_turn_for_human(turn_data, turn_number)
                 formatted_turns.append(formatted_turn)
