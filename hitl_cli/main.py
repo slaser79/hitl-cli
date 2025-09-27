@@ -13,6 +13,7 @@ from .auth import (
     delete_token,
     get_current_oauth_token,
     is_logged_in,
+    is_using_api_key,
     is_using_oauth,
     OAuthDynamicClient,
     save_token,
@@ -240,7 +241,14 @@ def request(
             typer.echo("\nWaiting for human response...")
 
             # Choose authentication method
-            if is_using_oauth():
+            if is_using_api_key():
+                # Use API key authentication
+                response = await client.request_human_input_api_key(
+                    prompt=prompt,
+                    choices=choice,
+                    placeholder_text=placeholder_text
+                )
+            elif is_using_oauth():
                 # Use OAuth Bearer authentication
                 response = await client.request_human_input_oauth(
                     prompt=prompt,
@@ -289,7 +297,12 @@ def notify_completion(
             typer.echo("\n⏳ Waiting for human response...")
 
             # Choose authentication method
-            if is_using_oauth():
+            if is_using_api_key():
+                # Use API key authentication
+                response = await client.notify_task_completion_api_key(
+                    summary=summary
+                )
+            elif is_using_oauth():
                 # Use OAuth Bearer authentication
                 response = await client.notify_task_completion_oauth(
                     summary=summary,
@@ -303,6 +316,57 @@ def notify_completion(
                 )
 
             typer.echo(f"\n✅ Human response received: {response}")
+
+        except Exception as e:
+            logger.error(f"Notification failed: {e}")
+            typer.echo(f"❌ Notification failed: {e}")
+            raise typer.Exit(1)
+
+    # Run the async function using asyncio.run
+    asyncio.run(_async_notify())
+
+
+@app.command()
+def notify(
+    message: str = typer.Option(..., "--message", help="The notification message to send"),
+    agent_id: Optional[str] = typer.Option(None, "--agent-id", help="Agent ID to use for the notification (optional - not used with OAuth)"),
+    agent_name: Optional[str] = typer.Option(None, "--agent-name", help="Agent name for OAuth requests")
+):
+    """Send a fire-forget notification to human"""
+    async def _async_notify():
+        client = MCPClient()
+
+        try:
+            typer.echo("📢 Sending Notification")
+            typer.echo("=" * 40)
+            typer.echo(f"Message: {message}")
+            if agent_id:
+                typer.echo(f"Agent ID: {agent_id}")
+            if agent_name:
+                typer.echo(f"Agent Name: {agent_name}")
+
+            typer.echo("\n📤 Sending notification...")
+
+            # Choose authentication method
+            if is_using_api_key():
+                # Use API key authentication
+                response = await client.notify_human_api_key(
+                    message=message
+                )
+            elif is_using_oauth():
+                # Use OAuth Bearer authentication
+                response = await client.notify_human_oauth(
+                    message=message,
+                    agent_name=agent_name
+                )
+            else:
+                # Use traditional JWT authentication
+                response = await client.notify_human(
+                    message=message,
+                    agent_id=agent_id
+                )
+
+            typer.echo(f"\n✅ {response}")
 
         except Exception as e:
             logger.error(f"Notification failed: {e}")

@@ -290,3 +290,102 @@ class MCPClient:
         # Make the MCP tool call using OAuth Bearer auth
         result = await self.call_tool("notify_human_completion", arguments)
         return result
+
+    async def request_human_input_api_key(
+        self,
+        prompt: str,
+        choices: Optional[List[str]] = None,
+        placeholder_text: Optional[str] = None
+    ) -> str:
+        """Make a request for human input via the MCP server using API key authentication"""
+
+        if not is_using_api_key():
+            raise Exception("API key authentication required - please set HITL_API_KEY environment variable")
+
+        # Build arguments for the tool call
+        arguments = {"prompt": prompt}
+        if choices:
+            arguments["choices"] = choices
+        if placeholder_text:
+            arguments["placeholder_text"] = placeholder_text
+
+        # Make the MCP tool call using API key auth
+        result = await self.call_tool("request_human_input", arguments)
+        return result
+
+    async def notify_task_completion_api_key(
+        self,
+        summary: str
+    ) -> str:
+        """Notify human that a task has been completed using API key authentication"""
+
+        if not is_using_api_key():
+            raise Exception("API key authentication required - please set HITL_API_KEY environment variable")
+
+        # Build arguments for the tool call
+        arguments = {"summary": summary}
+
+        # Make the MCP tool call using API key auth
+        result = await self.call_tool("notify_human_completion", arguments)
+        return result
+
+    async def notify_human(
+        self,
+        message: str,
+        agent_id: Optional[str] = None
+    ) -> str:
+        """Send a fire-forget notification to human via the MCP server"""
+
+        # If no agent_id provided, use the current user's agent from JWT token
+        if agent_id is None:
+            agent_id = get_current_agent_id()
+            if agent_id is None:
+                # Fallback: create a temporary agent for this request
+                import uuid
+                agent_id = await self.create_agent_for_mcp(f"hitl-cli-{uuid.uuid4().hex[:8]}")
+        else:
+            # Validate that the provided agent_id exists and belongs to the user
+            if not await self.validate_agent_exists(agent_id):
+                raise Exception(f"Agent does not exist or does not belong to the current user: {agent_id}")
+
+        # Build arguments for the tool call
+        arguments = {"message": message}
+
+        # Make the MCP tool call using FastMCP Client
+        result = await self.call_tool("notify_human", arguments, agent_id)
+        return result
+
+    async def notify_human_oauth(
+        self,
+        message: str,
+        agent_name: Optional[str] = None
+    ) -> str:
+        """Send a fire-forget notification to human using OAuth Bearer authentication"""
+
+        if not is_using_oauth():
+            raise Exception("OAuth authentication required - please login with --dynamic")
+
+        # Build arguments for the tool call
+        arguments = {"message": message}
+        if agent_name:
+            arguments["agent_name"] = agent_name
+
+        # Make the MCP tool call using OAuth Bearer auth
+        result = await self.call_tool("notify_human", arguments)
+        return result
+
+    async def notify_human_api_key(
+        self,
+        message: str
+    ) -> str:
+        """Send a fire-forget notification to human using API key authentication"""
+
+        if not is_using_api_key():
+            raise Exception("API key authentication required - please set HITL_API_KEY environment variable")
+
+        # Build arguments for the tool call
+        arguments = {"message": message}
+
+        # Make the MCP tool call using API key auth
+        result = await self.call_tool("notify_human", arguments)
+        return result

@@ -105,6 +105,97 @@ nix develop -c hitl-cli login
 
 ## Usage
 
+### Python SDK
+
+The HITL CLI can also be used as a Python SDK for programmatic integration into your applications.
+
+#### Installation
+
+Install the package:
+
+```bash
+pip install hitl-cli
+```
+
+#### Authentication
+
+Before using the SDK, you need to authenticate. You can use either:
+
+1. **API Key** (recommended for scripts and CI/CD):
+   ```bash
+   export HITL_API_KEY="your-secret-api-key"
+   export HITL_SERVER_URL="https://your-backend-url.com"
+   ```
+
+2. **OAuth 2.1 Dynamic Registration** (recommended for interactive applications):
+   ```bash
+   hitl-cli login --dynamic --name "My App Agent"
+   ```
+
+#### Basic Usage
+
+```python
+import asyncio
+from hitl_cli import HITL
+
+async def main():
+    # Initialize the HITL client
+    hitl = HITL()
+
+    # Request input from a human
+    response = await hitl.request_input(
+        "Do you want to proceed with the deployment?",
+        choices=["Yes", "No", "Ask me later"]
+    )
+    print(f"Human response: {response}")
+
+    # Send a notification
+    await hitl.notify("Processing started in the background")
+
+    # Notify task completion
+    feedback = await hitl.notify_completion("All tests passed successfully!")
+    print(f"Human feedback: {feedback}")
+
+asyncio.run(main())
+```
+
+#### Advanced Usage
+
+```python
+import asyncio
+from hitl_cli import HITL
+
+async def advanced_example():
+    hitl = HITL()
+
+    # Create a custom agent
+    agent_id = await hitl.create_agent("My Custom Agent")
+
+    # List all agents
+    agents = await hitl.list_agents()
+    print("Available agents:")
+    for agent in agents:
+        print(f"  - {agent['name']} (ID: {agent['id']})")
+
+    # Request input with custom agent (OAuth only)
+    response = await hitl.request_input(
+        "What's your opinion on this design?",
+        agent_name="My Custom Agent"
+    )
+
+asyncio.run(advanced_example())
+```
+
+#### SDK Methods
+
+- `request_input(prompt, choices=None, placeholder=None, agent_name=None)`: Request human input
+- `notify(message, agent_name=None)`: Send a fire-and-forget notification
+- `notify_completion(summary, agent_name=None)`: Notify task completion and get feedback
+- `create_agent(name)`: Create a new agent
+- `list_agents()`: List all agents for the current user
+
+All methods are async and return strings or appropriate data structures. Authentication is handled automatically based on your configuration.
+
 ### Authentication
 
 #### OAuth 2.1 Dynamic Registration (Recommended)
@@ -158,11 +249,6 @@ Create a new agent:
 hitl-cli agents create --name "My Assistant"
 ```
 
-Rename an agent:
-```bash
-hitl-cli agents rename <agent-id> --name "New Name"
-```
-
 ### Sending HITL Requests
 
 #### With OAuth 2.1 (Bearer Token Authentication)
@@ -174,10 +260,6 @@ hitl-cli request --prompt "Should I proceed with the deployment?" \
 
 # Send a free-form text request
 hitl-cli request --prompt "What should I name this file?"
-
-# Send a one-way notification (fire-and-forget)
-hitl-cli notify --message "Task started: Processing data files"
-hitl-cli notify --message "Step 2 of 5: Analyzing dependencies"
 
 # Notify completion of a task (waits for response)
 hitl-cli notify-completion --summary "Task completed successfully. All tests passed."
@@ -194,35 +276,8 @@ hitl-cli agents create --name "My Assistant"
 hitl-cli agents list  # Get agent ID
 ```
 
-### One-Way Notifications
-
-The `notify` command sends non-blocking notifications that don't require a response:
-
-```bash
-# Basic notification
-hitl-cli notify --message "Starting data processing..."
-
-# Progress updates
-hitl-cli notify --message "Processing: 50% complete"
-hitl-cli notify --message "Processing: 100% complete"
-
-# Status notifications
-hitl-cli notify --message "Server health check: All systems operational"
-hitl-cli notify --message "Warning: High memory usage detected"
-```
-
-**Key Features:**
-- Fire-and-forget: Returns immediately without waiting
-- No user interaction required
-- Appears as toast notification on mobile device
-- Ideal for progress updates and status messages
 
 ### Other Commands
-
-Check authentication status:
-```bash
-hitl-cli status
-```
 
 Logout:
 ```bash
@@ -366,7 +421,6 @@ claude mcp add human-in-the-loop-e2ee -- /Users/yourUser/lab/hitl/hitl-cli/resul
 - **OAuth Tokens**: `~/.hitl/oauth_token.json` (600 permissions)
 - **Mobile Keys**: Device secure keychain (iOS/Android)
 
-For detailed E2EE setup instructions, see the [E2EE Onboarding Guide](../docs/onboarding_e2ee.md).
 
 ## Troubleshooting
 
@@ -403,8 +457,6 @@ nix develop -c hitl-cli login
 echo $HITL_SERVER_URL
 curl -v $HITL_SERVER_URL/health
 
-# Check authentication status
-nix develop -c hitl-cli status
 ```
 
 ### E2EE Proxy Issues
@@ -476,12 +528,16 @@ python -m build
 
 The HITL CLI is structured as follows:
 
-- `hitl_cli/auth.py` - Dual authentication system (OAuth 2.1 + traditional Google OAuth)
+- `hitl_cli/auth.py` - Dual authentication system (OAuth 2.1 + traditional Google OAuth + API Key)
 - `hitl_cli/api_client.py` - HTTP client for backend API communication
-- `hitl_cli/mcp_client.py` - MCP client with Bearer token and JWT authentication
-- `hitl_cli/commands.py` - CLI command implementations
+- `hitl_cli/mcp_client.py` - MCP client with Bearer token, JWT, and API key authentication
+- `hitl_cli/main.py` - CLI command implementations and entry point
 - `hitl_cli/config.py` - Configuration management and secure token storage
-- `hitl_cli/main.py` - Entry point and CLI setup
+- `hitl_cli/crypto.py` - End-to-end encryption utilities
+- `hitl_cli/proxy_handler.py` - Proxy handler for E2EE mode
+- `hitl_cli/proxy_handler_v2.py` - Updated proxy handler using FastMCP
+- `hitl_cli/hooks/` - Hook scripts for interactive workflows
+- `hitl_cli/services/` - Additional service modules
 
 ### Authentication Flows
 
