@@ -95,6 +95,8 @@ def format_turn_for_human(turn_data: dict, turn_number: int) -> str:
                     user_text = " ".join([str(c.get("text", "")) for c in content if isinstance(c, dict)])
                 elif isinstance(content, str):
                     user_text = content
+                else:
+                    user_text = str(content)
 
                 return f"--- Turn {turn_number} (User) ---\n" \
                        f"⏰ Time: {timestamp}\n" \
@@ -172,7 +174,7 @@ def main():
         # 3. Interpret the user's response
         # assume everything is good if user reponse cotains "all good" or "looks good" or "Great job" and similar phrases (case insensitive)
         # Bit of hack as responses are now in json
-        if any(phrase in user_response.lower() for phrase in ["all good", "looks good", "great job", "thats it for now"]):
+        if any(phrase in user_response.lower() for phrase in ["all good", "looks good", "great job", "thats it for now", "thats good", "thats great", "wee are done", "ok great"]):
             # User is satisfied. Allow Claude to stop by exiting cleanly.
             sys.exit(0)
         else:
