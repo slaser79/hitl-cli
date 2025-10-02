@@ -59,6 +59,11 @@ def format_turn_for_human(turn_data: dict, turn_number: int) -> str:
     if turn_type == "user":
         # Handle user messages
         message = turn_data.get("message", {})
+        if not isinstance(message, dict):
+            return f"--- Turn {turn_number} (User - Invalid Message Format) ---\n" \
+                   f"⏰ Time: {timestamp}\n" \
+                   f"💬 Message: Invalid format (expected dict, got {type(message)})"
+
         content = message.get("content", [])
 
         # Check if it's a tool result
@@ -70,15 +75,16 @@ def format_turn_for_human(turn_data: dict, turn_number: int) -> str:
 
                 # Extract todo information if available
                 tool_use_result = turn_data.get("toolUseResult", {})
-                if tool_use_result:
+                if isinstance(tool_use_result, dict):
                     old_todos = tool_use_result.get("oldTodos", [])
                     new_todos = tool_use_result.get("newTodos", [])
 
                     todo_summary = []
                     for todo in new_todos:
-                        status = todo.get("status", "unknown")
-                        content_text = todo.get("content", "")
-                        todo_summary.append(f"  • {content_text} [{status}]")
+                        if isinstance(todo, dict):
+                            status = todo.get("status", "unknown")
+                            content_text = todo.get("content", "")
+                            todo_summary.append(f"  • {content_text} [{status}]")
 
                     return f"--- Turn {turn_number} (User - Tool Result) ---\n" \
                            f"⏰ Time: {timestamp}\n" \
@@ -92,7 +98,15 @@ def format_turn_for_human(turn_data: dict, turn_number: int) -> str:
                 # Regular user message
                 user_text = ""
                 if isinstance(content, list):
-                    user_text = " ".join([str(c.get("text", "")) for c in content if isinstance(c, dict)])
+                    user_text_parts = []
+                    for c in content:
+                        if isinstance(c, dict):
+                            user_text_parts.append(str(c.get("text", "")))
+                        elif isinstance(c, str):
+                            user_text_parts.append(c)
+                        else:
+                            user_text_parts.append(str(c))
+                    user_text = " ".join(user_text_parts)
                 elif isinstance(content, str):
                     user_text = content
                 else:
@@ -105,6 +119,11 @@ def format_turn_for_human(turn_data: dict, turn_number: int) -> str:
     elif turn_type == "assistant":
         # Handle assistant messages
         message = turn_data.get("message", {})
+        if not isinstance(message, dict):
+            return f"--- Turn {turn_number} (Assistant - Invalid Message Format) ---\n" \
+                   f"⏰ Time: {timestamp}\n" \
+                   f"📝 Message: Invalid format (expected dict, got {type(message)})"
+
         content = message.get("content", [])
         model = message.get("model", "unknown")
 
@@ -114,6 +133,8 @@ def format_turn_for_human(turn_data: dict, turn_number: int) -> str:
             for item in content:
                 if isinstance(item, dict) and item.get("type") == "text":
                     assistant_text += item.get("text", "")
+                elif isinstance(item, str):
+                    assistant_text += item
 
         # Truncate long responses
         if len(assistant_text) > 2000:
@@ -121,8 +142,12 @@ def format_turn_for_human(turn_data: dict, turn_number: int) -> str:
 
         # Get usage info if available
         usage = message.get("usage", {})
-        input_tokens = usage.get("input_tokens", 0)
-        output_tokens = usage.get("output_tokens", 0)
+        if isinstance(usage, dict):
+            input_tokens = usage.get("input_tokens", 0)
+            output_tokens = usage.get("output_tokens", 0)
+        else:
+            input_tokens = 0
+            output_tokens = 0
 
         return f"--- Turn {turn_number} (Assistant) ---\n" \
                f"⏰ Time: {timestamp}\n" \
