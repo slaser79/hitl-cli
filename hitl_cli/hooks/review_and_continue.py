@@ -40,6 +40,11 @@ def get_last_turns(transcript_path: str, num_turns: int = 2) -> str:
         return f"An error occurred while reading the transcript: {e}"
 
 
+def safe_get_str(d, key, default=""):
+    """Safely get a string value from dict, handling None values."""
+    val = d.get(key, default)
+    return val if val is not None else default
+
 def format_turn_for_human(turn_data: dict, turn_number: int) -> str:
     """
     Formats a single turn into a human-readable summary.
@@ -48,7 +53,7 @@ def format_turn_for_human(turn_data: dict, turn_number: int) -> str:
     timestamp = turn_data.get("timestamp", "N/A")
 
     # Format timestamp for readability
-    if timestamp != "N/A":
+    if timestamp is not None and timestamp != "N/A":
         try:
             from datetime import datetime
             dt = datetime.fromisoformat(timestamp.replace('Z', '+00:00'))
@@ -70,8 +75,8 @@ def format_turn_for_human(turn_data: dict, turn_number: int) -> str:
         if content and isinstance(content, list) and len(content) > 0:
             first_content = content[0]
             if isinstance(first_content, dict) and first_content.get("type") == "tool_result":
-                tool_result = first_content.get("content", "")
-                tool_use_id = first_content.get("tool_use_id", "")
+                tool_result = safe_get_str(first_content, "content", "")
+                tool_use_id = safe_get_str(first_content, "tool_use_id", "")
 
                 # Extract todo information if available
                 tool_use_result = turn_data.get("toolUseResult", {})
@@ -82,8 +87,8 @@ def format_turn_for_human(turn_data: dict, turn_number: int) -> str:
                     todo_summary = []
                     for todo in new_todos:
                         if isinstance(todo, dict):
-                            status = todo.get("status", "unknown")
-                            content_text = todo.get("content", "")
+                            status = safe_get_str(todo, "status", "unknown")
+                            content_text = safe_get_str(todo, "content", "")
                             todo_summary.append(f"  • {content_text} [{status}]")
 
                     return f"--- Turn {turn_number} (User - Tool Result) ---\n" \
@@ -101,16 +106,17 @@ def format_turn_for_human(turn_data: dict, turn_number: int) -> str:
                     user_text_parts = []
                     for c in content:
                         if isinstance(c, dict):
-                            user_text_parts.append(str(c.get("text", "")))
+                            text = safe_get_str(c, "text", "")
+                            user_text_parts.append(text)
                         elif isinstance(c, str):
                             user_text_parts.append(c)
                         else:
-                            user_text_parts.append(str(c))
+                            user_text_parts.append(str(c) if c is not None else "")
                     user_text = " ".join(user_text_parts)
                 elif isinstance(content, str):
                     user_text = content
                 else:
-                    user_text = str(content)
+                    user_text = str(content) if content is not None else ""
 
                 return f"--- Turn {turn_number} (User) ---\n" \
                        f"⏰ Time: {timestamp}\n" \
@@ -125,14 +131,15 @@ def format_turn_for_human(turn_data: dict, turn_number: int) -> str:
                    f"📝 Message: Invalid format (expected dict, got {type(message)})"
 
         content = message.get("content", [])
-        model = message.get("model", "unknown")
+        model = safe_get_str(message, "model", "unknown")
 
         # Extract text content
         assistant_text = ""
         if isinstance(content, list):
             for item in content:
                 if isinstance(item, dict) and item.get("type") == "text":
-                    assistant_text += item.get("text", "")
+                    text = safe_get_str(item, "text", "")
+                    assistant_text += text
                 elif isinstance(item, str):
                     assistant_text += item
 
