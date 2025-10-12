@@ -8,11 +8,9 @@ These tests validate:
 4. Error handling and timeout scenarios
 """
 
-import json
 from unittest.mock import MagicMock, Mock, patch
 
 import pytest
-from hitl_cli.auth import save_token
 from hitl_cli.mcp_client import MCPClient
 
 
@@ -129,7 +127,7 @@ class TestMCPClientErrorHandling:
             with patch.object(client, 'create_agent_for_mcp', return_value="temp-agent-id") as mock_create:
                 with patch.object(client, 'call_tool', return_value="Success") as mock_call:
                     import asyncio
-                    result = asyncio.run(client.request_human_input("Test prompt"))
+                    asyncio.run(client.request_human_input("Test prompt"))
 
                     # Verify temporary agent was created
                     mock_create.assert_called_once()

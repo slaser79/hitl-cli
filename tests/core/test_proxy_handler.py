@@ -10,12 +10,11 @@ These tests validate the proxy's core E2EE functionality.
 """
 
 import json
-import base64
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
 pytest.importorskip("nacl")
-from nacl.public import PrivateKey, PublicKey, Box
+from nacl.public import PrivateKey, Box
 from nacl.encoding import Base64Encoder
 
 from hitl_cli.proxy_handler import ProxyHandler
@@ -216,7 +215,7 @@ class TestRequestInterception:
                     }
                 }
 
-                response = await handler.handle_mcp_request(json.dumps(request))
+                await handler.handle_mcp_request(json.dumps(request))
 
                 # Verify backend was called with E2EE tool
                 mock_forward.assert_called_once()
@@ -286,7 +285,7 @@ class TestRequestInterception:
         with patch.object(handler, 'forward_to_backend') as mock_forward:
             mock_forward.return_value = {"jsonrpc": "2.0", "id": 1, "result": "Success"}
 
-            response = await handler.handle_mcp_request(json.dumps(request))
+            await handler.handle_mcp_request(json.dumps(request))
 
             mock_forward.assert_called_once()
             forwarded_request = mock_forward.call_args[0][0]
