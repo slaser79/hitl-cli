@@ -42,7 +42,7 @@ class TestLoginCommand:
         """Test successful login flow"""
 
         with patch('hitl_cli.main.OAuthDynamicClient') as mock_oauth_client_cls, \
-             patch('hitl_cli.main.ensure_agent_keypair') as mock_ensure_keys:
+             patch('hitl_cli.main.ensure_agent_keypair', new_callable=AsyncMock) as mock_ensure_keys:
             inst = mock_oauth_client_cls.return_value
             inst.perform_dynamic_oauth_flow = AsyncMock(return_value=("fake-access-token", "HITL CLI Agent"))
             mock_ensure_keys.return_value = ("public_key", "private_key")
@@ -57,7 +57,7 @@ class TestLoginCommand:
             inst.perform_dynamic_oauth_flow.assert_awaited_once_with("Test Agent")
 
             # Verify keys were ensured
-            mock_ensure_keys.assert_called_once()
+            mock_ensure_keys.assert_awaited_once()
 
     def test_login_already_logged_in(self, runner, mock_config_dir):
         """Test login when already logged in"""

@@ -10,7 +10,7 @@ import logging
 from pathlib import Path
 from typing import Tuple, Optional
 
-from nacl.public import Box, PrivateKey, PublicKey
+from nacl.public import PrivateKey, PublicKey
 from nacl.encoding import Base64Encoder
 
 from .api_client import ApiClient
@@ -115,7 +115,7 @@ def load_agent_keypair(keys_path: Optional[Path] = None) -> Tuple[str, str]:
         raise ValueError(f"Invalid key data: {e}")
 
 
-def ensure_agent_keypair() -> Tuple[str, str]:
+async def ensure_agent_keypair() -> Tuple[str, str]:
     """
     Ensure agent keypair exists, creating and registering if necessary.
     
@@ -138,8 +138,7 @@ def ensure_agent_keypair() -> Tuple[str, str]:
         
         # Attempt to register the public key with the backend
         try:
-            import asyncio
-            asyncio.run(register_public_key_with_backend(public_key))
+            await register_public_key_with_backend(public_key)
         except Exception as e:
             logger.error(f"Failed to register public key with backend: {e}")
             
@@ -210,63 +209,3 @@ async def register_public_key_with_backend(public_key: str) -> bool:
     except Exception as e:
         logger.error(f"Failed to register public key with backend: {e}")
         return False
-
-
-def encrypt_payload(
-    payload: dict, recipient_public_key_b64: str, sender_private_key_b64: str
-) -> str:
-    """
-    Encrypt a payload using the recipient's public key and sender's private key.
-
-    Args:
-        payload: The JSON-serializable dictionary to encrypt.
-        recipient_public_key_b64: The base64-encoded public key of the recipient.
-        sender_private_key_b64: The base64-encoded private key of the sender.
-
-    Returns:
-        A base64-encoded string of the encrypted payload.
-    """
-    sender_private_key = PrivateKey(
-        sender_private_key_b64, encoder=Base64Encoder
-    )
-    recipient_public_key = PublicKey(
-        recipient_public_key_b64, encoder=Base64Encoder
-    )
-
-    box = Box(sender_private_key, recipient_public_key)
-
-    payload_bytes = json.dumps(payload).encode("utf-8")
-    encrypted_payload = box.encrypt(payload_bytes)
-
-    return Base64Encoder.encode(encrypted_payload).decode("utf-8")
-
-
-def decrypt_payload(
-    encrypted_payload_b64: str,
-    sender_public_key_b64: str,
-    recipient_private_key_b64: str,
-) -> dict:
-    """
-    Decrypt a payload using the sender's public key and recipient's private key.
-
-    Args:
-        encrypted_payload_b64: The base64-encoded encrypted payload.
-        sender_public_key_b64: The base64-encoded public key of the sender.
-        recipient_private_key_b64: The base64-encoded private key of the recipient.
-
-    Returns:
-        The decrypted payload as a dictionary.
-    """
-    recipient_private_key = PrivateKey(
-        recipient_private_key_b64, encoder=Base64Encoder
-    )
-    sender_public_key = PublicKey(
-        sender_public_key_b64, encoder=Base64Encoder
-    )
-
-    box = Box(recipient_private_key, sender_public_key)
-
-    encrypted_payload = Base64Encoder.decode(encrypted_payload_b64)
-    decrypted_payload_bytes = box.decrypt(encrypted_payload)
-
-    return json.loads(decrypted_payload_bytes)

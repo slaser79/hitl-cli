@@ -51,42 +51,45 @@ def login(
 ):
     """Login to the HITL service using OAuth 2.1 dynamic registration"""
     
-    # Check if already logged in
-    if is_logged_in() or is_using_oauth():
-        typer.echo("✅ Already logged in!")
-        return
+    async def _login():
+        # Check if already logged in
+        if is_logged_in() or is_using_oauth():
+            typer.echo("✅ Already logged in!")
+            return
 
-    # Use OAuth 2.1 dynamic client registration
-    try:
-        default_name = name or "HITL CLI Agent"
-        oauth_client = OAuthDynamicClient()
-        access_token, agent_name = asyncio.run(oauth_client.perform_dynamic_oauth_flow(default_name))
-        
-        typer.echo("✅ OAuth 2.1 dynamic authentication successful!")
-        
-        # Generate E2EE keys and register with server during login
-        typer.echo("🔐 Generating end-to-end encryption keys...")
-        public_key, private_key = ensure_agent_keypair()
-        typer.echo("✅ E2EE keys generated and registered with server")
-        
-        typer.echo()
-        typer.echo(f"🤖 Agent '{agent_name}' is ready for secure E2EE communication.")
-        typer.echo("💡 Use Claude Desktop with MCP configuration to interact securely.")
-        typer.echo()
-        typer.echo("📋 Claude Desktop MCP Configuration:")
-        typer.echo('   {')
-        typer.echo('     "mcpServers": {')
-        typer.echo('       "hitl": {')
-        typer.echo('         "command": "hitl-cli",')
-        typer.echo('         "args": ["proxy", "https://hitlrelay.app/mcp-server/mcp/"]')
-        typer.echo('       }')
-        typer.echo('     }')
-        typer.echo('   }')
-        
-    except Exception as e:
-        logger.error(f"OAuth 2.1 login failed: {e}")
-        typer.echo(f"❌ OAuth 2.1 login failed: {e}")
-        raise typer.Exit(1)
+        # Use OAuth 2.1 dynamic client registration
+        try:
+            default_name = name or "HITL CLI Agent"
+            oauth_client = OAuthDynamicClient()
+            access_token, agent_name = await oauth_client.perform_dynamic_oauth_flow(default_name)
+
+            typer.echo("✅ OAuth 2.1 dynamic authentication successful!")
+
+            # Generate E2EE keys and register with server during login
+            typer.echo("🔐 Generating end-to-end encryption keys...")
+            public_key, private_key = await ensure_agent_keypair()
+            typer.echo("✅ E2EE keys generated and registered with server")
+
+            typer.echo()
+            typer.echo(f"🤖 Agent '{agent_name}' is ready for secure E2EE communication.")
+            typer.echo("💡 Use Claude Desktop with MCP configuration to interact securely.")
+            typer.echo()
+            typer.echo("📋 Claude Desktop MCP Configuration:")
+            typer.echo('   {')
+            typer.echo('     "mcpServers": {')
+            typer.echo('       "hitl": {')
+            typer.echo('         "command": "hitl-cli",')
+            typer.echo('         "args": ["proxy", "https://hitlrelay.app/mcp-server/mcp/"]')
+            typer.echo('       }')
+            typer.echo('     }')
+            typer.echo('   }')
+
+        except Exception as e:
+            logger.error(f"OAuth 2.1 login failed: {e}")
+            typer.echo(f"❌ OAuth 2.1 login failed: {e}")
+            raise typer.Exit(1)
+
+    asyncio.run(_login())
 
 @app.command()
 def logout():
@@ -225,8 +228,7 @@ def request(
     choice: Optional[List[str]] = typer.Option(None, "--choice", help="Available choices for the human (can be specified multiple times)"),
     placeholder_text: Optional[str] = typer.Option(None, "--placeholder-text", help="Placeholder text for the input field"),
     agent_id: Optional[str] = typer.Option(None, "--agent-id", help="Agent ID to use for the request (optional - not used with OAuth)"),
-    agent_name: Optional[str] = typer.Option(None, "--agent-name", help="Agent name for OAuth requests"),
-    e2ee: bool = typer.Option(False, "--e2ee", help="Enable end-to-end encryption for the request")
+    agent_name: Optional[str] = typer.Option(None, "--agent-name", help="Agent name for OAuth requests")
 ):
     """Send a request for human input"""
     async def _async_request():
@@ -242,14 +244,7 @@ def request(
             typer.echo("\nWaiting for human response...")
 
             # Choose authentication method
-            if e2ee:
-                # Use E2EE workflow
-                response = await client.request_human_input_e2ee(
-                    prompt=prompt,
-                    choices=choice,
-                    placeholder_text=placeholder_text,
-                )
-            elif is_using_api_key():
+            if is_using_api_key():
                 # Use API key authentication
                 response = await client.request_human_input_api_key(
                     prompt=prompt,
@@ -287,8 +282,7 @@ def request(
 def notify_completion(
     summary: str = typer.Option(..., "--summary", help="Summary of what was completed"),
     agent_id: Optional[str] = typer.Option(None, "--agent-id", help="Agent ID to use for the notification (optional - not used with OAuth)"),
-    agent_name: Optional[str] = typer.Option(None, "--agent-name", help="Agent name for OAuth requests"),
-    e2ee: bool = typer.Option(False, "--e2ee", help="Enable end-to-end encryption for the request")
+    agent_name: Optional[str] = typer.Option(None, "--agent-name", help="Agent name for OAuth requests")
 ):
     """Notify human that a task has been completed and wait for their response"""
     async def _async_notify():
@@ -306,12 +300,7 @@ def notify_completion(
             typer.echo("\n⏳ Waiting for human response...")
 
             # Choose authentication method
-            if e2ee:
-                # Use E2EE workflow
-                response = await client.notify_task_completion_e2ee(
-                    summary=summary
-                )
-            elif is_using_api_key():
+            if is_using_api_key():
                 # Use API key authentication
                 response = await client.notify_task_completion_api_key(
                     summary=summary
@@ -344,8 +333,7 @@ def notify_completion(
 def notify(
     message: str = typer.Option(..., "--message", help="The notification message to send"),
     agent_id: Optional[str] = typer.Option(None, "--agent-id", help="Agent ID to use for the notification (optional - not used with OAuth)"),
-    agent_name: Optional[str] = typer.Option(None, "--agent-name", help="Agent name for OAuth requests"),
-    e2ee: bool = typer.Option(False, "--e2ee", help="Enable end-to-end encryption for the request")
+    agent_name: Optional[str] = typer.Option(None, "--agent-name", help="Agent name for OAuth requests")
 ):
     """Send a fire-forget notification to human"""
     async def _async_notify():
@@ -363,10 +351,7 @@ def notify(
             typer.echo("\n📤 Sending notification...")
 
             # Choose authentication method
-            if e2ee:
-                # Use E2EE workflow
-                response = await client.notify_human_e2ee(message=message)
-            elif is_using_api_key():
+            if is_using_api_key():
                 # Use API key authentication
                 response = await client.notify_human_api_key(
                     message=message
@@ -410,7 +395,7 @@ def proxy(
             # Ensure agent keypair exists (generate if needed)
             # typer.echo("🔐 Ensuring agent cryptographic keys...")
             try:
-                public_key, private_key = ensure_agent_keypair()
+                public_key, private_key = await ensure_agent_keypair()
                 # typer.echo("✅ Agent keys ready")
             except Exception as e:
                 typer.echo("❌ E2EE keys not available. Please run 'hitl-cli login --name \"Agent Name\"' to generate keys.")

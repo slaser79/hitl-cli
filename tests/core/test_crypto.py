@@ -175,12 +175,13 @@ class TestKeyEnsurance:
         import shutil
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
+    @pytest.mark.asyncio
     @patch('hitl_cli.crypto.get_agent_keys_path')
-    def test_ensure_agent_keypair_creates_new_keys(self, mock_get_path):
+    async def test_ensure_agent_keypair_creates_new_keys(self, mock_get_path):
         """Test that ensure_agent_keypair creates new keys when none exist."""
         mock_get_path.return_value = self.keys_path
         
-        public_key, private_key = ensure_agent_keypair()
+        public_key, private_key = await ensure_agent_keypair()
         
         # Should return valid keys
         assert isinstance(public_key, str)
@@ -194,8 +195,9 @@ class TestKeyEnsurance:
         assert loaded_pub == public_key
         assert loaded_priv == private_key
 
+    @pytest.mark.asyncio
     @patch('hitl_cli.crypto.get_agent_keys_path')
-    def test_ensure_agent_keypair_loads_existing_keys(self, mock_get_path):
+    async def test_ensure_agent_keypair_loads_existing_keys(self, mock_get_path):
         """Test that ensure_agent_keypair loads existing keys."""
         mock_get_path.return_value = self.keys_path
         
@@ -204,26 +206,28 @@ class TestKeyEnsurance:
         save_agent_keypair(existing_pub, existing_priv, self.keys_path)
         
         # Should load existing keys, not create new ones
-        public_key, private_key = ensure_agent_keypair()
+        public_key, private_key = await ensure_agent_keypair()
         
         assert public_key == existing_pub
         assert private_key == existing_priv
 
+    @pytest.mark.asyncio
     @patch('hitl_cli.crypto.get_agent_keys_path')
-    @patch('hitl_cli.crypto.register_public_key_with_backend')
-    def test_ensure_agent_keypair_registers_new_keys(self, mock_register, mock_get_path):
+    @patch('hitl_cli.crypto.register_public_key_with_backend', new_callable=AsyncMock)
+    async def test_ensure_agent_keypair_registers_new_keys(self, mock_register, mock_get_path):
         """Test that ensure_agent_keypair registers new keys with backend."""
         mock_get_path.return_value = self.keys_path
         mock_register.return_value = True
         
-        public_key, private_key = ensure_agent_keypair()
+        public_key, private_key = await ensure_agent_keypair()
         
         # Should register the public key with backend
-        mock_register.assert_called_once_with(public_key)
+        mock_register.assert_awaited_once_with(public_key)
 
+    @pytest.mark.asyncio
     @patch('hitl_cli.crypto.get_agent_keys_path')
-    @patch('hitl_cli.crypto.register_public_key_with_backend')
-    def test_ensure_agent_keypair_skips_registration_for_existing(self, mock_register, mock_get_path):
+    @patch('hitl_cli.crypto.register_public_key_with_backend', new_callable=AsyncMock)
+    async def test_ensure_agent_keypair_skips_registration_for_existing(self, mock_register, mock_get_path):
         """Test that ensure_agent_keypair doesn't re-register existing keys."""
         mock_get_path.return_value = self.keys_path
         
@@ -231,10 +235,10 @@ class TestKeyEnsurance:
         existing_pub, existing_priv = generate_agent_keypair()
         save_agent_keypair(existing_pub, existing_priv, self.keys_path)
         
-        public_key, private_key = ensure_agent_keypair()
+        public_key, private_key = await ensure_agent_keypair()
         
         # Should not register existing keys
-        mock_register.assert_not_called()
+        mock_register.assert_not_awaited()
 
 
 class TestBackendRegistration:
