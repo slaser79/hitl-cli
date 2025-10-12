@@ -10,10 +10,9 @@ import base64
 import json
 import logging
 import sys
-from typing import Dict, List, Any, Optional
+from typing import Dict, List, Any
 
 import httpx
-from fastmcp import Client
 from nacl.public import PrivateKey, PublicKey, Box
 from nacl.encoding import Base64Encoder
 

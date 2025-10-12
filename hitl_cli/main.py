@@ -16,12 +16,10 @@ from .auth import (
     is_using_api_key,
     is_using_oauth,
     OAuthDynamicClient,
-    save_token,
 )
 from .config import BACKEND_BASE_URL
 from .crypto import ensure_agent_keypair
 from .mcp_client import MCPClient
-from .proxy_handler import ProxyHandler
 from .proxy_handler_v2 import create_fastmcp_proxy_server
 
 # Configure logging
@@ -397,7 +395,7 @@ def proxy(
             try:
                 public_key, private_key = await ensure_agent_keypair()
                 # typer.echo("✅ Agent keys ready")
-            except Exception as e:
+            except Exception:
                 typer.echo("❌ E2EE keys not available. Please run 'hitl-cli login --name \"Agent Name\"' to generate keys.")
                 raise typer.Exit(1)
             

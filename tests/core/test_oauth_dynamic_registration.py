@@ -10,15 +10,11 @@ This test module validates:
 """
 
 import json
-import secrets
 import base64
 import hashlib
-from pathlib import Path
-from unittest.mock import MagicMock, Mock, patch, AsyncMock
-from urllib.parse import parse_qs, urlparse
+from unittest.mock import Mock, patch, AsyncMock
 
 import pytest
-import httpx
 from typer.testing import CliRunner
 
 from hitl_cli.main import app
@@ -88,7 +84,7 @@ class TestOAuthDynamicRegistration:
         }
 
         with patch('hitl_cli.auth.load_oauth_client', return_value=client_data):
-            with patch('webbrowser.open') as mock_browser:
+            with patch('webbrowser.open'):
                 with patch('http.server.HTTPServer') as mock_server:
                     # Mock the authorization code callback
                     mock_handler = Mock()

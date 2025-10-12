@@ -8,9 +8,7 @@ These tests MUST FAIL initially, then pass after proper implementation.
 """
 
 import pytest
-import asyncio
-from unittest.mock import AsyncMock, MagicMock, patch
-from typing import List, Dict, Any
+from unittest.mock import AsyncMock, patch
 
 # Import the new implementation (will fail initially)
 try:

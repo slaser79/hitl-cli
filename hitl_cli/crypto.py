@@ -13,7 +13,6 @@ from typing import Tuple, Optional
 from nacl.public import PrivateKey, PublicKey
 from nacl.encoding import Base64Encoder
 
-from .api_client import ApiClient
 from .auth import get_current_oauth_token, is_using_oauth, get_current_token, get_current_agent_id
 
 

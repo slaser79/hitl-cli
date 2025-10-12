@@ -16,7 +16,6 @@ from urllib.parse import parse_qs, urlencode, urlparse
 import httpx
 import jwt
 import typer
-from authlib.oauth2 import OAuth2Error
 
 from .config import (
     BACKEND_BASE_URL,
@@ -252,7 +251,8 @@ class OAuthDynamicClient:
     
     def _start_callback_server(self, callback_data: Dict) -> socketserver.TCPServer:
         """Start local HTTP server for OAuth callback"""
-        handler = lambda *args, **kwargs: OAuthCallbackHandler(callback_data, *args, **kwargs)
+        def handler(*args, **kwargs):
+            return OAuthCallbackHandler(callback_data, *args, **kwargs)
         
         server = socketserver.TCPServer(("localhost", self.callback_port), handler)
         server_thread = threading.Thread(target=server.handle_request)
@@ -275,7 +275,7 @@ class OAuthDynamicClient:
         
         authorization_url = f"{self.base_url}/api/v1/oauth/authorize?" + urlencode(params)
         
-        typer.echo(f"🔗 Authorization URL parameters:")
+        typer.echo("🔗 Authorization URL parameters:")
         typer.echo(f"   - client_id: {client_id}")
         typer.echo(f"   - redirect_uri: {self.redirect_uri}")
         typer.echo(f"   - state: {state}")
@@ -310,7 +310,7 @@ class OAuthDynamicClient:
             "X-MCP-Agent-Name": agent_name
         }
 
-        typer.echo(f"🔄 Token exchange request:")
+        typer.echo("🔄 Token exchange request:")
         typer.echo(f"   - URL: {self.base_url}/api/v1/oauth/token")
         typer.echo(f"   - client_id: {client_id}")
         typer.echo(f"   - code: {authorization_code[:20]}...")
@@ -384,7 +384,7 @@ class OAuthDynamicClient:
                 state
             )
             
-            typer.echo(f"🌐 Opening browser for OAuth authorization...")
+            typer.echo("🌐 Opening browser for OAuth authorization...")
             typer.echo(f"   If browser doesn't open, visit: {auth_url}")
             
             webbrowser.open(auth_url)

@@ -5,7 +5,6 @@ Tests agent keypair generation, storage, and retrieval for end-to-end encryption
 Uses PyNaCl for cryptographic operations.
 """
 
-import os
 import tempfile
 from pathlib import Path
 from unittest.mock import patch, MagicMock, AsyncMock
@@ -89,7 +88,7 @@ class TestKeyStorage:
     def test_get_agent_keys_path_creates_directory(self):
         """Test that get_agent_keys_path creates parent directory."""
         with tempfile.TemporaryDirectory() as temp_dir:
-            test_path = Path(temp_dir) / "new_dir" / "agent.key"
+            Path(temp_dir) / "new_dir" / "agent.key"
             
             with patch('hitl_cli.crypto.Path.home') as mock_home:
                 mock_home.return_value = Path(temp_dir)

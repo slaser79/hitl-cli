@@ -4,9 +4,7 @@ Tests for CLI authentication commands (login, logout, agents)
 These tests validate the CLI command behavior and user interactions.
 """
 
-import json
-from pathlib import Path
-from unittest.mock import AsyncMock, MagicMock, Mock, patch
+from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 from hitl_cli.auth import save_token
