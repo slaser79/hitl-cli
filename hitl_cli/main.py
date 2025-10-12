@@ -225,7 +225,8 @@ def request(
     choice: Optional[List[str]] = typer.Option(None, "--choice", help="Available choices for the human (can be specified multiple times)"),
     placeholder_text: Optional[str] = typer.Option(None, "--placeholder-text", help="Placeholder text for the input field"),
     agent_id: Optional[str] = typer.Option(None, "--agent-id", help="Agent ID to use for the request (optional - not used with OAuth)"),
-    agent_name: Optional[str] = typer.Option(None, "--agent-name", help="Agent name for OAuth requests")
+    agent_name: Optional[str] = typer.Option(None, "--agent-name", help="Agent name for OAuth requests"),
+    e2ee: bool = typer.Option(False, "--e2ee", help="Enable end-to-end encryption for the request")
 ):
     """Send a request for human input"""
     async def _async_request():
@@ -241,7 +242,14 @@ def request(
             typer.echo("\nWaiting for human response...")
 
             # Choose authentication method
-            if is_using_api_key():
+            if e2ee:
+                # Use E2EE workflow
+                response = await client.request_human_input_e2ee(
+                    prompt=prompt,
+                    choices=choice,
+                    placeholder_text=placeholder_text,
+                )
+            elif is_using_api_key():
                 # Use API key authentication
                 response = await client.request_human_input_api_key(
                     prompt=prompt,
@@ -279,7 +287,8 @@ def request(
 def notify_completion(
     summary: str = typer.Option(..., "--summary", help="Summary of what was completed"),
     agent_id: Optional[str] = typer.Option(None, "--agent-id", help="Agent ID to use for the notification (optional - not used with OAuth)"),
-    agent_name: Optional[str] = typer.Option(None, "--agent-name", help="Agent name for OAuth requests")
+    agent_name: Optional[str] = typer.Option(None, "--agent-name", help="Agent name for OAuth requests"),
+    e2ee: bool = typer.Option(False, "--e2ee", help="Enable end-to-end encryption for the request")
 ):
     """Notify human that a task has been completed and wait for their response"""
     async def _async_notify():
@@ -297,7 +306,12 @@ def notify_completion(
             typer.echo("\n⏳ Waiting for human response...")
 
             # Choose authentication method
-            if is_using_api_key():
+            if e2ee:
+                # Use E2EE workflow
+                response = await client.notify_task_completion_e2ee(
+                    summary=summary
+                )
+            elif is_using_api_key():
                 # Use API key authentication
                 response = await client.notify_task_completion_api_key(
                     summary=summary
@@ -330,7 +344,8 @@ def notify_completion(
 def notify(
     message: str = typer.Option(..., "--message", help="The notification message to send"),
     agent_id: Optional[str] = typer.Option(None, "--agent-id", help="Agent ID to use for the notification (optional - not used with OAuth)"),
-    agent_name: Optional[str] = typer.Option(None, "--agent-name", help="Agent name for OAuth requests")
+    agent_name: Optional[str] = typer.Option(None, "--agent-name", help="Agent name for OAuth requests"),
+    e2ee: bool = typer.Option(False, "--e2ee", help="Enable end-to-end encryption for the request")
 ):
     """Send a fire-forget notification to human"""
     async def _async_notify():
@@ -348,7 +363,10 @@ def notify(
             typer.echo("\n📤 Sending notification...")
 
             # Choose authentication method
-            if is_using_api_key():
+            if e2ee:
+                # Use E2EE workflow
+                response = await client.notify_human_e2ee(message=message)
+            elif is_using_api_key():
                 # Use API key authentication
                 response = await client.notify_human_api_key(
                     message=message

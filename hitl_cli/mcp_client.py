@@ -1,3 +1,5 @@
+import base64
+import json
 from typing import Any, Dict, List, Optional
 
 import httpx
@@ -5,6 +7,7 @@ from fastmcp import Client
 from fastmcp.client.transports import StreamableHttpTransport
 
 from .api_client import ApiClient
+from .crypto import decrypt_payload, encrypt_payload, ensure_agent_keypair
 from .auth import (
     get_current_agent_id,
     get_current_oauth_token,
@@ -389,3 +392,112 @@ class MCPClient:
         # Make the MCP tool call using API key auth
         result = await self.call_tool("notify_human", arguments)
         return result
+
+    async def request_human_input_e2ee(
+        self,
+        prompt: str,
+        choices: Optional[List[str]] = None,
+        placeholder_text: Optional[str] = None,
+    ) -> str:
+        """Send an E2EE request for human input"""
+        # 1. Ensure agent's keypair exists
+        agent_public_key, agent_private_key = ensure_agent_keypair()
+
+        # 2. Fetch user's public key from the server
+        client = ApiClient()
+        user_keys = await client.get("/api/v1/keys/user")
+        if not user_keys:
+            raise Exception("No user public keys found on the server.")
+
+        # For simplicity, we'll use the first available user key.
+        user_public_key_b64 = user_keys[0]['public_key']
+
+        # 3. Construct the payload
+        payload = {
+            "prompt": prompt,
+            "choices": choices or [],
+            "placeholder_text": placeholder_text or "",
+        }
+
+        # 4. Encrypt the payload
+        encrypted_payload_b64 = encrypt_payload(
+            payload, user_public_key_b64, agent_private_key
+        )
+
+        # 5. Send the encrypted payload to the E2EE endpoint
+        e2ee_request_body = {"encrypted_payload": encrypted_payload_b64}
+        response = await client.post("/api/v1/hitl/request/e2ee", e2ee_request_body)
+
+        # 6. Decrypt the response
+        encrypted_response_b64 = response["encrypted_response"]
+        decrypted_response = decrypt_payload(
+            encrypted_response_b64, user_public_key_b64, agent_private_key
+        )
+
+        return decrypted_response.get("response", "")
+
+    async def notify_human_e2ee(self, message: str) -> str:
+        """Send an E2EE notification to the user"""
+        # 1. Ensure agent's keypair exists
+        agent_public_key, agent_private_key = ensure_agent_keypair()
+
+        # 2. Fetch user's public key from the server
+        client = ApiClient()
+        user_keys = await client.get("/api/v1/keys/user")
+        if not user_keys:
+            raise Exception("No user public keys found on the server.")
+
+        # For simplicity, we'll use the first available user key.
+        user_public_key_b64 = user_keys[0]["public_key"]
+
+        # 3. Construct the payload
+        payload = {"message": message}
+
+        # 4. Encrypt the payload
+        encrypted_payload_b64 = encrypt_payload(
+            payload, user_public_key_b64, agent_private_key
+        )
+
+        # 5. Send the encrypted payload to the E2EE notify endpoint
+        e2ee_request_body = {"encrypted_payload": encrypted_payload_b64}
+        response = await client.post(
+            "/api/v1/hitl/notify/e2ee", e2ee_request_body
+        )
+
+        return response.get("status", "Notification sent")
+
+    async def notify_task_completion_e2ee(self, summary: str) -> str:
+        """Send an E2EE notification that a task has been completed"""
+        # 1. Ensure agent's keypair exists
+        agent_public_key, agent_private_key = ensure_agent_keypair()
+
+        # 2. Fetch user's public key from the server
+        client = ApiClient()
+        user_keys = await client.get("/api/v1/keys/user")
+        if not user_keys:
+            raise Exception("No user public keys found on the server.")
+
+        # For simplicity, we'll use the first available user key.
+        user_public_key_b64 = user_keys[0]["public_key"]
+
+        # 3. Construct the payload
+        payload = {"summary": summary}
+
+        # 4. Encrypt the payload
+        encrypted_payload_b64 = encrypt_payload(
+            payload, user_public_key_b64, agent_private_key
+        )
+
+        # 5. Send the encrypted payload to the E2EE completion endpoint
+        e2ee_request_body = {"encrypted_payload": encrypted_payload_b64}
+        response = await client.post(
+            "/api/v1/hitl/complete/e2ee", e2ee_request_body
+        )
+
+        # 6. Decrypt the response
+        encrypted_response_b64 = response["encrypted_response"]
+        decrypted_response = decrypt_payload(
+            encrypted_response_b64, user_public_key_b64, agent_private_key
+        )
+
+        return decrypted_response.get("response", "")
