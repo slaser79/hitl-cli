@@ -152,11 +152,13 @@ class TestFastMCPProxyServerCompliance:
         with patch('hitl_cli.proxy_handler_v2.get_device_public_keys') as mock_get_keys, \
              patch('hitl_cli.proxy_handler_v2.encrypt_arguments') as mock_encrypt, \
              patch('hitl_cli.proxy_handler_v2.decrypt_response') as mock_decrypt, \
-             patch('hitl_cli.proxy_handler_v2.BackendMCPClient') as mock_backend_client:
-            
+             patch('hitl_cli.proxy_handler_v2.BackendMCPClient') as mock_backend_client, \
+             patch('hitl_cli.proxy_handler_v2.load_agent_keypair') as mock_load_keys:
+
             mock_get_keys.return_value = mock_device_keys
             mock_encrypt.return_value = mock_encrypted_payload
             mock_decrypt.return_value = mock_decrypted_response
+            mock_load_keys.return_value = ("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=", "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=")
             
             # Mock backend client
             mock_client = AsyncMock()
@@ -193,9 +195,11 @@ class TestFastMCPProxyServerCompliance:
         if create_fastmcp_proxy_server is None:
             pytest.fail("FastMCP proxy server implementation not found - this test should fail initially")
         
-        with patch('hitl_cli.proxy_handler_v2.get_device_public_keys') as mock_get_keys:
+        with patch('hitl_cli.proxy_handler_v2.get_device_public_keys') as mock_get_keys, \
+             patch('hitl_cli.proxy_handler_v2.load_agent_keypair') as mock_load_keys:
             # Simulate error condition
             mock_get_keys.side_effect = Exception("Device keys unavailable")
+            mock_load_keys.return_value = ("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=", "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=")
             
             server = create_fastmcp_proxy_server(self.backend_url)
             
@@ -286,6 +290,8 @@ class TestFastMCPProxyServerIntegration:
             pytest.fail("FastMCP proxy server implementation not found - this test should fail initially")
         
         # Test that server can be created even with invalid URL (validation happens at runtime)
-        server = create_fastmcp_proxy_server("invalid-url")
-        assert isinstance(server, FastMCP), "Server creation should succeed"
-        assert server.name == "hitl-e2ee-proxy", "Server should have correct name"
+        with patch('hitl_cli.proxy_handler_v2.load_agent_keypair') as mock_load_keys:
+            mock_load_keys.return_value = ("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=", "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=")
+            server = create_fastmcp_proxy_server("invalid-url")
+            assert isinstance(server, FastMCP), "Server creation should succeed"
+            assert server.name == "hitl-e2ee-proxy", "Server should have correct name"
