@@ -43,6 +43,7 @@ Repository = "https://github.com/slaser79/hitl-cli"
 hitl-cli = "hitl_cli.main:main"
 hitl = "hitl_cli.main:main" # Keep this alias
 hitl-hook-review-and-continue = "hitl_cli.hooks.review_and_continue:main"
+hitl-codex-notify = "hitl_cli.hooks.codex_notify:main"
 
 [build-system]
 requires = ["hatchling"]
