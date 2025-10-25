@@ -48,46 +48,43 @@ def login(
     name: Optional[str] = typer.Option(None, "--name", help="Agent name for dynamic registration")
 ):
     """Login to the HITL service using OAuth 2.1 dynamic registration"""
-    
-    async def _login():
-        # Check if already logged in
-        if is_logged_in() or is_using_oauth():
-            typer.echo("✅ Already logged in!")
-            return
 
-        # Use OAuth 2.1 dynamic client registration
-        try:
-            default_name = name or "HITL CLI Agent"
-            oauth_client = OAuthDynamicClient()
-            access_token, agent_name = await oauth_client.perform_dynamic_oauth_flow(default_name)
+    # Check if already logged in
+    if is_logged_in() or is_using_oauth():
+        typer.echo("✅ Already logged in!")
+        return
 
-            typer.echo("✅ OAuth 2.1 dynamic authentication successful!")
-
-            # Generate E2EE keys and register with server during login
-            typer.echo("🔐 Generating end-to-end encryption keys...")
-            public_key, private_key = await ensure_agent_keypair()
-            typer.echo("✅ E2EE keys generated and registered with server")
-
-            typer.echo()
-            typer.echo(f"🤖 Agent '{agent_name}' is ready for secure E2EE communication.")
-            typer.echo("💡 Use Claude Desktop with MCP configuration to interact securely.")
-            typer.echo()
-            typer.echo("📋 Claude Desktop MCP Configuration:")
-            typer.echo('   {')
-            typer.echo('     "mcpServers": {')
-            typer.echo('       "hitl": {')
-            typer.echo('         "command": "hitl-cli",')
-            typer.echo('         "args": ["proxy", "https://hitlrelay.app/mcp-server/mcp/"]')
-            typer.echo('       }')
-            typer.echo('     }')
-            typer.echo('   }')
-
-        except Exception as e:
-            logger.error(f"OAuth 2.1 login failed: {e}")
-            typer.echo(f"❌ OAuth 2.1 login failed: {e}")
-            raise typer.Exit(1)
-
-    asyncio.run(_login())
+    # Use OAuth 2.1 dynamic client registration
+    try:
+        default_name = name or "HITL CLI Agent"
+        oauth_client = OAuthDynamicClient()
+        access_token, agent_name = asyncio.run(oauth_client.perform_dynamic_oauth_flow(default_name))
+        
+        typer.echo("✅ OAuth 2.1 dynamic authentication successful!")
+        
+        # Generate E2EE keys and register with server during login
+        typer.echo("🔐 Generating end-to-end encryption keys...")
+        public_key, private_key = asyncio.run(ensure_agent_keypair())
+        typer.echo("✅ E2EE keys generated and registered with server")
+        
+        typer.echo()
+        typer.echo(f"🤖 Agent '{agent_name}' is ready for secure E2EE communication.")
+        typer.echo("💡 Use Claude Desktop with MCP configuration to interact securely.")
+        typer.echo()
+        typer.echo("📋 Claude Desktop MCP Configuration:")
+        typer.echo('   {')
+        typer.echo('     "mcpServers": {')
+        typer.echo('       "hitl": {')
+        typer.echo('         "command": "hitl-cli",')
+        typer.echo(f'         "args": ["proxy", "{BACKEND_BASE_URL}/mcp-server/mcp/"]')
+        typer.echo('       }')
+        typer.echo('     }')
+        typer.echo('   }')
+        
+    except Exception as e:
+        logger.error(f"OAuth 2.1 login failed: {e}")
+        typer.echo(f"❌ OAuth 2.1 login failed: {e}")
+        raise typer.Exit(1)
 
 @app.command()
 def logout():

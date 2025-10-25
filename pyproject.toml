@@ -1,11 +1,28 @@
 [project]
 name = "hitl-cli"
 version = "1.2.0"
-description = "Command-line interface for Human-in-the-Loop services"
+description = "Command-line interface and SDK for Human-in-the-Loop services."
+# Add a longer description from your README
+readme = "README.md"
 license = {text = "MIT"}
 authors = [
-    {name = "HITL CLI Team", email = "team@example.com"},
+    {name = "HITL CLI Team", email = "contact@hitlrelay.app"},
 ]
+requires-python = ">=3.10"
+# Add classifiers to help users find your package
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Terminals",
+]
+# Add keywords for better searchability
+keywords = ["hitl", "human-in-the-loop", "mcp", "cli", "sdk", "ai", "agent"]
 dependencies = [
     "google-auth>=2.40.3",
     "google-auth-oauthlib>=1.2.2",
@@ -16,11 +33,15 @@ dependencies = [
     "authlib>=1.3.0",
     "pynacl>=1.5.0",
 ]
-requires-python = ">=3.10"
+
+[project.urls]
+Homepage = "https://github.com/slaser79/hitl-cli"
+Repository = "https://github.com/slaser79/hitl-cli"
+"Bug Tracker" = "https://github.com/slaser79/hitl-cli/issues"
 
 [project.scripts]
 hitl-cli = "hitl_cli.main:main"
-hitl = "hitl_cli.main:main"
+hitl = "hitl_cli.main:main" # Keep this alias
 hitl-hook-review-and-continue = "hitl_cli.hooks.review_and_continue:main"
 
 [build-system]

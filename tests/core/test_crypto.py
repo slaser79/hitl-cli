@@ -82,7 +82,7 @@ class TestKeyStorage:
 
     def test_get_agent_keys_path_default(self):
         """Test default agent keys path location."""
-        expected_path = Path.home() / ".config" / "hitl-shin-relay" / "agent.key"
+        expected_path = Path.home() / ".config" / "hitl-cli" / "agent.key"
         assert get_agent_keys_path() == expected_path
 
     def test_get_agent_keys_path_creates_directory(self):
