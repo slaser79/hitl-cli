@@ -55,8 +55,7 @@ class TestProxyCommand:
             mock_create_server.assert_called_once_with("https://test-backend.com")
             mock_server.run_stdio_async.assert_awaited_once()
 
-    @patch('hitl_cli.proxy_handler.ProxyHandler')
-    def test_proxy_command_help(self, mock_handler):
+    def test_proxy_command_help(self):
         """Test proxy command help text."""
         result = self.runner.invoke(app, ["proxy", "--help"])
         assert result.exit_code == 0
@@ -96,108 +95,3 @@ class TestProxyCommand:
         # Should start the server
         mock_server.run_stdio_async.assert_awaited_once()
         assert result.exit_code == 0
-
-
-class TestProxyHandler:
-    """Test suite for the proxy handler core functionality."""
-
-    def setup_method(self):
-        """Set up test fixtures."""
-        self.backend_url = "https://test-backend.com"
-
-    @patch('hitl_cli.proxy_handler.load_agent_keypair')
-    def test_proxy_handler_initialization(self, mock_load_keys):
-        """Test proxy handler initialization."""
-        from hitl_cli.proxy_handler import ProxyHandler
-
-        mock_load_keys.return_value = ("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=", "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=")
-
-        handler = ProxyHandler(self.backend_url)
-
-        assert handler.backend_url == self.backend_url
-        assert handler.public_key == "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
-        assert handler.private_key == "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
-
-    @pytest.mark.asyncio
-    @patch('hitl_cli.proxy_handler.load_agent_keypair')
-    @patch('sys.stdin')
-    @patch('sys.stdout')
-    async def test_proxy_handler_stdio_loop(self, mock_stdout, mock_stdin, mock_load_keys):
-        """Test that proxy handler listens for MCP JSON-RPC over stdio."""
-        from hitl_cli.proxy_handler import ProxyHandler
-
-        mock_load_keys.return_value = ("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=", "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=")
-
-        # Mock stdin to provide a sample MCP request
-        mock_stdin.readline = MagicMock(side_effect=[
-            '{"jsonrpc": "2.0", "id": 1, "method": "tools/list", "params": {}}\n',
-            ''  # EOF to end loop
-        ])
-
-        handler = ProxyHandler(self.backend_url)
-        handler.handle_mcp_request = AsyncMock(return_value={
-            "jsonrpc": "2.0",
-            "id": 1,
-            "result": {"tools": []}
-        })
-
-        # Start proxy loop (should terminate when stdin returns empty)
-        await handler.start_proxy_loop()
-
-        # Should have processed the MCP request
-        handler.handle_mcp_request.assert_called_once()
-
-    @pytest.mark.asyncio
-    @patch('hitl_cli.proxy_handler.load_agent_keypair')
-    async def test_proxy_handler_invalid_json(self, mock_load_keys):
-        """Test proxy handler handles invalid JSON gracefully."""
-        from hitl_cli.proxy_handler import ProxyHandler
-
-        mock_load_keys.return_value = ("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=", "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=")
-
-        handler = ProxyHandler(self.backend_url)
-
-        # Should return error response for invalid JSON
-        response = await handler.handle_mcp_request("invalid json")
-
-        assert response["jsonrpc"] == "2.0"
-        assert "error" in response
-        assert response["error"]["code"] == -32700  # Parse error
-
-    @pytest.mark.asyncio
-    @patch('hitl_cli.proxy_handler.load_agent_keypair')
-    async def test_proxy_handler_missing_method(self, mock_load_keys):
-        """Test proxy handler handles missing method gracefully."""
-        from hitl_cli.proxy_handler import ProxyHandler
-
-        mock_load_keys.return_value = ("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=", "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=")
-
-        handler = ProxyHandler(self.backend_url)
-
-        # Request without method
-        request = {"jsonrpc": "2.0", "id": 1, "params": {}}
-
-        response = await handler.handle_mcp_request(json.dumps(request))
-
-        assert response["jsonrpc"] == "2.0"
-        assert "error" in response
-        assert response["error"]["code"] == -32600  # Invalid request
-
-    @pytest.mark.asyncio
-    @patch('hitl_cli.proxy_handler.load_agent_keypair')
-    async def test_proxy_handler_termination_on_parent_exit(self, mock_load_keys):
-        """Test that proxy terminates when parent process ends."""
-        from hitl_cli.proxy_handler import ProxyHandler
-
-        mock_load_keys.return_value = ("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=", "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=")
-
-        handler = ProxyHandler(self.backend_url)
-
-        # Mock stdin to simulate parent process ending (EOF)
-        with patch('sys.stdin') as mock_stdin:
-            mock_stdin.readline = MagicMock(return_value='')  # EOF
-
-            # Should exit cleanly when parent terminates
-            await handler.start_proxy_loop()
-
-            # Should not raise any exceptions
