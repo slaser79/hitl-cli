@@ -107,9 +107,16 @@ if __name__ == "__main__":
 
 For maximum security, `hitl-cli` can act as a local [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) proxy. This allows tools like Claude Desktop to interact with a human while ensuring that the prompt and response are end-to-end encrypted. The HITL server only relays the encrypted data and never sees the plaintext content.
 
-1.  **Log in first:**
+1.  **Authenticate first:**
+
+    **Option A: OAuth (Interactive)**
     ```bash
     hitl-cli login --name "My E2EE Agent"
+    ```
+
+    **Option B: API Key (Services/Automation)**
+    ```bash
+    export HITL_API_KEY="your_api_key_here"
     ```
 
 2.  **Configure your MCP client (e.g., Claude Desktop's `mcp_servers.json`):**
@@ -118,7 +125,10 @@ For maximum security, `hitl-cli` can act as a local [Model Context Protocol (MCP
       "mcpServers": {
         "human": {
           "command": "hitl-cli",
-          "args": ["proxy", "https://hitlrelay.app/mcp-server/mcp/"]
+          "args": ["proxy", "https://hitlrelay.app/mcp-server/mcp/"],
+          "env": {
+            "HITL_API_KEY": "your_api_key_here"
+          }
         }
       }
     }
