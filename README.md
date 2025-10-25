@@ -1,7 +1,7 @@
 
 # HITL-CLI: Human-in-the-Loop Command-Line Interface and SDK
 
-**hitl-cli** is the official reference client for the Human-in-the-Loop (HITL) mobile application. It provides a powerful command-line interface (CLI) and Python SDK to programmatically request input from, and send notifications to, a human user via their mobile device.
+**hitl-cli** is the official reference client for the [Human-in-the-Loop (HITL) mobile application](https://hitlrelay.app). It provides a powerful command-line interface (CLI) and Python SDK to programmatically request input from, and send notifications to, a human user via their mobile device.
 
 It features zero-config, secure authentication using OAuth 2.1 and supports end-to-end encryption (E2EE) for confidential interactions.
 
@@ -123,13 +123,10 @@ For maximum security, `hitl-cli` can act as a local [Model Context Protocol (MCP
       }
     }
     ```
+The proxy will automatically encrypt the request and decrypt the response. The llm will still use the unecrypted enpoints and the hit-cli proxy will use the endpoints ending in e2ee
 
-3ool. The proxy will automatically encrypt the request and decrypt the response.
-
-    ```xml
-    <tool_code>
+    ```python
     human.request_human_input(prompt="Please provide the API key for the staging environment.")
-    </tool_code>
     ```
 
 ### D. Continuous Interaction Hook for Claude
