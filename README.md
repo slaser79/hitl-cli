@@ -180,3 +180,36 @@ For more details on hooks, see the [Claude Code hooks documentation](https://doc
 
 This turns `hitl-cli` into a remote control for your AI assistant.
 
+### E. Codex CLI Notifications
+
+The `hitl-codex-notify` hook enables you to receive notifications on your HITL mobile app when Codex CLI completes a task. Unlike the Claude Code hook, this is a fire-and-forget notification system that keeps you informed about Codex activity without requiring interaction.
+
+**Setup:**
+
+Add the following to your Codex configuration file at `~/.codex/config.toml`:
+
+```toml
+notify = ["hitl-codex-notify"]
+```
+
+**How it works:**
+- When Codex CLI completes a turn, the hook executes automatically
+- A notification appears on your HITL mobile app with:
+  - The task that was performed
+  - Codex's completion message
+  - The working directory
+  - A session identifier
+- No interaction required - pure notification
+
+**Example notification:**
+```
+🤖 Codex Turn Complete
+
+📝 Task: Rename `foo` to `bar` and update the callsites.
+✅ Result: Rename complete and verified `cargo build` succeeds.
+📁 Directory: /Users/alice/projects/example
+🔗 Session: b5f6c1c2...
+```
+
+This is ideal for keeping track of Codex activity while you're away from your desk or working on other tasks.
+
