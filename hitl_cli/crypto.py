@@ -13,7 +13,7 @@ from typing import Tuple, Optional
 from nacl.public import PrivateKey, PublicKey, Box
 from nacl.encoding import Base64Encoder
 
-from .auth import get_current_oauth_token, is_using_oauth, get_current_token, get_current_agent_id
+from .auth import get_current_oauth_token, is_using_oauth, get_current_token, get_current_agent_id, is_using_api_key, get_api_key
 
 
 logger = logging.getLogger(__name__)
@@ -163,7 +163,15 @@ async def register_public_key_with_backend(public_key: str) -> bool:
         # Determine authentication method
         headers = {"Content-Type": "application/json"}
 
-        if is_using_oauth():
+        if is_using_api_key():
+            # Use API Key authentication
+            api_key = get_api_key()
+            if api_key:
+                headers["X-API-Key"] = api_key
+            else:
+                logger.error("API key not available for key registration")
+                return False
+        elif is_using_oauth():
             # Use OAuth Bearer authentication
             oauth_token = get_current_oauth_token()
             if oauth_token:

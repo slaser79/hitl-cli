@@ -292,3 +292,33 @@ class TestBackendRegistration:
             result = await register_public_key_with_backend(public_key)
 
             assert result is False
+
+    @pytest.mark.asyncio
+    @patch('hitl_cli.crypto.get_current_agent_id', return_value='test-agent-id')
+    @patch('hitl_cli.crypto.is_using_oauth', return_value=False)
+    @patch('hitl_cli.crypto.is_using_api_key', return_value=True)
+    @patch('hitl_cli.crypto.get_api_key', return_value='test-api-key')
+    async def test_register_public_key_with_backend_api_key(self, mock_get_api_key, mock_is_api_key, mock_is_oauth, mock_get_agent_id):
+        """Test successful public key registration with API key authentication."""
+        with patch('httpx.AsyncClient') as mock_client_class:
+            mock_client = AsyncMock()
+            mock_client_class.return_value.__aenter__.return_value = mock_client
+            mock_client_class.return_value.__aexit__.return_value = None
+
+            mock_response = MagicMock()
+            mock_response.status_code = 200
+            mock_client.post.return_value = mock_response
+
+            public_key = "test_public_key_base64"
+            result = await register_public_key_with_backend(public_key)
+
+            assert result is True
+            mock_client.post.assert_awaited_once()
+            call_args = mock_client.post.call_args
+            assert "/api/v1/keys/register" in call_args[0][0]
+            assert call_args[1]['json'] == {
+                "entity_type": "agent",
+                "entity_id": "test-agent-id",
+                "public_key": public_key
+            }
+            assert call_args[1]['headers']['X-API-Key'] == 'test-api-key'
