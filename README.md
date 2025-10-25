@@ -148,7 +148,7 @@ Add the following to your Claude Code settings file:
         "hooks": [
           {
             "type": "command",
-            "command": "hitl-hook-review-and-continue"
+            "command": "uvx --from hitl-cli hitl-hook-review-and-continue"
           }
         ]
       }
@@ -156,6 +156,8 @@ Add the following to your Claude Code settings file:
   }
 }
 ```
+
+**Why `uvx`?** Using `uvx --from hitl-cli` ensures the hook works in any environment with `uv` installed, automatically fetching the latest version from PyPI without requiring a separate installation step.
 
 **How it works:**
 - When Claude Code finishes responding, the hook executes
