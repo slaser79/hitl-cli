@@ -37,7 +37,7 @@ dependencies = [
 [project.urls]
 Homepage = "https://github.com/slaser79/hitl-cli"
 Repository = "https://github.com/slaser79/hitl-cli"
-"Bug Tracker" = "https://github.com/your-username/hitl-cli/issues"
+"Bug Tracker" = "https://github.com/slaser79/hitl-cli/issues"
 
 [project.scripts]
 hitl-cli = "hitl_cli.main:main"
