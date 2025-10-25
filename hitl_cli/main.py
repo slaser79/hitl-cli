@@ -16,12 +16,10 @@ from .auth import (
     is_using_api_key,
     is_using_oauth,
     OAuthDynamicClient,
-    save_token,
 )
 from .config import BACKEND_BASE_URL
 from .crypto import ensure_agent_keypair
 from .mcp_client import MCPClient
-from .proxy_handler import ProxyHandler
 from .proxy_handler_v2 import create_fastmcp_proxy_server
 
 # Configure logging
@@ -51,10 +49,11 @@ def login(
 ):
     """Login to the HITL service using OAuth 2.1 dynamic registration"""
     
-    # Check if already logged in
-    if is_logged_in() or is_using_oauth():
-        typer.echo("✅ Already logged in!")
-        return
+    async def _login():
+        # Check if already logged in
+        if is_logged_in() or is_using_oauth():
+            typer.echo("✅ Already logged in!")
+            return
 
     # Use OAuth 2.1 dynamic client registration
     try:
@@ -392,9 +391,9 @@ def proxy(
             # Ensure agent keypair exists (generate if needed)
             # typer.echo("🔐 Ensuring agent cryptographic keys...")
             try:
-                public_key, private_key = ensure_agent_keypair()
+                public_key, private_key = await ensure_agent_keypair()
                 # typer.echo("✅ Agent keys ready")
-            except Exception as e:
+            except Exception:
                 typer.echo("❌ E2EE keys not available. Please run 'hitl-cli login --name \"Agent Name\"' to generate keys.")
                 raise typer.Exit(1)
             

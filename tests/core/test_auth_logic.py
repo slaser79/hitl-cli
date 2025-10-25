@@ -6,7 +6,6 @@ These tests validate the authentication helper functions and token management.
 
 from unittest.mock import patch
 
-import pytest
 from hitl_cli.auth import is_logged_in, load_token, save_token
 
 

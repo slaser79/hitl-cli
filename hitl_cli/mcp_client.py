@@ -7,7 +7,6 @@ from fastmcp.client.transports import StreamableHttpTransport
 from .api_client import ApiClient
 from .auth import (
     get_current_agent_id,
-    get_current_oauth_token,
     is_oauth_token_expired,
     is_using_api_key,
     is_using_oauth,
@@ -148,8 +147,6 @@ class MCPClient:
         mcp_url = f"{self.base_url}/mcp-server/mcp/"
 
         # Create custom auth handler for Bearer token
-        import httpx
-
         class BearerAuth(httpx.Auth):
             """Custom auth handler for Bearer token"""
             def __init__(self, token: str):

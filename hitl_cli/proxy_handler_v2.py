@@ -8,7 +8,6 @@ Replaces the broken manual JSON-RPC implementation with protocol-compliant
 FastMCP server architecture.
 """
 
-import asyncio
 import base64
 import json
 import logging
@@ -281,7 +280,7 @@ def create_fastmcp_proxy_server(backend_url: str) -> FastMCP:
     try:
         public_key_b64, private_key_b64 = load_agent_keypair()
         agent_private_key = PrivateKey(private_key_b64, encoder=Base64Encoder)
-        agent_public_key = PublicKey(public_key_b64, encoder=Base64Encoder)
+        PublicKey(public_key_b64, encoder=Base64Encoder)
         logger.info("Agent cryptographic keys loaded successfully")
     except Exception as e:
         logger.error(f"Failed to load agent keys: {e}")
@@ -291,7 +290,6 @@ def create_fastmcp_proxy_server(backend_url: str) -> FastMCP:
     backend_client = BackendMCPClient(backend_url)
     
     # Store backend tools for filtering (will be populated on startup)
-    backend_tools_cache = []
     
     @mcp.tool()
     async def request_human_input(prompt: str, choices: Optional[List[str]] = None) -> str:
@@ -356,7 +354,7 @@ def create_fastmcp_proxy_server(backend_url: str) -> FastMCP:
             encrypted_payload = encrypt_arguments(arguments, device_keys, agent_private_key)
             
             # Call backend E2EE variant
-            encrypted_response = await backend_client.call_tool(
+            await backend_client.call_tool(
                 "notify_human_e2ee",
                 {"encrypted_payload": encrypted_payload}
             )

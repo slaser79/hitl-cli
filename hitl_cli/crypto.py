@@ -13,7 +13,6 @@ from typing import Tuple, Optional
 from nacl.public import PrivateKey, PublicKey
 from nacl.encoding import Base64Encoder
 
-from .api_client import ApiClient
 from .auth import get_current_oauth_token, is_using_oauth, get_current_token, get_current_agent_id
 
 
@@ -111,7 +110,7 @@ def load_agent_keypair(keys_path: Optional[Path] = None) -> Tuple[str, str]:
         raise ValueError(f"Invalid key data: {e}")
 
 
-def ensure_agent_keypair() -> Tuple[str, str]:
+async def ensure_agent_keypair() -> Tuple[str, str]:
     """
     Ensure agent keypair exists, creating and registering if necessary.
     
@@ -134,8 +133,7 @@ def ensure_agent_keypair() -> Tuple[str, str]:
         
         # Attempt to register the public key with the backend
         try:
-            import asyncio
-            asyncio.run(register_public_key_with_backend(public_key))
+            await register_public_key_with_backend(public_key)
         except Exception as e:
             logger.error(f"Failed to register public key with backend: {e}")
             

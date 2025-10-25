@@ -58,7 +58,7 @@ def format_turn_for_human(turn_data: dict, turn_number: int) -> str:
             from datetime import datetime
             dt = datetime.fromisoformat(timestamp.replace('Z', '+00:00'))
             timestamp = dt.strftime("%Y-%m-%d %H:%M:%S UTC")
-        except:
+        except Exception:
             pass  # Keep original timestamp if parsing fails
 
     if turn_type == "user":
@@ -76,12 +76,12 @@ def format_turn_for_human(turn_data: dict, turn_number: int) -> str:
             first_content = content[0]
             if isinstance(first_content, dict) and first_content.get("type") == "tool_result":
                 tool_result = safe_get_str(first_content, "content", "")
-                tool_use_id = safe_get_str(first_content, "tool_use_id", "")
+                safe_get_str(first_content, "tool_use_id", "")
 
                 # Extract todo information if available
                 tool_use_result = turn_data.get("toolUseResult", {})
                 if isinstance(tool_use_result, dict):
-                    old_todos = tool_use_result.get("oldTodos", [])
+                    tool_use_result.get("oldTodos", [])
                     new_todos = tool_use_result.get("newTodos", [])
 
                     todo_summary = []

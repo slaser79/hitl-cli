@@ -86,7 +86,7 @@ class ApiClient:
             try:
                 error_data = response.json()
                 error_msg = error_data.get("detail", f"HTTP {response.status_code}")
-            except:
+            except Exception:
                 error_msg = f"HTTP {response.status_code} - {response.text}"
 
             logger.error(f"API error: {error_msg}")
@@ -95,7 +95,7 @@ class ApiClient:
 
         try:
             return response.json()
-        except:
+        except Exception:
             return {"status": "success"}
 
     # Sync wrappers for testing
