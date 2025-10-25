@@ -38,13 +38,9 @@ def generate_agent_keypair() -> Tuple[str, str]:
 
 
 def get_agent_keys_path() -> Path:
-    """
-    Get the path where agent keys should be stored.
-    
-    Returns:
-        Path to agent.key file in ~/.config/hitl-shin-relay/
-    """
-    config_dir = Path.home() / ".config" / "hitl-shin-relay"
+    """Get the path where agent keys should be stored."""
+    # Use the same config directory as the rest of the CLI
+    config_dir = Path.home() / ".config" / "hitl-cli"
     config_dir.mkdir(parents=True, exist_ok=True)
     return config_dir / "agent.key"
 
