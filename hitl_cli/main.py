@@ -48,12 +48,11 @@ def login(
     name: Optional[str] = typer.Option(None, "--name", help="Agent name for dynamic registration")
 ):
     """Login to the HITL service using OAuth 2.1 dynamic registration"""
-    
-    async def _login():
-        # Check if already logged in
-        if is_logged_in() or is_using_oauth():
-            typer.echo("✅ Already logged in!")
-            return
+
+    # Check if already logged in
+    if is_logged_in() or is_using_oauth():
+        typer.echo("✅ Already logged in!")
+        return
 
     # Use OAuth 2.1 dynamic client registration
     try:
@@ -65,7 +64,7 @@ def login(
         
         # Generate E2EE keys and register with server during login
         typer.echo("🔐 Generating end-to-end encryption keys...")
-        public_key, private_key = ensure_agent_keypair()
+        public_key, private_key = asyncio.run(ensure_agent_keypair())
         typer.echo("✅ E2EE keys generated and registered with server")
         
         typer.echo()
