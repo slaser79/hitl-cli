@@ -129,18 +129,42 @@ The proxy will automatically encrypt the request and decrypt the response. The l
     human.request_human_input(prompt="Please provide the API key for the staging environment.")
     ```
 
-### D. Continuous Interaction Hook for Claude
+### D. Continuous Interaction Hook for Claude Code
 
-The `hitl-hook-review-and-continue` script provides a powerful way to create a continuous interaction loop with Claude. When Claude finishes a task, this hook intercepts the stop event, asks for your confirmation via the HITL app, and feeds your response back to Claude as new instructions.
+The `hitl-hook-review-and-continue` hook provides a powerful way to create a continuous interaction loop with Claude Code. When Claude finishes a task, this hook intercepts the stop event, asks for your confirmation via the HITL app, and feeds your response back to Claude as new instructions.
 
-**Setup in Claude Desktop's `hooks.json`:**
+**Setup:**
+
+Add the following to your Claude Code settings file:
+- `~/.claude/settings.json` (user-level, affects all projects)
+- `.claude/settings.local.json` (project-level, gitignored)
+
 ```json
 {
-  "on_stop": {
-    "command": "hitl-hook-review-and-continue"
+  "hooks": {
+    "Stop": [
+      {
+        "matcher": ".*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "hitl-hook-review-and-continue"
+          }
+        ]
+      }
+    ]
   }
 }
 ```
+
+**How it works:**
+- When Claude Code finishes responding, the hook executes
+- A prompt appears on your HITL mobile app
+- You can review what Claude did and provide feedback
+- Your response is fed back to Claude as new instructions
+- This creates an interactive review-and-continue workflow
+
+For more details on hooks, see the [Claude Code hooks documentation](https://docs.claude.com/en/docs/claude-code/hooks).
 
 This turns `hitl-cli` into a remote control for your AI assistant.
 
