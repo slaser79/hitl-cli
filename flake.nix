@@ -16,7 +16,7 @@
         # Build the Python package
         hitl-cli-package = pythonPackages.buildPythonApplication {
           pname = "hitl-cli";
-          version = "0.1.0";
+          version = "1.2.0";
           src = ./.;
           pyproject = true;
           
