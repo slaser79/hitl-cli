@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:spec.modelcontextprotocol.io)",
+      "WebFetch(domain:modelcontextprotocol.io)",
+      "WebFetch(domain:gofastmcp.com)",
+      "Bash(git log:*)",
+      "Bash(git rev-list:*)"
+    ],
+    "deny": []
+  }
+}
