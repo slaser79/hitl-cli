@@ -1,6 +1,6 @@
 [project]
 name = "hitl-cli"
-version = "1.2.0"
+version = "1.2.1"
 description = "Command-line interface and SDK for Human-in-the-Loop services."
 # Add a longer description from your README
 readme = "README.md"
