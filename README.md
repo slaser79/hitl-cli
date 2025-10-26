@@ -1,7 +1,7 @@
 
 # HITL-CLI: Human-in-the-Loop Command-Line Interface and SDK
 
-**hitl-cli** is the official reference client for the [Human-in-the-Loop (HITL) mobile application](https://hitlrelay.app). It provides a powerful command-line interface (CLI) and Python SDK to programmatically request input from, and send notifications to, a human user via their mobile device.
+**hitl-cli** is the official reference MCP client for the [Human-in-the-Loop (HITL) mobile application](https://hitlrelay.app). It provides a powerful command-line interface (CLI) and Python SDK to programmatically request input from, and send notifications to, a human user via their mobile device.
 
 It features zero-config, secure authentication using OAuth 2.1 and supports end-to-end encryption (E2EE) for confidential interactions.
 
@@ -105,7 +105,7 @@ if __name__ == "__main__":
 
 ### C. End-to-End Encryption with a Local Proxy
 
-For maximum security, `hitl-cli` can act as a local [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) proxy. This allows tools like Claude Desktop to interact with a human while ensuring that the prompt and response are end-to-end encrypted. The HITL server only relays the encrypted data and never sees the plaintext content.
+For maximum security, `hitl-cli` can act as a local [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) proxy. This allows tools like Claude Code to interact with a human while ensuring that the prompt and response are end-to-end encrypted. The HITL server only relays the encrypted data and never sees the plaintext content.
 
 1.  **Authenticate first:**
 
@@ -167,14 +167,14 @@ Add the following to your Claude Code settings file:
 }
 ```
 
-**Why `uvx`?** Using `uvx --from hitl-cli` ensures the hook works in any environment with `uv` installed, automatically fetching the latest version from PyPI without requiring a separate installation step.
+
 
 **How it works:**
 - When Claude Code finishes responding, the hook executes
 - A prompt appears on your HITL mobile app
 - You can review what Claude did and provide feedback
 - Your response is fed back to Claude as new instructions
-- This creates an interactive review-and-continue workflow
+- This creates an interactive review-and-continue workflow for continuos operation with claude code
 
 For more details on hooks, see the [Claude Code hooks documentation](https://docs.claude.com/en/docs/claude-code/hooks).
 
@@ -182,7 +182,7 @@ This turns `hitl-cli` into a remote control for your AI assistant.
 
 ### E. Codex CLI Notifications
 
-The `hitl-codex-notify` hook enables you to receive notifications on your HITL mobile app when Codex CLI completes a task. Unlike the Claude Code hook, this is a fire-and-forget notification system that keeps you informed about Codex activity without requiring interaction.
+The `hitl-codex-notify` hook enables you to receive notifications on your HITL mobile app when Codex CLI completes a task. Unlike the Claude Code hook, this is a fire-and-forget notification system that keeps you informed about Codex activity without allowing interaction.
 
 **Setup:**
 
