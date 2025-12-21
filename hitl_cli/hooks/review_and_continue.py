@@ -120,7 +120,7 @@ def format_turn_for_human(turn_data: dict, turn_number: int) -> str:
 
                 return f"--- Turn {turn_number} (User) ---\n" \
                        f"⏰ Time: {timestamp}\n" \
-                       f"💬 Message: {user_text[:2000]}..."
+                       f"💬 Message: {user_text[:20000]}..."
 
     elif turn_type == "assistant":
         # Handle assistant messages
