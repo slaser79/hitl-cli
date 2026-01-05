@@ -98,7 +98,7 @@ def format_turn_for_human(turn_data: dict, turn_number: int) -> str:
                 else:
                     return f"--- Turn {turn_number} (User - Tool Result) ---\n" \
                            f"⏰ Time: {timestamp}\n" \
-                           f"🔧 Tool Result: {tool_result[:20000]}..."
+                           f"🔧 Tool Result: {tool_result[:200]}..."
             else:
                 # Regular user message
                 user_text = ""
@@ -166,7 +166,7 @@ def format_turn_for_human(turn_data: dict, turn_number: int) -> str:
         # Fallback for unknown turn types
         return f"--- Turn {turn_number} ({turn_type}) ---\n" \
                f"⏰ Time: {timestamp}\n" \
-               f"📄 Raw data: {str(turn_data)[:20000]}..."
+               f"📄 Raw data: {str(turn_data)[:2000]}..."
 
 def main():
     """
