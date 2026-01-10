@@ -18,7 +18,6 @@ Example usage:
 """
 
 import logging
-from typing import List, Optional
 
 from .mcp_client import MCPClient
 
@@ -48,9 +47,9 @@ class HITL:
     async def request_input(
         self,
         prompt: str,
-        choices: Optional[List[str]] = None,
-        placeholder: Optional[str] = None,
-        agent_name: Optional[str] = None
+        choices: list[str] | None = None,
+        placeholder: str | None = None,
+        agent_name: str | None = None
     ) -> str:
         """
         Request input from a human user.
@@ -78,7 +77,9 @@ class HITL:
             from .auth import is_using_api_key, is_using_oauth
 
             if is_using_api_key():
-                return await self._mcp_client.request_human_input_api_key(
+                from .api_client import ApiClient
+                api_client = ApiClient()
+                return await api_client.request_human_input(
                     prompt=prompt,
                     choices=choices,
                     placeholder_text=placeholder
@@ -104,7 +105,7 @@ class HITL:
     async def notify_completion(
         self,
         summary: str,
-        agent_name: Optional[str] = None
+        agent_name: str | None = None
     ) -> str:
         """
         Notify a human that a task has been completed.
@@ -127,7 +128,9 @@ class HITL:
             from .auth import is_using_api_key, is_using_oauth
 
             if is_using_api_key():
-                return await self._mcp_client.notify_task_completion_api_key(summary=summary)
+                from .api_client import ApiClient
+                api_client = ApiClient()
+                return await api_client.notify_task_completion(summary=summary)
             elif is_using_oauth():
                 return await self._mcp_client.notify_task_completion_oauth(
                     summary=summary,
@@ -143,7 +146,7 @@ class HITL:
     async def notify(
         self,
         message: str,
-        agent_name: Optional[str] = None
+        agent_name: str | None = None
     ) -> str:
         """
         Send a fire-and-forget notification to a human.
@@ -169,7 +172,9 @@ class HITL:
             from .auth import is_using_api_key, is_using_oauth
 
             if is_using_api_key():
-                return await self._mcp_client.notify_human_api_key(message=message)
+                from .api_client import ApiClient
+                api_client = ApiClient()
+                return await api_client.notify_human(message=message)
             elif is_using_oauth():
                 return await self._mcp_client.notify_human_oauth(
                     message=message,
@@ -204,7 +209,7 @@ class HITL:
             logger.error(f"Failed to create agent: {e}")
             raise
 
-    async def list_agents(self) -> List[dict]:
+    async def list_agents(self) -> list[dict]:
         """
         List all agents belonging to the current user.
 

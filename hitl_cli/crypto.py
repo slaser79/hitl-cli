@@ -8,18 +8,23 @@ between CLI agents and mobile devices.
 import json
 import logging
 from pathlib import Path
-from typing import Tuple, Optional
 
-from nacl.public import PrivateKey, PublicKey, Box
 from nacl.encoding import Base64Encoder
+from nacl.public import Box, PrivateKey, PublicKey
 
-from .auth import get_current_oauth_token, is_using_oauth, get_current_token, get_current_agent_id, is_using_api_key, get_api_key
-
+from .auth import (
+    get_api_key,
+    get_current_agent_id,
+    get_current_oauth_token,
+    get_current_token,
+    is_using_api_key,
+    is_using_oauth,
+)
 
 logger = logging.getLogger(__name__)
 
 
-def generate_agent_keypair() -> Tuple[str, str]:
+def generate_agent_keypair() -> tuple[str, str]:
     """
     Generate a new PyNaCl keypair for the agent.
     
@@ -28,11 +33,11 @@ def generate_agent_keypair() -> Tuple[str, str]:
     """
     private_key = PrivateKey.generate()
     public_key = private_key.public_key
-    
+
     # Encode keys as base64 strings
     public_key_b64 = public_key.encode(Base64Encoder).decode()
     private_key_b64 = private_key.encode(Base64Encoder).decode()
-    
+
     return public_key_b64, private_key_b64
 
 
@@ -44,7 +49,7 @@ def get_agent_keys_path() -> Path:
     return config_dir / "agent.key"
 
 
-def save_agent_keypair(public_key: str, private_key: str, keys_path: Optional[Path] = None) -> None:
+def save_agent_keypair(public_key: str, private_key: str, keys_path: Path | None = None) -> None:
     """
     Save agent keypair to secure file storage.
     
@@ -55,21 +60,21 @@ def save_agent_keypair(public_key: str, private_key: str, keys_path: Optional[Pa
     """
     if keys_path is None:
         keys_path = get_agent_keys_path()
-    
+
     # Create key data structure
     key_data = {
         "public_key": public_key,
         "private_key": private_key
     }
-    
+
     # Write to file with restricted permissions
     keys_path.write_text(json.dumps(key_data, indent=2))
     keys_path.chmod(0o600)  # Owner read/write only
-    
+
     logger.info(f"Agent keypair saved to {keys_path}")
 
 
-def load_agent_keypair(keys_path: Optional[Path] = None) -> Tuple[str, str]:
+def load_agent_keypair(keys_path: Path | None = None) -> tuple[str, str]:
     """
     Load agent keypair from file storage.
     
@@ -86,22 +91,22 @@ def load_agent_keypair(keys_path: Optional[Path] = None) -> Tuple[str, str]:
     """
     if keys_path is None:
         keys_path = get_agent_keys_path()
-    
+
     if not keys_path.exists():
         raise FileNotFoundError(f"Agent key file not found: {keys_path}")
-    
+
     try:
         key_data = json.loads(keys_path.read_text())
-        
+
         public_key = key_data["public_key"]
         private_key = key_data["private_key"]
-        
+
         # Validate keys by attempting to parse them
         PublicKey(public_key, encoder=Base64Encoder)
         PrivateKey(private_key, encoder=Base64Encoder)
-        
+
         return public_key, private_key
-        
+
     except json.JSONDecodeError as e:
         raise ValueError(f"Invalid JSON in key file: {e}")
     except KeyError as e:
@@ -110,7 +115,7 @@ def load_agent_keypair(keys_path: Optional[Path] = None) -> Tuple[str, str]:
         raise ValueError(f"Invalid key data: {e}")
 
 
-async def ensure_agent_keypair() -> Tuple[str, str]:
+async def ensure_agent_keypair() -> tuple[str, str]:
     """
     Ensure agent keypair exists, creating and registering if necessary.
     
@@ -118,25 +123,25 @@ async def ensure_agent_keypair() -> Tuple[str, str]:
         Tuple of (public_key_base64, private_key_base64)
     """
     keys_path = get_agent_keys_path()
-    
+
     try:
         # Try to load existing keys
         public_key, private_key = load_agent_keypair(keys_path)
         logger.info("Loaded existing agent keypair")
         return public_key, private_key
-        
+
     except FileNotFoundError:
         # Generate new keys
         logger.info("Generating new agent keypair")
         public_key, private_key = generate_agent_keypair()
         save_agent_keypair(public_key, private_key, keys_path)
-        
+
         # Attempt to register the public key with the backend
         try:
             await register_public_key_with_backend(public_key)
         except Exception as e:
             logger.error(f"Failed to register public key with backend: {e}")
-            
+
         return public_key, private_key
 
 
@@ -152,6 +157,7 @@ async def register_public_key_with_backend(public_key: str) -> bool:
     """
     try:
         import httpx
+
         from .config import BACKEND_BASE_URL
 
         # Get agent ID for registration

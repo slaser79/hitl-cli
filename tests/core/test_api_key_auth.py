@@ -1,6 +1,6 @@
 import os
 import unittest.mock
-from unittest.mock import patch, MagicMock, AsyncMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 from hitl_cli.api_client import ApiClient
 from hitl_cli.mcp_client import MCPClient

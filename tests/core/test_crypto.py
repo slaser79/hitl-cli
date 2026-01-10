@@ -7,21 +7,21 @@ Uses PyNaCl for cryptographic operations.
 
 import tempfile
 from pathlib import Path
-from unittest.mock import patch, MagicMock, AsyncMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-pytest.importorskip("nacl")
-from nacl.public import PrivateKey, PublicKey
-from nacl.encoding import Base64Encoder
 
+pytest.importorskip("nacl")
 from hitl_cli.crypto import (
-    generate_agent_keypair,
-    save_agent_keypair,
-    load_agent_keypair,
     ensure_agent_keypair,
+    generate_agent_keypair,
     get_agent_keys_path,
-    register_public_key_with_backend
+    load_agent_keypair,
+    register_public_key_with_backend,
+    save_agent_keypair,
 )
+from nacl.encoding import Base64Encoder
+from nacl.public import PrivateKey, PublicKey
 
 
 class TestKeyGeneration:
@@ -30,19 +30,19 @@ class TestKeyGeneration:
     def test_generate_agent_keypair_returns_valid_keys(self):
         """Test that key generation returns valid PyNaCl key pair."""
         public_key_b64, private_key_b64 = generate_agent_keypair()
-        
+
         # Should return base64-encoded strings
         assert isinstance(public_key_b64, str)
         assert isinstance(private_key_b64, str)
-        
+
         # Should be valid base64 encoding
         public_key_bytes = Base64Encoder.decode(public_key_b64)
         private_key_bytes = Base64Encoder.decode(private_key_b64)
-        
+
         # Should be valid PyNaCl keys
         public_key = PublicKey(public_key_bytes)
         private_key = PrivateKey(private_key_bytes)
-        
+
         # Public key from private key should match
         assert private_key.public_key.encode() == public_key.encode()
 
@@ -50,7 +50,7 @@ class TestKeyGeneration:
         """Test that each key generation produces unique keys."""
         pub1, priv1 = generate_agent_keypair()
         pub2, priv2 = generate_agent_keypair()
-        
+
         # Keys should be different each time
         assert pub1 != pub2
         assert priv1 != priv2
@@ -58,10 +58,10 @@ class TestKeyGeneration:
     def test_generate_agent_keypair_correct_length(self):
         """Test that generated keys have correct byte length."""
         public_key_b64, private_key_b64 = generate_agent_keypair()
-        
+
         public_key_bytes = Base64Encoder.decode(public_key_b64)
         private_key_bytes = Base64Encoder.decode(private_key_b64)
-        
+
         # PyNaCl key lengths
         assert len(public_key_bytes) == 32  # 32 bytes for Curve25519 public key
         assert len(private_key_bytes) == 32  # 32 bytes for Curve25519 private key
@@ -89,24 +89,24 @@ class TestKeyStorage:
         """Test that get_agent_keys_path creates parent directory."""
         with tempfile.TemporaryDirectory() as temp_dir:
             Path(temp_dir) / "new_dir" / "agent.key"
-            
+
             with patch('hitl_cli.crypto.Path.home') as mock_home:
                 mock_home.return_value = Path(temp_dir)
-                
+
                 result_path = get_agent_keys_path()
-                
+
                 # Directory should be created
                 assert result_path.parent.exists()
 
     def test_save_agent_keypair(self):
         """Test saving agent keypair to file."""
         public_key, private_key = generate_agent_keypair()
-        
+
         save_agent_keypair(public_key, private_key, self.keys_path)
-        
+
         # File should exist
         assert self.keys_path.exists()
-        
+
         # File should have restricted permissions (600)
         file_stat = self.keys_path.stat()
         assert oct(file_stat.st_mode)[-3:] == "600"
@@ -116,11 +116,11 @@ class TestKeyStorage:
         # Create initial keys
         pub1, priv1 = generate_agent_keypair()
         save_agent_keypair(pub1, priv1, self.keys_path)
-        
+
         # Save different keys
         pub2, priv2 = generate_agent_keypair()
         save_agent_keypair(pub2, priv2, self.keys_path)
-        
+
         # Should load the new keys
         loaded_pub, loaded_priv = load_agent_keypair(self.keys_path)
         assert loaded_pub == pub2
@@ -130,16 +130,16 @@ class TestKeyStorage:
         """Test loading valid agent keypair from file."""
         public_key, private_key = generate_agent_keypair()
         save_agent_keypair(public_key, private_key, self.keys_path)
-        
+
         loaded_public, loaded_private = load_agent_keypair(self.keys_path)
-        
+
         assert loaded_public == public_key
         assert loaded_private == private_key
 
     def test_load_agent_keypair_file_not_found(self):
         """Test loading keypair when file doesn't exist."""
         non_existent_path = Path(self.temp_dir) / "nonexistent.key"
-        
+
         with pytest.raises(FileNotFoundError):
             load_agent_keypair(non_existent_path)
 
@@ -147,7 +147,7 @@ class TestKeyStorage:
         """Test loading keypair from corrupted file."""
         # Write invalid content to key file
         self.keys_path.write_text("invalid json content")
-        
+
         with pytest.raises((ValueError, KeyError)):
             load_agent_keypair(self.keys_path)
 
@@ -156,7 +156,7 @@ class TestKeyStorage:
         # Write JSON without required keys
         import json
         self.keys_path.write_text(json.dumps({"invalid": "data"}))
-        
+
         with pytest.raises(KeyError):
             load_agent_keypair(self.keys_path)
 
@@ -179,16 +179,16 @@ class TestKeyEnsurance:
     async def test_ensure_agent_keypair_creates_new_keys(self, mock_get_path):
         """Test that ensure_agent_keypair creates new keys when none exist."""
         mock_get_path.return_value = self.keys_path
-        
+
         public_key, private_key = await ensure_agent_keypair()
-        
+
         # Should return valid keys
         assert isinstance(public_key, str)
         assert isinstance(private_key, str)
-        
+
         # Should create the key file
         assert self.keys_path.exists()
-        
+
         # Should be able to load the same keys
         loaded_pub, loaded_priv = load_agent_keypair(self.keys_path)
         assert loaded_pub == public_key
@@ -199,14 +199,14 @@ class TestKeyEnsurance:
     async def test_ensure_agent_keypair_loads_existing_keys(self, mock_get_path):
         """Test that ensure_agent_keypair loads existing keys."""
         mock_get_path.return_value = self.keys_path
-        
+
         # Create existing keys
         existing_pub, existing_priv = generate_agent_keypair()
         save_agent_keypair(existing_pub, existing_priv, self.keys_path)
-        
+
         # Should load existing keys, not create new ones
         public_key, private_key = await ensure_agent_keypair()
-        
+
         assert public_key == existing_pub
         assert private_key == existing_priv
 
@@ -217,9 +217,9 @@ class TestKeyEnsurance:
         """Test that ensure_agent_keypair registers new keys with backend."""
         mock_get_path.return_value = self.keys_path
         mock_register.return_value = True
-        
+
         public_key, private_key = await ensure_agent_keypair()
-        
+
         # Should register the public key with backend
         mock_register.assert_awaited_once_with(public_key)
 
@@ -229,13 +229,13 @@ class TestKeyEnsurance:
     async def test_ensure_agent_keypair_skips_registration_for_existing(self, mock_register, mock_get_path):
         """Test that ensure_agent_keypair doesn't re-register existing keys."""
         mock_get_path.return_value = self.keys_path
-        
+
         # Create existing keys
         existing_pub, existing_priv = generate_agent_keypair()
         save_agent_keypair(existing_pub, existing_priv, self.keys_path)
-        
+
         public_key, private_key = await ensure_agent_keypair()
-        
+
         # Should not register existing keys
         mock_register.assert_not_awaited()
 

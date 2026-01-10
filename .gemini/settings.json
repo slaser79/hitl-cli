@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "human": {
+      "httpUrl": "https://hitlrelay.app/mcp-server/mcp",
+      "headers": {
+        "X-API-KEY": "mcp_pk_GtIADnIT3kqb1w4nfXKILaw4Dyq9_VsmlANW07fnZkI"
+      },
+      "timeout": 900000
+    }
+  }
+}

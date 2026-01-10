@@ -8,6 +8,6 @@ OAUTH_TOKEN_FILE = CONFIG_DIR / "oauth_token.json"
 
 # Support environment variable override, default to cloud service
 BACKEND_BASE_URL = os.environ.get(
-    "HITL_SERVER_URL", 
+    "HITL_SERVER_URL",
     "https://hitlrelay.app"
 )

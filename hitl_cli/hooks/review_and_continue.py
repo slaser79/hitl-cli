@@ -3,13 +3,14 @@ import json
 import subprocess
 import sys
 
+
 def get_last_turns(transcript_path: str, num_turns: int = 2) -> str:
     """
     Reads a JSONL transcript file and returns a human-readable formatted string of the
     last few turns for review.
     """
     try:
-        with open(transcript_path, 'r') as f:
+        with open(transcript_path) as f:
             lines = f.readlines()
 
         # Get the last N lines, ensuring we don't go out of bounds
@@ -175,21 +176,21 @@ def main():
     """
     try:
         input_data = json.load(sys.stdin)
-        
-        
+
+
         transcript_path = input_data.get("transcript_path")
         if not transcript_path:
             # Cannot proceed without the transcript; allow stop.
             sys.exit(0)
-            
+
         # 1. Get the context for the user
         review_payload = get_last_turns(transcript_path, num_turns=2)
-        
+
         prompt_for_human = (
             "Claude has completed its task. Please review the final actions below.\n\n"
             f"{review_payload}"
         )
-        
+
         # 2. Send the blocking request to the user
         completed_process = subprocess.run(
             [
@@ -200,9 +201,9 @@ def main():
             capture_output=True,
             text=True
         )
-        
+
         user_response = completed_process.stdout.strip()
-        
+
         # 3. Interpret the user's response
         # assume everything is good if user reponse cotains "all good" or "looks good" or "Great job" and similar phrases (case insensitive)
         # Bit of hack as responses are now in json
