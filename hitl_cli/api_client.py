@@ -38,18 +38,18 @@ class ApiClient:
                 typer.echo("Error: Not logged in. Please run 'hitl-cli login' first.")
                 raise typer.Exit(1)
 
-    async def get(self, path: str) -> Dict[str, Any]:
+    async def get(self, path: str, timeout: Optional[float] = None) -> Dict[str, Any]:
         """Make GET request to API"""
-        async with httpx.AsyncClient(timeout=self.timeout) as client:
+        async with httpx.AsyncClient(timeout=timeout or self.timeout) as client:
             response = await client.get(
                 f"{self.base_url}{path}",
                 headers=self._get_headers()
             )
             return self._handle_response(response)
 
-    async def post(self, path: str, data: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    async def post(self, path: str, data: Optional[Dict[str, Any]] = None, timeout: Optional[float] = None) -> Dict[str, Any]:
         """Make POST request to API"""
-        async with httpx.AsyncClient(timeout=self.timeout) as client:
+        async with httpx.AsyncClient(timeout=timeout or self.timeout) as client:
             response = await client.post(
                 f"{self.base_url}{path}",
                 json=data,
@@ -119,12 +119,42 @@ class ApiClient:
             def json(self):
                 return self._json_data
 
-        try:
+    try:
             result = asyncio.run(self.post(path, data))
             return MockResponse(200, result)
         except typer.Exit as e:
             # In case of error, still return a response object
             return MockResponse(getattr(e, 'exit_code', 500), {"error": "Request failed"})
+
+    async def request_human_input(
+        self,
+        prompt: str,
+        choices: Optional[List[str]] = None,
+        placeholder_text: Optional[str] = None,
+    ) -> str:
+        """Send a request for human input using REST API"""
+        payload = {
+            "prompt": prompt,
+            "choices": choices or [],
+            "placeholder_text": placeholder_text or "",
+        }
+        # Use a long timeout (15 minutes) for human response
+        response = await self.post("/api/v1/hitl/request", payload, timeout=900.0)
+        return response.get("response", "")
+
+    async def notify_human(self, message: str) -> str:
+        """Send a notification to human using REST API"""
+        payload = {"message": message}
+        # Notifications are usually fire-and-forget, but we wait for delivery
+        response = await self.post("/api/v1/hitl/notify", payload, timeout=900.0)
+        return response.get("status", "Notification sent")
+
+    async def notify_task_completion(self, summary: str) -> str:
+        """Send a notification that a task has been completed using REST API"""
+        payload = {"summary": summary}
+        # Use a long timeout (15 minutes) for human response
+        response = await self.post("/api/v1/hitl/complete", payload, timeout=900.0)
+        return response.get("response", "")
 
     async def request_human_input_e2ee(
         self,
