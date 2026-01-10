@@ -1,10 +1,10 @@
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import httpx
 import typer
 
-from .auth import NotLoggedInError, get_current_token, is_using_api_key, get_api_key
+from .auth import NotLoggedInError, get_api_key, get_current_token, is_using_api_key
 from .config import BACKEND_BASE_URL
 from .crypto import decrypt_payload, encrypt_payload, ensure_agent_keypair
 
@@ -14,11 +14,11 @@ logger = logging.getLogger(__name__)
 class ApiClient:
     """HTTP client for hitl-shin-relay API with automatic JWT authentication"""
 
-    def __init__(self, base_url: Optional[str] = None):
+    def __init__(self, base_url: str | None = None):
         self.base_url = base_url or BACKEND_BASE_URL
         self.timeout = 30.0
 
-    def _get_headers(self) -> Dict[str, str]:
+    def _get_headers(self) -> dict[str, str]:
         """Get headers with authentication token"""
         if is_using_api_key():
             api_key = get_api_key()
@@ -38,18 +38,18 @@ class ApiClient:
                 typer.echo("Error: Not logged in. Please run 'hitl-cli login' first.")
                 raise typer.Exit(1)
 
-    async def get(self, path: str) -> Dict[str, Any]:
+    async def get(self, path: str, timeout: float | None = None) -> dict[str, Any]:
         """Make GET request to API"""
-        async with httpx.AsyncClient(timeout=self.timeout) as client:
+        async with httpx.AsyncClient(timeout=timeout or self.timeout) as client:
             response = await client.get(
                 f"{self.base_url}{path}",
                 headers=self._get_headers()
             )
             return self._handle_response(response)
 
-    async def post(self, path: str, data: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    async def post(self, path: str, data: dict[str, Any] | None = None, timeout: float | None = None) -> dict[str, Any]:
         """Make POST request to API"""
-        async with httpx.AsyncClient(timeout=self.timeout) as client:
+        async with httpx.AsyncClient(timeout=timeout or self.timeout) as client:
             response = await client.post(
                 f"{self.base_url}{path}",
                 json=data,
@@ -57,9 +57,9 @@ class ApiClient:
             )
             return self._handle_response(response)
 
-    async def put(self, path: str, data: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    async def put(self, path: str, data: dict[str, Any] | None = None, timeout: float | None = None) -> dict[str, Any]:
         """Make PUT request to API"""
-        async with httpx.AsyncClient(timeout=self.timeout) as client:
+        async with httpx.AsyncClient(timeout=timeout or self.timeout) as client:
             response = await client.put(
                 f"{self.base_url}{path}",
                 json=data,
@@ -67,16 +67,16 @@ class ApiClient:
             )
             return self._handle_response(response)
 
-    async def delete(self, path: str) -> Dict[str, Any]:
+    async def delete(self, path: str, timeout: float | None = None) -> dict[str, Any]:
         """Make DELETE request to API"""
-        async with httpx.AsyncClient(timeout=self.timeout) as client:
+        async with httpx.AsyncClient(timeout=timeout or self.timeout) as client:
             response = await client.delete(
                 f"{self.base_url}{path}",
                 headers=self._get_headers()
             )
             return self._handle_response(response)
 
-    def _handle_response(self, response: httpx.Response) -> Dict[str, Any]:
+    def _handle_response(self, response: httpx.Response) -> dict[str, Any]:
         """Handle API response and errors"""
         if response.status_code == 401:
             logger.error("Authentication failed - token may be expired or invalid")
@@ -105,7 +105,7 @@ class ApiClient:
         import asyncio
         return asyncio.run(self.get(path))
 
-    def post_sync(self, path: str, data: Optional[Dict[str, Any]] = None):
+    def post_sync(self, path: str, data: dict[str, Any] | None = None):
         """Sync wrapper for POST request - returns response object for testing"""
         import asyncio
 
@@ -126,11 +126,41 @@ class ApiClient:
             # In case of error, still return a response object
             return MockResponse(getattr(e, 'exit_code', 500), {"error": "Request failed"})
 
+    async def request_human_input(
+        self,
+        prompt: str,
+        choices: list[str] | None = None,
+        placeholder_text: str | None = None,
+    ) -> str:
+        """Send a request for human input using REST API"""
+        payload = {
+            "prompt": prompt,
+            "choices": choices or [],
+            "placeholder_text": placeholder_text or "",
+        }
+        # Use a long timeout (15 minutes) for human response
+        response = await self.post("/api/v1/hitl/request", payload, timeout=900.0)
+        return response.get("response", "")
+
+    async def notify_human(self, message: str) -> str:
+        """Send a notification to human using REST API"""
+        payload = {"message": message}
+        # Notifications are usually fire-and-forget, but we wait for delivery
+        response = await self.post("/api/v1/hitl/notify", payload, timeout=900.0)
+        return response.get("status", "Notification sent")
+
+    async def notify_task_completion(self, summary: str) -> str:
+        """Send a notification that a task has been completed using REST API"""
+        payload = {"summary": summary}
+        # Use a long timeout (15 minutes) for human response
+        response = await self.post("/api/v1/hitl/complete", payload, timeout=900.0)
+        return response.get("response", "")
+
     async def request_human_input_e2ee(
         self,
         prompt: str,
-        choices: Optional[List[str]] = None,
-        placeholder_text: Optional[str] = None,
+        choices: list[str] | None = None,
+        placeholder_text: str | None = None,
     ) -> str:
         """Send an E2EE request for human input"""
         # 1. Ensure agent's keypair exists
@@ -158,7 +188,8 @@ class ApiClient:
 
         # 5. Send the encrypted payload to the E2EE endpoint
         e2ee_request_body = {"encrypted_payload": encrypted_payload_b64}
-        response = await self.post("/api/v1/hitl/request/e2ee", e2ee_request_body)
+        # Use a long timeout (15 minutes) for E2EE human response as well
+        response = await self.post("/api/v1/hitl/request/e2ee", e2ee_request_body, timeout=900.0)
 
         # 6. Decrypt the response
         encrypted_response_b64 = response["encrypted_response"]
@@ -192,7 +223,7 @@ class ApiClient:
         # 5. Send the encrypted payload to the E2EE notify endpoint
         e2ee_request_body = {"encrypted_payload": encrypted_payload_b64}
         response = await self.post(
-            "/api/v1/hitl/notify/e2ee", e2ee_request_body
+            "/api/v1/hitl/notify/e2ee", e2ee_request_body, timeout=900.0
         )
 
         return response.get("status", "Notification sent")
@@ -220,8 +251,9 @@ class ApiClient:
 
         # 5. Send the encrypted payload to the E2EE completion endpoint
         e2ee_request_body = {"encrypted_payload": encrypted_payload_b64}
+        # Use a long timeout (15 minutes) for E2EE human response as well
         response = await self.post(
-            "/api/v1/hitl/complete/e2ee", e2ee_request_body
+            "/api/v1/hitl/complete/e2ee", e2ee_request_body, timeout=900.0
         )
 
         # 6. Decrypt the response

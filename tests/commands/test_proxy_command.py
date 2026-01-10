@@ -5,13 +5,10 @@ Tests the new `hitl-cli proxy <backend_url>` command that enables transparent
 end-to-end encryption by acting as an MCP proxy between Claude and the backend.
 """
 
-import json
 from unittest.mock import AsyncMock, MagicMock, patch
 
-import pytest
-from typer.testing import CliRunner
-
 from hitl_cli.main import app
+from typer.testing import CliRunner
 
 
 class TestProxyCommand:

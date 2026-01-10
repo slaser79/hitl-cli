@@ -9,15 +9,14 @@ This test module validates:
 5. MCP client updates for OAuth Bearer auth
 """
 
-import json
 import base64
 import hashlib
-from unittest.mock import Mock, patch, AsyncMock
+import json
+from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
-from typer.testing import CliRunner
-
 from hitl_cli.main import app
+from typer.testing import CliRunner
 
 
 class TestOAuthDynamicRegistration:
@@ -41,7 +40,7 @@ class TestOAuthDynamicRegistration:
              patch('hitl_cli.auth.TOKEN_FILE', token_file), \
              patch('hitl_cli.auth.OAUTH_TOKEN_FILE', oauth_token_file), \
              patch('hitl_cli.auth.OAUTH_CLIENT_FILE', oauth_client_file):
-            from hitl_cli.auth import delete_token, delete_oauth_tokens
+            from hitl_cli.auth import delete_oauth_tokens, delete_token
             delete_token()
             delete_oauth_tokens()
             yield config_dir
@@ -143,9 +142,9 @@ class TestOAuthDynamicRegistration:
 
     def test_oauth_bearer_token_storage(self, runner, mock_config_dir):
         """Test OAuth Bearer token storage and retrieval"""
-        
-        from hitl_cli.auth import save_oauth_token, load_oauth_token
-        
+
+        from hitl_cli.auth import load_oauth_token, save_oauth_token
+
         token_data = {
             "access_token": "oauth-bearer-token",
             "token_type": "Bearer",
@@ -153,10 +152,10 @@ class TestOAuthDynamicRegistration:
             "refresh_token": "refresh-token-123",
             "expires_at": 1234567890 + 3600
         }
-        
+
         # Test saving OAuth token
         save_oauth_token(token_data)
-        
+
         # Test loading OAuth token
         loaded_token = load_oauth_token()
         assert loaded_token["access_token"] == "oauth-bearer-token"
@@ -306,88 +305,89 @@ class TestOAuthSecurityFeatures:
 
     def test_pkce_code_challenge_generation(self):
         """Test PKCE code challenge generation follows RFC 7636"""
-        
+
         from hitl_cli.auth import OAuthDynamicClient
         client = OAuthDynamicClient()
-        
+
         # Test code verifier generation
         code_verifier = client._generate_code_verifier()
-        
+
         # Verify length requirements (43-128 characters)
         assert 43 <= len(code_verifier) <= 128
-        
+
         # Verify character set (unreserved characters)
         import re
         pattern = re.compile(r'^[A-Za-z0-9\-\._~]+$')
         assert pattern.match(code_verifier)
-        
+
         # Test code challenge generation
         code_challenge = client._generate_code_challenge(code_verifier)
-        
+
         # Verify SHA256 + base64url encoding
         expected = base64.urlsafe_b64encode(
             hashlib.sha256(code_verifier.encode()).digest()
         ).decode().rstrip('=')
-        
+
         assert code_challenge == expected
 
     def test_state_parameter_validation(self):
         """Test OAuth state parameter generation and validation"""
-        
+
         from hitl_cli.auth import OAuthDynamicClient
         client = OAuthDynamicClient()
-        
+
         # Test state generation
         state = client._generate_state()
-        
+
         # Verify length and randomness
         assert len(state) >= 32
-        
+
         # Test multiple generations are different
         state2 = client._generate_state()
         assert state != state2
 
     def test_token_storage_security(self, tmp_path):
         """Test OAuth token storage security"""
-        
+
         config_dir = tmp_path / ".config" / "hitl-cli"
         token_file = config_dir / "oauth_token.json"
-        
+
         with patch('hitl_cli.auth.CONFIG_DIR', config_dir):
             with patch('hitl_cli.auth.OAUTH_TOKEN_FILE', token_file):
                 from hitl_cli.auth import save_oauth_token
-                
+
                 token_data = {
                     "access_token": "sensitive-oauth-token",
                     "refresh_token": "sensitive-refresh-token"
                 }
-                
+
                 save_oauth_token(token_data)
-                
+
                 # Verify directory permissions (700)
                 assert oct(config_dir.stat().st_mode)[-3:] == '700'
-                
+
                 # Verify file permissions (600)
                 assert oct(token_file.stat().st_mode)[-3:] == '600'
 
     def test_token_expiry_handling(self):
         """Test OAuth token expiry detection and handling"""
-        
-        from hitl_cli.auth import is_oauth_token_expired
+
         import time
-        
+
+        from hitl_cli.auth import is_oauth_token_expired
+
         # Test non-expired token
         valid_token = {
             "expires_at": int(time.time()) + 3600  # Expires in 1 hour
         }
         assert not is_oauth_token_expired(valid_token)
-        
+
         # Test expired token
         expired_token = {
             "expires_at": int(time.time()) - 3600  # Expired 1 hour ago
         }
         assert is_oauth_token_expired(expired_token)
-        
+
         # Test token without expiry (treat as expired for safety)
         no_expiry_token = {}
         assert is_oauth_token_expired(no_expiry_token)

@@ -1,10 +1,8 @@
-import asyncio
 from unittest.mock import AsyncMock, patch
 
 import pytest
-from typer.testing import CliRunner
-
 from hitl_cli.main import app
+from typer.testing import CliRunner
 
 runner = CliRunner()
 

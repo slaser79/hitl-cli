@@ -30,7 +30,7 @@ class TestLoginCommand:
         with patch('hitl_cli.auth.CONFIG_DIR', config_dir), \
              patch('hitl_cli.auth.TOKEN_FILE', config_dir / "token.json"), \
              patch('hitl_cli.auth.OAUTH_TOKEN_FILE', config_dir / "oauth_token.json"):
-            from hitl_cli.auth import delete_token, delete_oauth_tokens
+            from hitl_cli.auth import delete_oauth_tokens, delete_token
             delete_token()
             delete_oauth_tokens()
             yield config_dir

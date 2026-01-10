@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import httpx
 from fastmcp import Client
@@ -6,6 +6,7 @@ from fastmcp.client.transports import StreamableHttpTransport
 
 from .api_client import ApiClient
 from .auth import (
+    get_api_key,
     get_current_agent_id,
     is_oauth_token_expired,
     is_using_api_key,
@@ -14,7 +15,6 @@ from .auth import (
     load_oauth_token,
     refresh_oauth_token,
     save_oauth_token,
-    get_api_key
 )
 from .config import BACKEND_BASE_URL
 
@@ -92,7 +92,7 @@ class MCPClient:
 
         return token_data['access_token']
 
-    async def call_tool(self, tool_name: str, arguments: Dict[str, Any], agent_id: Optional[str] = None) -> str:
+    async def call_tool(self, tool_name: str, arguments: dict[str, Any], agent_id: str | None = None) -> str:
         """Make an MCP tool call using FastMCP Client with streamable HTTP transport"""
 
         # Check if using API key authentication
@@ -189,9 +189,9 @@ class MCPClient:
     async def request_human_input(
         self,
         prompt: str,
-        choices: Optional[List[str]] = None,
-        placeholder_text: Optional[str] = None,
-        agent_id: Optional[str] = None
+        choices: list[str] | None = None,
+        placeholder_text: str | None = None,
+        agent_id: str | None = None
     ) -> str:
         """Make a request for human input via the MCP server"""
 
@@ -221,7 +221,7 @@ class MCPClient:
     async def notify_task_completion(
         self,
         summary: str,
-        agent_id: Optional[str] = None
+        agent_id: str | None = None
     ) -> str:
         """Notify human that a task has been completed and get their response"""
 
@@ -247,12 +247,12 @@ class MCPClient:
     async def request_human_input_oauth(
         self,
         prompt: str,
-        choices: Optional[List[str]] = None,
-        placeholder_text: Optional[str] = None,
-        agent_name: Optional[str] = None
+        choices: list[str] | None = None,
+        placeholder_text: str | None = None,
+        agent_name: str | None = None
     ) -> str:
         """Make a request for human input via the MCP server using OAuth Bearer authentication"""
-        
+
         if not is_using_oauth():
             raise Exception("OAuth authentication required - please login with --dynamic")
 
@@ -272,10 +272,10 @@ class MCPClient:
     async def notify_task_completion_oauth(
         self,
         summary: str,
-        agent_name: Optional[str] = None
+        agent_name: str | None = None
     ) -> str:
         """Notify human that a task has been completed using OAuth Bearer authentication"""
-        
+
         if not is_using_oauth():
             raise Exception("OAuth authentication required - please login with --dynamic")
 
@@ -291,45 +291,37 @@ class MCPClient:
     async def request_human_input_api_key(
         self,
         prompt: str,
-        choices: Optional[List[str]] = None,
-        placeholder_text: Optional[str] = None
+        choices: list[str] | None = None,
+        placeholder_text: str | None = None
     ) -> str:
-        """Make a request for human input via the MCP server using API key authentication"""
+        """Make a request for human input via the REST API using API key authentication"""
 
         if not is_using_api_key():
             raise Exception("API key authentication required - please set HITL_API_KEY environment variable")
 
-        # Build arguments for the tool call
-        arguments = {"prompt": prompt}
-        if choices:
-            arguments["choices"] = choices
-        if placeholder_text:
-            arguments["placeholder_text"] = placeholder_text
-
-        # Make the MCP tool call using API key auth
-        result = await self.call_tool("request_human_input", arguments)
-        return result
+        api_client = ApiClient()
+        return await api_client.request_human_input(
+            prompt=prompt,
+            choices=choices,
+            placeholder_text=placeholder_text
+        )
 
     async def notify_task_completion_api_key(
         self,
         summary: str
     ) -> str:
-        """Notify human that a task has been completed using API key authentication"""
+        """Notify human that a task has been completed using API key authentication via REST API"""
 
         if not is_using_api_key():
             raise Exception("API key authentication required - please set HITL_API_KEY environment variable")
 
-        # Build arguments for the tool call
-        arguments = {"summary": summary}
-
-        # Make the MCP tool call using API key auth
-        result = await self.call_tool("notify_human_completion", arguments)
-        return result
+        api_client = ApiClient()
+        return await api_client.notify_task_completion(summary=summary)
 
     async def notify_human(
         self,
         message: str,
-        agent_id: Optional[str] = None
+        agent_id: str | None = None
     ) -> str:
         """Send a fire-forget notification to human via the MCP server"""
 
@@ -355,7 +347,7 @@ class MCPClient:
     async def notify_human_oauth(
         self,
         message: str,
-        agent_name: Optional[str] = None
+        agent_name: str | None = None
     ) -> str:
         """Send a fire-forget notification to human using OAuth Bearer authentication"""
 
@@ -375,14 +367,10 @@ class MCPClient:
         self,
         message: str
     ) -> str:
-        """Send a fire-forget notification to human using API key authentication"""
+        """Send a fire-forget notification to human using API key authentication via REST API"""
 
         if not is_using_api_key():
             raise Exception("API key authentication required - please set HITL_API_KEY environment variable")
 
-        # Build arguments for the tool call
-        arguments = {"message": message}
-
-        # Make the MCP tool call using API key auth
-        result = await self.call_tool("notify_human", arguments)
-        return result
+        api_client = ApiClient()
+        return await api_client.notify_human(message=message)
