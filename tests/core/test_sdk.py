@@ -11,9 +11,9 @@ These tests validate:
 7. Error handling
 """
 
-import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import pytest
 from hitl_cli.sdk import HITL
 
 
@@ -38,14 +38,16 @@ class TestHITLSDK:
         mock_api_key.return_value = True
         mock_oauth.return_value = False
 
-        with patch.object(hitl_client._mcp_client, 'request_human_input_api_key', new_callable=AsyncMock) as mock_request:
-            mock_request.return_value = "User response"
+        with patch('hitl_cli.api_client.ApiClient') as mock_api_client_class:
+            mock_api_client = MagicMock()
+            mock_api_client_class.return_value = mock_api_client
+            mock_api_client.request_human_input = AsyncMock(return_value="User response")
 
             import asyncio
             result = asyncio.run(hitl_client.request_input("Test prompt", ["Yes", "No"]))
 
             assert result == "User response"
-            mock_request.assert_called_once_with(
+            mock_api_client.request_human_input.assert_called_once_with(
                 prompt="Test prompt",
                 choices=["Yes", "No"],
                 placeholder_text=None
@@ -97,14 +99,16 @@ class TestHITLSDK:
         """Test notify_completion with API key authentication"""
         mock_api_key.return_value = True
 
-        with patch.object(hitl_client._mcp_client, 'notify_task_completion_api_key', new_callable=AsyncMock) as mock_notify:
-            mock_notify.return_value = "Task completed feedback"
+        with patch('hitl_cli.api_client.ApiClient') as mock_api_client_class:
+            mock_api_client = MagicMock()
+            mock_api_client_class.return_value = mock_api_client
+            mock_api_client.notify_task_completion = AsyncMock(return_value="Task completed feedback")
 
             import asyncio
             result = asyncio.run(hitl_client.notify_completion("Task done"))
 
             assert result == "Task completed feedback"
-            mock_notify.assert_called_once_with(summary="Task done")
+            mock_api_client.notify_task_completion.assert_called_once_with(summary="Task done")
 
     @patch('hitl_cli.auth.is_using_api_key')
     @patch('hitl_cli.auth.is_using_oauth')
@@ -130,14 +134,16 @@ class TestHITLSDK:
         """Test notify with API key authentication"""
         mock_api_key.return_value = True
 
-        with patch.object(hitl_client._mcp_client, 'notify_human_api_key', new_callable=AsyncMock) as mock_notify:
-            mock_notify.return_value = "Notification sent"
+        with patch('hitl_cli.api_client.ApiClient') as mock_api_client_class:
+            mock_api_client = MagicMock()
+            mock_api_client_class.return_value = mock_api_client
+            mock_api_client.notify_human = AsyncMock(return_value="Notification sent")
 
             import asyncio
             result = asyncio.run(hitl_client.notify("Hello world"))
 
             assert result == "Notification sent"
-            mock_notify.assert_called_once_with(message="Hello world")
+            mock_api_client.notify_human.assert_called_once_with(message="Hello world")
 
     @patch('hitl_cli.auth.is_using_oauth')
     @patch('hitl_cli.auth.is_using_api_key')
@@ -190,8 +196,10 @@ class TestHITLSDK:
     def test_request_input_error_handling(self, hitl_client):
         """Test error handling in request_input"""
         with patch('hitl_cli.auth.is_using_api_key', return_value=True):
-            with patch.object(hitl_client._mcp_client, 'request_human_input_api_key', new_callable=AsyncMock) as mock_request:
-                mock_request.side_effect = Exception("Network error")
+            with patch('hitl_cli.api_client.ApiClient') as mock_api_client_class:
+                mock_api_client = MagicMock()
+                mock_api_client_class.return_value = mock_api_client
+                mock_api_client.request_human_input = AsyncMock(side_effect=Exception("Network error"))
 
                 import asyncio
                 with pytest.raises(Exception, match="Network error"):
@@ -200,8 +208,10 @@ class TestHITLSDK:
     def test_notify_completion_error_handling(self, hitl_client):
         """Test error handling in notify_completion"""
         with patch('hitl_cli.auth.is_using_api_key', return_value=True):
-            with patch.object(hitl_client._mcp_client, 'notify_task_completion_api_key', new_callable=AsyncMock) as mock_notify:
-                mock_notify.side_effect = Exception("Authentication failed")
+            with patch('hitl_cli.api_client.ApiClient') as mock_api_client_class:
+                mock_api_client = MagicMock()
+                mock_api_client_class.return_value = mock_api_client
+                mock_api_client.notify_task_completion = AsyncMock(side_effect=Exception("Authentication failed"))
 
                 import asyncio
                 with pytest.raises(Exception, match="Authentication failed"):
@@ -210,8 +220,10 @@ class TestHITLSDK:
     def test_notify_error_handling(self, hitl_client):
         """Test error handling in notify"""
         with patch('hitl_cli.auth.is_using_api_key', return_value=True):
-            with patch.object(hitl_client._mcp_client, 'notify_human_api_key', new_callable=AsyncMock) as mock_notify:
-                mock_notify.side_effect = Exception("Send failed")
+            with patch('hitl_cli.api_client.ApiClient') as mock_api_client_class:
+                mock_api_client = MagicMock()
+                mock_api_client_class.return_value = mock_api_client
+                mock_api_client.notify_human = AsyncMock(side_effect=Exception("Send failed"))
 
                 import asyncio
                 with pytest.raises(Exception, match="Send failed"):

@@ -2,20 +2,19 @@
 
 import asyncio
 import logging
-from typing import List, Optional
 
 import httpx
 import typer
 
 from .api_client import ApiClient
 from .auth import (
+    OAuthDynamicClient,
     delete_oauth_tokens,
     delete_token,
     get_current_oauth_token,
     is_logged_in,
     is_using_api_key,
     is_using_oauth,
-    OAuthDynamicClient,
 )
 from .config import BACKEND_BASE_URL
 from .crypto import ensure_agent_keypair
@@ -45,7 +44,7 @@ app.add_typer(admin_app, name="admin")
 
 @app.command()
 def login(
-    name: Optional[str] = typer.Option(None, "--name", help="Agent name for dynamic registration")
+    name: str | None = typer.Option(None, "--name", help="Agent name for dynamic registration")
 ):
     """Login to the HITL service using OAuth 2.1 dynamic registration"""
 
@@ -59,14 +58,14 @@ def login(
         default_name = name or "HITL CLI Agent"
         oauth_client = OAuthDynamicClient()
         access_token, agent_name = asyncio.run(oauth_client.perform_dynamic_oauth_flow(default_name))
-        
+
         typer.echo("✅ OAuth 2.1 dynamic authentication successful!")
-        
+
         # Generate E2EE keys and register with server during login
         typer.echo("🔐 Generating end-to-end encryption keys...")
         public_key, private_key = asyncio.run(ensure_agent_keypair())
         typer.echo("✅ E2EE keys generated and registered with server")
-        
+
         typer.echo()
         typer.echo(f"🤖 Agent '{agent_name}' is ready for secure E2EE communication.")
         typer.echo("💡 Use Claude Desktop with MCP configuration to interact securely.")
@@ -80,7 +79,7 @@ def login(
         typer.echo('       }')
         typer.echo('     }')
         typer.echo('   }')
-        
+
     except Exception as e:
         logger.error(f"OAuth 2.1 login failed: {e}")
         typer.echo(f"❌ OAuth 2.1 login failed: {e}")
@@ -220,10 +219,10 @@ def admin_register_client(
 @app.command()
 def request(
     prompt: str = typer.Option(..., "--prompt", help="The prompt to send to the human"),
-    choice: Optional[List[str]] = typer.Option(None, "--choice", help="Available choices for the human (can be specified multiple times)"),
-    placeholder_text: Optional[str] = typer.Option(None, "--placeholder-text", help="Placeholder text for the input field"),
-    agent_id: Optional[str] = typer.Option(None, "--agent-id", help="Agent ID to use for the request (optional - not used with OAuth)"),
-    agent_name: Optional[str] = typer.Option(None, "--agent-name", help="Agent name for OAuth requests"),
+    choice: list[str] | None = typer.Option(None, "--choice", help="Available choices for the human (can be specified multiple times)"),
+    placeholder_text: str | None = typer.Option(None, "--placeholder-text", help="Placeholder text for the input field"),
+    agent_id: str | None = typer.Option(None, "--agent-id", help="Agent ID to use for the request (optional - not used with OAuth)"),
+    agent_name: str | None = typer.Option(None, "--agent-name", help="Agent name for OAuth requests"),
     e2ee: bool = typer.Option(False, "--e2ee", help="Enable end-to-end encryption for the request")
 ):
     """Send a request for human input"""
@@ -247,9 +246,9 @@ def request(
                     placeholder_text=placeholder_text,
                 )
             elif is_using_api_key():
-                # Use API key authentication (via MCP)
-                client = MCPClient()
-                response = await client.request_human_input_api_key(
+                # Use API key authentication (via REST)
+                api_client = ApiClient()
+                response = await api_client.request_human_input(
                     prompt=prompt,
                     choices=choice,
                     placeholder_text=placeholder_text
@@ -286,8 +285,8 @@ def request(
 @app.command("notify-completion")
 def notify_completion(
     summary: str = typer.Option(..., "--summary", help="Summary of what was completed"),
-    agent_id: Optional[str] = typer.Option(None, "--agent-id", help="Agent ID to use for the notification (optional - not used with OAuth)"),
-    agent_name: Optional[str] = typer.Option(None, "--agent-name", help="Agent name for OAuth requests"),
+    agent_id: str | None = typer.Option(None, "--agent-id", help="Agent ID to use for the notification (optional - not used with OAuth)"),
+    agent_name: str | None = typer.Option(None, "--agent-name", help="Agent name for OAuth requests"),
     e2ee: bool = typer.Option(False, "--e2ee", help="Enable end-to-end encryption for the notification")
 ):
     """Notify human that a task has been completed and wait for their response"""
@@ -311,9 +310,9 @@ def notify_completion(
                     summary=summary
                 )
             elif is_using_api_key():
-                # Use API key authentication (via MCP)
-                client = MCPClient()
-                response = await client.notify_task_completion_api_key(
+                # Use API key authentication (via REST)
+                api_client = ApiClient()
+                response = await api_client.notify_task_completion(
                     summary=summary
                 )
             elif is_using_oauth():
@@ -345,8 +344,8 @@ def notify_completion(
 @app.command()
 def notify(
     message: str = typer.Option(..., "--message", help="The notification message to send"),
-    agent_id: Optional[str] = typer.Option(None, "--agent-id", help="Agent ID to use for the notification (optional - not used with OAuth)"),
-    agent_name: Optional[str] = typer.Option(None, "--agent-name", help="Agent name for OAuth requests"),
+    agent_id: str | None = typer.Option(None, "--agent-id", help="Agent ID to use for the notification (optional - not used with OAuth)"),
+    agent_name: str | None = typer.Option(None, "--agent-name", help="Agent name for OAuth requests"),
     e2ee: bool = typer.Option(False, "--e2ee", help="Enable end-to-end encryption for the notification")
 ):
     """Send a fire-forget notification to human"""
@@ -370,9 +369,9 @@ def notify(
                     message=message
                 )
             elif is_using_api_key():
-                # Use API key authentication (via MCP)
-                client = MCPClient()
-                response = await client.notify_human_api_key(
+                # Use API key authentication (via REST)
+                api_client = ApiClient()
+                response = await api_client.notify_human(
                     message=message
                 )
             elif is_using_oauth():
@@ -412,7 +411,7 @@ def proxy(
             if not is_logged_in() and not is_using_oauth():
                 typer.echo("❌ Not logged in. Please run 'hitl-cli login --name \"Agent Name\"' first.")
                 raise typer.Exit(1)
-            
+
             # Ensure agent keypair exists (generate if needed)
             # typer.echo("🔐 Ensuring agent cryptographic keys...")
             try:
@@ -421,21 +420,21 @@ def proxy(
             except Exception:
                 typer.echo("❌ E2EE keys not available. Please run 'hitl-cli login --name \"Agent Name\"' to generate keys.")
                 raise typer.Exit(1)
-            
+
             # Create and start FastMCP proxy server
             # typer.echo(f"🚀 Starting FastMCP proxy for backend: {backend_url}")
             # typer.echo("📡 Listening for MCP requests on stdin...")
             # typer.echo("🔐 End-to-end encryption active - server will only see encrypted data")
-            
+
             # Use new FastMCP-based proxy server
             server = create_fastmcp_proxy_server(backend_url)
             await server.run_stdio_async()
-            
+
         except Exception as e:
             logger.error(f"Proxy failed: {e}")
             typer.echo(f"❌ Proxy failed: {e}")
             raise typer.Exit(1)
-    
+
     # Run the async function using asyncio.run
     asyncio.run(_async_proxy())
 
