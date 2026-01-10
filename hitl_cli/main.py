@@ -247,9 +247,9 @@ def request(
                     placeholder_text=placeholder_text,
                 )
             elif is_using_api_key():
-                # Use API key authentication (via MCP)
-                client = MCPClient()
-                response = await client.request_human_input_api_key(
+                # Use API key authentication (via REST API)
+                api_client = ApiClient()
+                response = await api_client.request_human_input(
                     prompt=prompt,
                     choices=choice,
                     placeholder_text=placeholder_text
@@ -311,9 +311,9 @@ def notify_completion(
                     summary=summary
                 )
             elif is_using_api_key():
-                # Use API key authentication (via MCP)
-                client = MCPClient()
-                response = await client.notify_task_completion_api_key(
+                # Use API key authentication (via REST API)
+                api_client = ApiClient()
+                response = await api_client.notify_task_completion(
                     summary=summary
                 )
             elif is_using_oauth():
@@ -370,9 +370,9 @@ def notify(
                     message=message
                 )
             elif is_using_api_key():
-                # Use API key authentication (via MCP)
-                client = MCPClient()
-                response = await client.notify_human_api_key(
+                # Use API key authentication (via REST API)
+                api_client = ApiClient()
+                response = await api_client.notify_human(
                     message=message
                 )
             elif is_using_oauth():

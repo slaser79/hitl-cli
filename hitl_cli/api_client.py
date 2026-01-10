@@ -231,3 +231,49 @@ class ApiClient:
         )
 
         return decrypted_response.get("response", "")
+
+    async def request_human_input(
+        self,
+        prompt: str,
+        choices: Optional[List[str]] = None,
+        placeholder_text: Optional[str] = None,
+        agent_name: Optional[str] = None
+    ) -> str:
+        """Request human input via REST API"""
+        payload = {
+            "prompt": prompt,
+            "choices": choices,
+            "placeholder_text": placeholder_text,
+            "agent_name": agent_name
+        }
+        # Filter out None values
+        payload = {k: v for k, v in payload.items() if v is not None}
+        
+        response = await self.post("/api/v1/hitl/request", payload)
+        return response.get("response", "")
+
+    async def notify_human(
+        self,
+        message: str,
+        agent_id: Optional[str] = None
+    ) -> str:
+        """Send a notification to human via REST API"""
+        payload = {"message": message}
+        if agent_id:
+            payload["agent_id"] = agent_id
+            
+        response = await self.post("/api/v1/hitl/notify", payload)
+        return response.get("status", "Notification sent")
+
+    async def notify_task_completion(
+        self,
+        summary: str,
+        agent_name: Optional[str] = None
+    ) -> str:
+        """Notify human that a task has been completed via REST API"""
+        payload = {"summary": summary}
+        if agent_name:
+            payload["agent_name"] = agent_name
+
+        response = await self.post("/api/v1/hitl/complete", payload)
+        return response.get("response", "")
