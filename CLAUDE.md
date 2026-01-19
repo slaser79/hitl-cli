@@ -222,3 +222,25 @@ To perform a fresh login, you can log out and remove stored credentials:
 ```bash
 # This command clears credentials from the sys
     *   **Solution**: The CLI should handle token refreshe
+```
+
+## The Constitution (Non-Negotiable)
+
+This repository is a **Satellite** in the HITL Empire, managed from HQ (`slaser79/agent_workflows`).
+
+### 1. The Spec-First Doctrine
+**No code is written without a Spec.**
+- You must read the spec linked in your Issue before writing code.
+- *Code is liability. Specs are assets.*
+
+### 2. Relentless Improvement (Kaizen)
+**We do not repeat mistakes.**
+- After every failure, document lessons learned.
+- *The system gets smarter with every crash.*
+
+### 3. Chain of Command
+1. **The CEO (Human):** Sets high-level intent via HITL.
+2. **The Chief of Staff (CoS):** The Architect. Creates Specs and GitHub Issues.
+3. **The Workers:** (Gemini/Codex/Qwen). They write code in isolated worktrees.
+
+For full Empire governance, see: [agent_workflows CLAUDE.md](https://github.com/slaser79/agent_workflows/blob/main/CLAUDE.md)
