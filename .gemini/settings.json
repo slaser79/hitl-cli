@@ -1,0 +1,21 @@
+{
+  "mcpServers": {
+    "agent-workflows": {
+      "command": "nix",
+      "args": [
+        "develop",
+        "/home/slaser79/lab/agent_workflows",
+        "-c",
+        "uv",
+        "run",
+        "python",
+        "-m",
+        "agent_workflows.mcp_server"
+      ],
+      "env": {
+        "PYTHONPATH": "src",
+        "DATABASE_URL": "sqlite:////home/slaser79/lab/agent_workflows/data/tasks.db"
+      }
+    }
+  }
+}
