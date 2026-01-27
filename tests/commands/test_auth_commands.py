@@ -114,8 +114,11 @@ class TestAgentCommands:
         return CliRunner()
 
     @pytest.fixture
-    def mock_auth(self, tmp_path):
+    def mock_auth(self, tmp_path, monkeypatch):
         """Mock authentication state"""
+        # Ensure HITL_API_KEY is not set so tests use JWT auth path
+        monkeypatch.delenv('HITL_API_KEY', raising=False)
+
         config_dir = tmp_path / ".config" / "hitl-cli"
         config_dir.mkdir(parents=True)
         token_file = config_dir / "token.json"
@@ -147,8 +150,10 @@ class TestAgentCommands:
             assert "agent-1" in result.output
             assert "agent-2" in result.output
 
-    def test_agents_list_not_logged_in(self, runner):
+    def test_agents_list_not_logged_in(self, runner, monkeypatch):
         """Test listing agents when not logged in"""
+        # Ensure HITL_API_KEY is not set so tests use JWT auth path
+        monkeypatch.delenv('HITL_API_KEY', raising=False)
 
         with patch('hitl_cli.auth.load_token', return_value=None):
             result = runner.invoke(app, ["agents", "list"])
@@ -183,8 +188,11 @@ class TestRequestCommand:
         return CliRunner()
 
     @pytest.fixture
-    def mock_auth(self, tmp_path):
+    def mock_auth(self, tmp_path, monkeypatch):
         """Mock authentication state"""
+        # Ensure HITL_API_KEY is not set so tests use JWT/MCP auth path
+        monkeypatch.delenv('HITL_API_KEY', raising=False)
+
         config_dir = tmp_path / ".config" / "hitl-cli"
         config_dir.mkdir(parents=True)
         token_file = config_dir / "token.json"

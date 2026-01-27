@@ -21,8 +21,11 @@ class TestApiClientExitCodeHandling:
     """Test API Client exit code handling"""
 
     @pytest.fixture
-    def mock_config_dir(self, tmp_path):
+    def mock_config_dir(self, tmp_path, monkeypatch):
         """Create a temporary config directory"""
+        # Ensure HITL_API_KEY is not set so tests use JWT auth path
+        monkeypatch.delenv('HITL_API_KEY', raising=False)
+
         config_dir = tmp_path / ".config" / "hitl-cli"
         config_dir.mkdir(parents=True)
         token_file = config_dir / "token.json"
@@ -120,8 +123,11 @@ class TestApiClientSyncWrapperHandling:
     """Test API Client sync wrapper handling"""
 
     @pytest.fixture
-    def mock_config_dir(self, tmp_path):
+    def mock_config_dir(self, tmp_path, monkeypatch):
         """Create a temporary config directory"""
+        # Ensure HITL_API_KEY is not set so tests use JWT auth path
+        monkeypatch.delenv('HITL_API_KEY', raising=False)
+
         config_dir = tmp_path / ".config" / "hitl-cli"
         config_dir.mkdir(parents=True)
         token_file = config_dir / "token.json"
@@ -192,8 +198,11 @@ class TestApiClientAuthentication:
     """Test API Client authentication handling"""
 
     @pytest.fixture
-    def mock_config_dir(self, tmp_path):
+    def mock_config_dir(self, tmp_path, monkeypatch):
         """Create a temporary config directory"""
+        # Ensure HITL_API_KEY is not set so tests use JWT auth path
+        monkeypatch.delenv('HITL_API_KEY', raising=False)
+
         config_dir = tmp_path / ".config" / "hitl-cli"
         config_dir.mkdir(parents=True)
         token_file = config_dir / "token.json"

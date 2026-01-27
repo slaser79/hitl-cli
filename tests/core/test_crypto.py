@@ -245,9 +245,10 @@ class TestBackendRegistration:
 
     @pytest.mark.asyncio
     @patch('hitl_cli.crypto.get_current_agent_id', return_value='test-agent-id')
+    @patch('hitl_cli.crypto.is_using_api_key', return_value=False)
     @patch('hitl_cli.crypto.is_using_oauth', return_value=True)
     @patch('hitl_cli.crypto.get_current_oauth_token', return_value='test-oauth-token')
-    async def test_register_public_key_with_backend_success(self, mock_get_token, mock_is_oauth, mock_get_agent_id):
+    async def test_register_public_key_with_backend_success(self, mock_get_token, mock_is_oauth, mock_is_api_key, mock_get_agent_id):
         """Test successful public key registration with backend."""
         with patch('httpx.AsyncClient') as mock_client_class:
             mock_client = AsyncMock()

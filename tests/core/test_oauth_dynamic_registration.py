@@ -201,8 +201,11 @@ class TestMCPOAuthIntegration:
     """Test MCP client integration with OAuth Bearer authentication"""
 
     @pytest.fixture
-    def mock_oauth_token(self, tmp_path):
+    def mock_oauth_token(self, tmp_path, monkeypatch):
         """Mock OAuth token storage"""
+        # Ensure HITL_API_KEY is not set so tests use OAuth auth path
+        monkeypatch.delenv('HITL_API_KEY', raising=False)
+
         import time
         config_dir = tmp_path / ".config" / "hitl-cli"
         config_dir.mkdir(parents=True)
