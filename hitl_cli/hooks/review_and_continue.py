@@ -4,20 +4,29 @@ import subprocess
 import sys
 
 
-def get_last_turns(transcript_path: str, num_turns: int = 2) -> str:
+def get_last_turns(transcript_path: str, num_turns: int = 2, max_search_lines: int = 50) -> str:
     """
     Reads a JSONL transcript file and returns a human-readable formatted string of the
     last few assistant messages for review.
+
+    Args:
+        transcript_path: Path to the JSONL transcript file
+        num_turns: Number of assistant messages to return
+        max_search_lines: Maximum number of lines to search backwards for assistant messages
     """
     try:
         with open(transcript_path) as f:
             lines = f.readlines()
 
-        # Get the last N lines, ensuring we don't go out of bounds
-        last_lines = lines[-num_turns:]
+        # Search through the last max_search_lines to find assistant messages with text
+        search_lines = lines[-max_search_lines:] if len(lines) > max_search_lines else lines
 
         formatted_turns = []
-        for line in last_lines:
+        # Iterate in reverse to get the most recent messages first
+        for line in reversed(search_lines):
+            if len(formatted_turns) >= num_turns:
+                break
+
             try:
                 turn_data = json.loads(line)
                 if not isinstance(turn_data, dict):
@@ -49,6 +58,8 @@ def get_last_turns(transcript_path: str, num_turns: int = 2) -> str:
         if not formatted_turns:
             return "No recent activity found in transcript."
 
+        # Reverse to get chronological order (oldest first)
+        formatted_turns.reverse()
         return "\n\n".join(formatted_turns)
 
     except FileNotFoundError:
