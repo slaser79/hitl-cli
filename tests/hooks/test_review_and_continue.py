@@ -102,6 +102,55 @@ def test_get_last_turns_searches_beyond_last_two_lines(temp_transcript_with_tool
     assert "No recent activity" not in output
 
 
+@pytest.fixture
+def temp_transcript_claude_code_format(tmp_path):
+    """Transcript in Claude Code's actual format (message.role instead of type)"""
+    transcript_file = tmp_path / "transcript.jsonl"
+    turns = [
+        {
+            "message": {
+                "role": "assistant",
+                "content": [
+                    {"type": "text", "text": "All tests pass. Creating PR:"},
+                    {"type": "tool_use", "name": "Bash", "input": {}}
+                ]
+            }
+        },
+        {
+            "type": "user",
+            "message": {
+                "role": "user",
+                "content": [{"type": "tool_result", "content": "success"}]
+            }
+        },
+        {
+            "message": {
+                "role": "assistant",
+                "content": [
+                    {"type": "text", "text": "Done! PR created. Would you like me to merge this PR?"}
+                ]
+            }
+        },
+        {
+            "type": "progress",
+            "data": {"type": "hook_progress", "hookEvent": "Stop"}
+        }
+    ]
+    with open(transcript_file, "w") as f:
+        for turn in turns:
+            f.write(json.dumps(turn) + "\n")
+    return str(transcript_file)
+
+
+def test_get_last_turns_claude_code_format(temp_transcript_claude_code_format):
+    """Test that we handle Claude Code's transcript format (message.role)"""
+    output = review_and_continue.get_last_turns(temp_transcript_claude_code_format)
+    # Should find the LAST assistant message, not the first one
+    assert "Would you like me to merge this PR?" in output
+    # Should NOT contain the earlier message
+    assert "All tests pass" not in output
+
+
 def test_main_hook_logic_no_header(temp_transcript):
     input_data = {
         "transcript_path": temp_transcript

@@ -27,26 +27,35 @@ def get_last_turns(transcript_path: str, num_turns: int = 1, max_search_lines: i
                 if not isinstance(turn_data, dict):
                     continue
 
-                if turn_data.get("type") == "assistant":
-                    # Handle assistant messages
-                    message = turn_data.get("message", {})
-                    if not isinstance(message, dict):
-                        continue
+                # Check for assistant message - handle both formats:
+                # 1. type: "assistant" at top level (test format)
+                # 2. message.role: "assistant" (Claude Code transcript format)
+                message = turn_data.get("message", {})
+                if not isinstance(message, dict):
+                    continue
 
-                    content = message.get("content", [])
+                is_assistant = (
+                    turn_data.get("type") == "assistant" or
+                    message.get("role") == "assistant"
+                )
 
-                    # Extract text content
-                    assistant_text = ""
-                    if isinstance(content, list):
-                        for item in content:
-                            if isinstance(item, dict) and item.get("type") == "text":
-                                text = safe_get_str(item, "text", "")
-                                assistant_text += text
-                            elif isinstance(item, str):
-                                assistant_text += item
+                if not is_assistant:
+                    continue
 
-                    if assistant_text:
-                        return assistant_text.strip()
+                content = message.get("content", [])
+
+                # Extract text content (skip thinking, tool_use, etc.)
+                assistant_text = ""
+                if isinstance(content, list):
+                    for item in content:
+                        if isinstance(item, dict) and item.get("type") == "text":
+                            text = safe_get_str(item, "text", "")
+                            assistant_text += text
+                        elif isinstance(item, str):
+                            assistant_text += item
+
+                if assistant_text:
+                    return assistant_text.strip()
             except json.JSONDecodeError:
                 continue
 
