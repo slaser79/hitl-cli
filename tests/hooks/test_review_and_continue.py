@@ -45,7 +45,7 @@ def temp_transcript(tmp_path):
     return str(transcript_file)
 
 def test_get_last_turns_only_assistant(temp_transcript):
-    output = review_and_continue.get_last_turns(temp_transcript, num_turns=2)
+    output = review_and_continue.get_last_turns(temp_transcript)
     # Should ONLY contain the assistant message text
     assert "Committed and PR created" in output
     # Should NOT contain metadata or other turn types
@@ -94,8 +94,8 @@ def temp_transcript_with_tool_results(tmp_path):
 
 
 def test_get_last_turns_searches_beyond_last_two_lines(temp_transcript_with_tool_results):
-    """Test that we find assistant messages even if they're not in the last 2 lines"""
-    output = review_and_continue.get_last_turns(temp_transcript_with_tool_results, num_turns=2)
+    """Test that we find assistant message even if it's not in the last 2 lines"""
+    output = review_and_continue.get_last_turns(temp_transcript_with_tool_results)
     # Should find the assistant message even though it's not in the last 2 lines
     assert "recommended next steps" in output
     # Should NOT return the "no activity" message
