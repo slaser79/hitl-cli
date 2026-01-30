@@ -4,7 +4,7 @@ import subprocess
 import sys
 
 
-def get_last_turns(transcript_path: str, num_turns: int = 1, max_search_lines: int = 50) -> str:
+def get_last_turns(transcript_path: str, num_turns: int = 1, max_search_lines: int = 200) -> str:
     """
     Reads a JSONL transcript file and returns the last assistant message text.
 
@@ -17,10 +17,13 @@ def get_last_turns(transcript_path: str, num_turns: int = 1, max_search_lines: i
         with open(transcript_path) as f:
             lines = f.readlines()
 
+        if not lines:
+            return "No recent activity found in transcript."
+
         # Search through the last max_search_lines to find assistant messages with text
         search_lines = lines[-max_search_lines:] if len(lines) > max_search_lines else lines
 
-        # Iterate in reverse to find the most recent assistant message
+        # Iterate in reverse to find the most recent assistant message with text content
         for line in reversed(search_lines):
             try:
                 turn_data = json.loads(line)
@@ -50,11 +53,12 @@ def get_last_turns(transcript_path: str, num_turns: int = 1, max_search_lines: i
                     for item in content:
                         if isinstance(item, dict) and item.get("type") == "text":
                             text = safe_get_str(item, "text", "")
-                            assistant_text += text
+                            if text:
+                                assistant_text += text
                         elif isinstance(item, str):
                             assistant_text += item
 
-                if assistant_text:
+                if assistant_text.strip():
                     return assistant_text.strip()
             except json.JSONDecodeError:
                 continue
