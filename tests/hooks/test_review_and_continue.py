@@ -1,41 +1,25 @@
 #!/usr/bin/env python3
+"""Tests for the review_and_continue stop hook."""
 import json
-import os
-import subprocess
-import sys
 from unittest.mock import MagicMock, patch
+
 import pytest
+
 from hitl_cli.hooks import review_and_continue
 
+
 @pytest.fixture
-def temp_transcript(tmp_path):
+def temp_transcript_simple(tmp_path):
+    """Simple transcript with one assistant message."""
     transcript_file = tmp_path / "transcript.jsonl"
     turns = [
         {
             "type": "assistant",
-            "timestamp": "2026-01-27T18:29:51.754Z",
             "message": {
-                "model": "claude-opus-4-5-20251101",
+                "role": "assistant",
                 "content": [
-                    {
-                        "type": "text",
-                        "text": "Committed and PR created.Commit: bdfc023 on branch feature/maestro-screenshot-automation"
-                    }
-                ],
-                "usage": {
-                    "input_tokens": 7,
-                    "output_tokens": 1
-                }
-            }
-        },
-        {
-            "type": "progress",
-            "timestamp": "2026-01-27T18:29:51.754Z",
-            "data": {
-                "type": "hook_progress",
-                "hookEvent": "Stop",
-                "hookName": "Stop",
-                "uuid": "1c70c44a-a92f-470c-8066-b03706169ccf"
+                    {"type": "text", "text": "Task completed successfully."}
+                ]
             }
         }
     ]
@@ -44,47 +28,24 @@ def temp_transcript(tmp_path):
             f.write(json.dumps(turn) + "\n")
     return str(transcript_file)
 
-def test_get_last_turns_only_assistant(temp_transcript):
-    output = review_and_continue.get_last_turns(temp_transcript)
-    # Should ONLY contain the assistant message text
-    assert "Committed and PR created" in output
-    # Should NOT contain metadata or other turn types
-    assert "--- Turn" not in output
-    assert "Model:" not in output
-    assert "progress" not in output
 
 @pytest.fixture
-def temp_transcript_with_tool_results(tmp_path):
-    """Transcript where assistant message is not in the last 2 lines"""
+def temp_transcript_with_progress(tmp_path):
+    """Transcript with assistant message followed by progress events."""
     transcript_file = tmp_path / "transcript.jsonl"
     turns = [
         {
             "type": "assistant",
-            "timestamp": "2026-01-27T18:29:50.000Z",
             "message": {
-                "model": "claude-opus-4-5-20251101",
+                "role": "assistant",
                 "content": [
-                    {
-                        "type": "text",
-                        "text": "Here are the recommended next steps for your project."
-                    }
+                    {"type": "text", "text": "Committed and PR created."}
                 ]
             }
         },
         {
-            "type": "tool_result",
-            "timestamp": "2026-01-27T18:29:51.000Z",
-            "data": {"tool": "some_tool", "result": "success"}
-        },
-        {
             "type": "progress",
-            "timestamp": "2026-01-27T18:29:52.000Z",
             "data": {"type": "hook_progress", "hookEvent": "Stop"}
-        },
-        {
-            "type": "user",
-            "timestamp": "2026-01-27T18:29:53.000Z",
-            "message": {"content": "Thanks"}
         }
     ]
     with open(transcript_file, "w") as f:
@@ -93,18 +54,66 @@ def temp_transcript_with_tool_results(tmp_path):
     return str(transcript_file)
 
 
-def test_get_last_turns_searches_beyond_last_two_lines(temp_transcript_with_tool_results):
-    """Test that we find assistant message even if it's not in the last 2 lines"""
-    output = review_and_continue.get_last_turns(temp_transcript_with_tool_results)
-    # Should find the assistant message even though it's not in the last 2 lines
-    assert "recommended next steps" in output
-    # Should NOT return the "no activity" message
-    assert "No recent activity" not in output
+@pytest.fixture
+def temp_transcript_with_tool_calls(tmp_path):
+    """Transcript where last assistant message is followed by tool calls."""
+    transcript_file = tmp_path / "transcript.jsonl"
+    turns = [
+        {
+            "type": "assistant",
+            "message": {
+                "role": "assistant",
+                "content": [
+                    {"type": "text", "text": "First message - should NOT be returned."}
+                ]
+            }
+        },
+        {
+            "type": "assistant",
+            "message": {
+                "role": "assistant",
+                "content": [
+                    {"type": "tool_use", "name": "Bash", "input": {}}
+                ]
+            }
+        },
+        {
+            "type": "user",
+            "message": {
+                "role": "user",
+                "content": [{"type": "tool_result", "content": "success"}]
+            }
+        },
+        {
+            "type": "assistant",
+            "message": {
+                "role": "assistant",
+                "content": [
+                    {"type": "text", "text": "Final message - should be returned."}
+                ]
+            }
+        },
+        {
+            "type": "assistant",
+            "message": {
+                "role": "assistant",
+                "content": [{"type": "thinking", "thinking": "..."}]
+            }
+        },
+        {
+            "type": "progress",
+            "data": {"type": "hook_progress"}
+        }
+    ]
+    with open(transcript_file, "w") as f:
+        for turn in turns:
+            f.write(json.dumps(turn) + "\n")
+    return str(transcript_file)
 
 
 @pytest.fixture
 def temp_transcript_claude_code_format(tmp_path):
-    """Transcript in Claude Code's actual format (message.role instead of type)"""
+    """Transcript in Claude Code's actual format (message.role instead of type)."""
     transcript_file = tmp_path / "transcript.jsonl"
     turns = [
         {
@@ -142,38 +151,100 @@ def temp_transcript_claude_code_format(tmp_path):
     return str(transcript_file)
 
 
-def test_get_last_turns_claude_code_format(temp_transcript_claude_code_format):
-    """Test that we handle Claude Code's transcript format (message.role)"""
-    output = review_and_continue.get_last_turns(temp_transcript_claude_code_format)
+def test_get_last_assistant_message_simple(temp_transcript_simple):
+    """Test basic extraction of assistant message."""
+    output = review_and_continue.get_last_assistant_message(temp_transcript_simple)
+    assert "Task completed successfully" in output
+
+
+def test_get_last_assistant_message_with_progress(temp_transcript_with_progress):
+    """Test that we skip progress events and find the assistant message."""
+    output = review_and_continue.get_last_assistant_message(temp_transcript_with_progress)
+    assert "Committed and PR created" in output
+    assert "progress" not in output
+
+
+def test_get_last_assistant_message_with_tool_calls(temp_transcript_with_tool_calls):
+    """Test that we find the LAST assistant message, not earlier ones."""
+    output = review_and_continue.get_last_assistant_message(temp_transcript_with_tool_calls)
+    # Should find the FINAL message
+    assert "Final message - should be returned" in output
+    # Should NOT return the first message
+    assert "First message" not in output
+
+
+def test_get_last_assistant_message_claude_code_format(temp_transcript_claude_code_format):
+    """Test that we handle Claude Code's transcript format (message.role)."""
+    output = review_and_continue.get_last_assistant_message(temp_transcript_claude_code_format)
     # Should find the LAST assistant message, not the first one
     assert "Would you like me to merge this PR?" in output
     # Should NOT contain the earlier message
     assert "All tests pass" not in output
 
 
-def test_main_hook_logic_no_header(temp_transcript):
+def test_get_last_assistant_message_file_not_found():
+    """Test handling of missing transcript file."""
+    output = review_and_continue.get_last_assistant_message("/nonexistent/path.jsonl")
+    assert "Error" in output or "not found" in output.lower()
+
+
+def test_main_hook_allows_stop_on_satisfied_response(temp_transcript_simple):
+    """Test that satisfied phrases allow Claude to stop."""
+    input_data = {"transcript_path": temp_transcript_simple}
+
+    with patch("hitl_cli.hooks.review_and_continue.json.load", return_value=input_data):
+        with patch("hitl_cli.hooks.review_and_continue.subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(stdout="All good, thanks!", returncode=0)
+
+            with patch("hitl_cli.hooks.review_and_continue.sys.exit") as mock_exit:
+                mock_exit.side_effect = SystemExit(0)
+                try:
+                    review_and_continue.main()
+                except SystemExit:
+                    pass
+
+                # Should exit with 0 (allow stop)
+                mock_exit.assert_called_with(0)
+
+
+def test_main_hook_blocks_on_new_instructions(temp_transcript_simple):
+    """Test that new instructions block the stop."""
+    input_data = {"transcript_path": temp_transcript_simple}
+
+    with patch("hitl_cli.hooks.review_and_continue.json.load", return_value=input_data):
+        with patch("hitl_cli.hooks.review_and_continue.subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(stdout="Please also update the README", returncode=0)
+
+            with patch("hitl_cli.hooks.review_and_continue.sys.exit") as mock_exit:
+                mock_exit.side_effect = SystemExit(0)
+                with patch("builtins.print") as mock_print:
+                    try:
+                        review_and_continue.main()
+                    except SystemExit:
+                        pass
+
+                    # Should print a block decision
+                    mock_print.assert_called()
+                    call_args = mock_print.call_args[0][0]
+                    output = json.loads(call_args)
+                    assert output["decision"] == "block"
+                    assert "README" in output["reason"]
+
+
+def test_main_hook_respects_stop_hook_active():
+    """Test that we don't block when stop_hook_active is true (prevents loops)."""
     input_data = {
-        "transcript_path": temp_transcript
+        "transcript_path": "/some/path.jsonl",
+        "stop_hook_active": True
     }
-    
-    with patch("json.load", return_value=input_data):
-        with patch("subprocess.run") as mock_run:
-            mock_run.return_value = MagicMock(stdout="All good", returncode=0)
-            
-            with patch("sys.exit") as mock_exit:
+
+    with patch("hitl_cli.hooks.review_and_continue.json.load", return_value=input_data):
+        with patch("hitl_cli.hooks.review_and_continue.sys.exit") as mock_exit:
+            mock_exit.side_effect = SystemExit(0)
+            try:
                 review_and_continue.main()
-                
-                # Check what was sent to hitl-cli
-                mock_run.assert_called_once()
-                args, kwargs = mock_run.call_args
-                summary = ""
-                for i, arg in enumerate(args[0]):
-                    if arg == "--summary":
-                        summary = args[0][i+1]
-                
-                # Header should be gone
-                assert "Claude has completed its task" not in summary
-                # Metadata should be gone
-                assert "--- Turn" not in summary
-                # Only the assistant message should remain
-                assert "Committed and PR created" in summary
+            except SystemExit:
+                pass
+
+            # Should exit immediately with 0 (allow stop)
+            mock_exit.assert_called_once_with(0)
