@@ -8,74 +8,85 @@ and sends it to a human for review via the HITL notification system.
 import json
 import subprocess
 import sys
+import time
 
 
-def get_last_assistant_message(transcript_path: str) -> str:
+def get_last_assistant_message(transcript_path: str, retries: int = 3, delay: float = 0.2) -> str:
     """
     Reads a JSONL transcript file and returns the last assistant message with text content.
 
     Iterates from the END of the file backwards to find the most recent assistant
     message that contains actual text (not just thinking or tool_use blocks).
 
+    Note: There's a known race condition where the Stop hook can fire before the
+    transcript is fully written. We retry with a small delay to handle this.
+
     Args:
         transcript_path: Path to the JSONL transcript file
+        retries: Number of retry attempts if no message found (default: 3)
+        delay: Delay in seconds between retries (default: 0.2)
 
     Returns:
         The text content of the last assistant message, or an error message if not found.
     """
-    try:
-        with open(transcript_path) as f:
-            lines = f.readlines()
-    except FileNotFoundError:
-        return "Error: Transcript file not found."
-    except Exception as e:
-        return f"Error reading transcript: {e}"
+    for attempt in range(retries):
+        if attempt > 0:
+            # Wait before retry to allow file to be fully written
+            time.sleep(delay)
 
-    if not lines:
-        return "No content in transcript."
-
-    # Iterate from the END of the file to find the most recent assistant message with text
-    for line in reversed(lines):
         try:
-            entry = json.loads(line.strip())
-        except json.JSONDecodeError:
-            continue
+            with open(transcript_path) as f:
+                lines = f.readlines()
+        except FileNotFoundError:
+            return "Error: Transcript file not found."
+        except Exception as e:
+            return f"Error reading transcript: {e}"
 
-        if not isinstance(entry, dict):
-            continue
+        if not lines:
+            continue  # Retry if empty
 
-        # Get the message object
-        message = entry.get("message", {})
-        if not isinstance(message, dict):
-            continue
+        # Iterate from the END of the file to find the most recent assistant message with text
+        for line in reversed(lines):
+            try:
+                entry = json.loads(line.strip())
+            except json.JSONDecodeError:
+                continue
 
-        # Check if this is an assistant message (handle both formats)
-        is_assistant = (
-            entry.get("type") == "assistant" or
-            message.get("role") == "assistant"
-        )
+            if not isinstance(entry, dict):
+                continue
 
-        if not is_assistant:
-            continue
+            # Get the message object
+            message = entry.get("message", {})
+            if not isinstance(message, dict):
+                continue
 
-        # Extract text content from the message
-        content = message.get("content", [])
-        if not isinstance(content, list):
-            continue
+            # Check if this is an assistant message (handle both formats)
+            is_assistant = (
+                entry.get("type") == "assistant" or
+                message.get("role") == "assistant"
+            )
 
-        # Collect all text blocks (skip thinking, tool_use, etc.)
-        text_parts = []
-        for item in content:
-            if isinstance(item, dict) and item.get("type") == "text":
-                text = item.get("text")
-                if text and isinstance(text, str) and text.strip():
-                    text_parts.append(text)
-            elif isinstance(item, str) and item.strip():
-                text_parts.append(item)
+            if not is_assistant:
+                continue
 
-        # If we found text, return it
-        if text_parts:
-            return "".join(text_parts).strip()
+            # Extract text content from the message
+            content = message.get("content", [])
+            if not isinstance(content, list):
+                continue
+
+            # Collect all text blocks (skip thinking, tool_use, etc.)
+            text_parts = []
+            for item in content:
+                if isinstance(item, dict) and item.get("type") == "text":
+                    text = item.get("text")
+                    if text and isinstance(text, str) and text.strip():
+                        text_parts.append(text)
+                elif isinstance(item, str) and item.strip():
+                    text_parts.append(item)
+
+            # If we found text, return it
+            if text_parts:
+                return "".join(text_parts).strip()
 
     return "No recent assistant message found in transcript."
 
