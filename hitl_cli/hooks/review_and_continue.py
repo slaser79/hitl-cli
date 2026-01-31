@@ -133,18 +133,24 @@ def main():
         sys.exit(1)
 
     # Interpret the user's response
+    # Only allow stop if the response is EXACTLY a satisfied phrase (or very close)
+    # Any additional text means the user wants to continue with instructions
     satisfied_phrases = [
         "all good", "looks good", "great job", "thats it for now",
         "thats good", "thats great", "we are done", "ok great",
-        "done", "thanks", "thank you", "perfect", "awesome"
+        "done", "thanks", "thank you", "perfect", "awesome", "ok", "okay",
+        "good", "yes", "yep", "sure", "fine", "cool", "nice", "great"
     ]
 
-    response_lower = user_response.lower()
-    if any(phrase in response_lower for phrase in satisfied_phrases):
+    # Normalize response: lowercase and strip punctuation
+    response_normalized = user_response.lower().strip().rstrip("!.,;:")
+
+    # Only allow stop if response IS a satisfied phrase, not just contains one
+    if response_normalized in satisfied_phrases:
         # User is satisfied - allow Claude to stop
         sys.exit(0)
     else:
-        # User provided new instructions - block the stop and continue
+        # User provided instructions - block the stop and continue
         output = {
             "decision": "block",
             "reason": user_response

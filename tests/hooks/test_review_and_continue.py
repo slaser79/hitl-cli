@@ -248,3 +248,28 @@ def test_main_hook_respects_stop_hook_active():
 
             # Should exit immediately with 0 (allow stop)
             mock_exit.assert_called_once_with(0)
+
+
+def test_main_hook_blocks_when_response_contains_but_isnt_satisfied_phrase(temp_transcript_simple):
+    """Test that 'done but please continue' blocks, not stops (strict matching)."""
+    input_data = {"transcript_path": temp_transcript_simple}
+
+    with patch("hitl_cli.hooks.review_and_continue.json.load", return_value=input_data):
+        with patch("hitl_cli.hooks.review_and_continue.subprocess.run") as mock_run:
+            # Response CONTAINS "done" but has more instructions
+            mock_run.return_value = MagicMock(stdout="Done, but please also add tests", returncode=0)
+
+            with patch("hitl_cli.hooks.review_and_continue.sys.exit") as mock_exit:
+                mock_exit.side_effect = SystemExit(0)
+                with patch("builtins.print") as mock_print:
+                    try:
+                        review_and_continue.main()
+                    except SystemExit:
+                        pass
+
+                    # Should print a block decision, NOT allow stop
+                    mock_print.assert_called()
+                    call_args = mock_print.call_args[0][0]
+                    output = json.loads(call_args)
+                    assert output["decision"] == "block"
+                    assert "add tests" in output["reason"]
