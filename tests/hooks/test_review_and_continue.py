@@ -188,13 +188,13 @@ def test_get_last_assistant_message_file_not_found():
     assert "Error" in output or "not found" in output.lower()
 
 
-def test_main_hook_allows_stop_on_satisfied_response(temp_transcript_simple):
-    """Test that satisfied phrases allow Claude to stop."""
+def test_main_hook_allows_stop_on_explicit_done(temp_transcript_simple):
+    """Test that 'YOU ARE DONE' allows Claude to stop."""
     input_data = {"transcript_path": temp_transcript_simple}
 
     with patch("hitl_cli.hooks.review_and_continue.json.load", return_value=input_data):
         with patch("hitl_cli.hooks.review_and_continue.subprocess.run") as mock_run:
-            mock_run.return_value = MagicMock(stdout="All good, thanks!", returncode=0)
+            mock_run.return_value = MagicMock(stdout="YOU ARE DONE", returncode=0)
 
             with patch("hitl_cli.hooks.review_and_continue.sys.exit") as mock_exit:
                 mock_exit.side_effect = SystemExit(0)
@@ -250,14 +250,14 @@ def test_main_hook_respects_stop_hook_active():
             mock_exit.assert_called_once_with(0)
 
 
-def test_main_hook_blocks_when_response_contains_but_isnt_satisfied_phrase(temp_transcript_simple):
-    """Test that 'done but please continue' blocks, not stops (strict matching)."""
+def test_main_hook_blocks_on_any_response_except_explicit_done(temp_transcript_simple):
+    """Test that any response except 'YOU ARE DONE' blocks and continues."""
     input_data = {"transcript_path": temp_transcript_simple}
 
     with patch("hitl_cli.hooks.review_and_continue.json.load", return_value=input_data):
         with patch("hitl_cli.hooks.review_and_continue.subprocess.run") as mock_run:
-            # Response CONTAINS "done" but has more instructions
-            mock_run.return_value = MagicMock(stdout="Done, but please also add tests", returncode=0)
+            # Any response that isn't exactly "YOU ARE DONE" should block
+            mock_run.return_value = MagicMock(stdout="looks good", returncode=0)
 
             with patch("hitl_cli.hooks.review_and_continue.sys.exit") as mock_exit:
                 mock_exit.side_effect = SystemExit(0)
@@ -272,4 +272,3 @@ def test_main_hook_blocks_when_response_contains_but_isnt_satisfied_phrase(temp_
                     call_args = mock_print.call_args[0][0]
                     output = json.loads(call_args)
                     assert output["decision"] == "block"
-                    assert "add tests" in output["reason"]
