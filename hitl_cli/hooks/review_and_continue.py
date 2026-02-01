@@ -102,10 +102,9 @@ def main():
         print(f"HITL Stop Hook: Failed to parse input: {e}", file=sys.stderr)
         sys.exit(1)
 
-    # Check if we're already in a stop hook loop - prevent infinite loops
-    if input_data.get("stop_hook_active", False):
-        # Already continuing from a previous stop hook, don't block again
-        sys.exit(0)
+    # NOTE: We intentionally do NOT check stop_hook_active here.
+    # We want the hook to ALWAYS prompt the user until they say "YOU ARE DONE",
+    # even if we're in a recursive stop hook situation.
 
     transcript_path = input_data.get("transcript_path")
     if not transcript_path:

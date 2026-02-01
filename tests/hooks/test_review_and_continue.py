@@ -231,23 +231,29 @@ def test_main_hook_blocks_on_new_instructions(temp_transcript_simple):
                     assert "README" in output["reason"]
 
 
-def test_main_hook_respects_stop_hook_active():
-    """Test that we don't block when stop_hook_active is true (prevents loops)."""
+def test_main_hook_always_prompts_even_when_stop_hook_active(temp_transcript_simple):
+    """Test that we ALWAYS prompt user, even when stop_hook_active is true (recursive)."""
     input_data = {
-        "transcript_path": "/some/path.jsonl",
-        "stop_hook_active": True
+        "transcript_path": temp_transcript_simple,
+        "stop_hook_active": True  # Even when active, we should still prompt
     }
 
     with patch("hitl_cli.hooks.review_and_continue.json.load", return_value=input_data):
-        with patch("hitl_cli.hooks.review_and_continue.sys.exit") as mock_exit:
-            mock_exit.side_effect = SystemExit(0)
-            try:
-                review_and_continue.main()
-            except SystemExit:
-                pass
+        with patch("hitl_cli.hooks.review_and_continue.subprocess.run") as mock_run:
+            # User says to continue
+            mock_run.return_value = MagicMock(stdout="keep going", returncode=0)
 
-            # Should exit immediately with 0 (allow stop)
-            mock_exit.assert_called_once_with(0)
+            with patch("hitl_cli.hooks.review_and_continue.sys.exit") as mock_exit:
+                mock_exit.side_effect = SystemExit(0)
+                with patch("builtins.print") as mock_print:
+                    try:
+                        review_and_continue.main()
+                    except SystemExit:
+                        pass
+
+                    # Should still prompt and block (not exit early)
+                    mock_run.assert_called_once()  # notify-completion was called
+                    mock_print.assert_called()  # block decision was printed
 
 
 def test_main_hook_blocks_on_any_response_except_explicit_done(temp_transcript_simple):
