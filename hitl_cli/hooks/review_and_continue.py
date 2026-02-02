@@ -11,7 +11,7 @@ import sys
 import time
 
 
-def get_last_assistant_message(transcript_path: str, retries: int = 3, delay: float = 0.2) -> str:
+def get_last_assistant_message(transcript_path: str, retries: int = 5, delay: float = 0.3) -> str:
     """
     Reads a JSONL transcript file and returns the last assistant message with text content.
 
@@ -29,6 +29,10 @@ def get_last_assistant_message(transcript_path: str, retries: int = 3, delay: fl
     Returns:
         The text content of the last assistant message, or an error message if not found.
     """
+    # Initial delay to let the transcript file be fully written
+    # This handles the race condition where the hook fires before the last message is flushed
+    time.sleep(0.5)
+
     for attempt in range(retries):
         if attempt > 0:
             # Wait before retry to allow file to be fully written
