@@ -151,40 +151,40 @@ def temp_transcript_claude_code_format(tmp_path):
     return str(transcript_file)
 
 
-def test_get_last_assistant_message_simple(temp_transcript_simple):
+def test_get_last_assistant_messages_simple(temp_transcript_simple):
     """Test basic extraction of assistant message."""
-    output = review_and_continue.get_last_assistant_message(temp_transcript_simple)
+    output = review_and_continue.get_last_assistant_messages(temp_transcript_simple)
     assert "Task completed successfully" in output
 
 
-def test_get_last_assistant_message_with_progress(temp_transcript_with_progress):
+def test_get_last_assistant_messages_with_progress(temp_transcript_with_progress):
     """Test that we skip progress events and find the assistant message."""
-    output = review_and_continue.get_last_assistant_message(temp_transcript_with_progress)
+    output = review_and_continue.get_last_assistant_messages(temp_transcript_with_progress)
     assert "Committed and PR created" in output
     assert "progress" not in output
 
 
-def test_get_last_assistant_message_with_tool_calls(temp_transcript_with_tool_calls):
-    """Test that we find the LAST assistant message, not earlier ones."""
-    output = review_and_continue.get_last_assistant_message(temp_transcript_with_tool_calls)
+def test_get_last_assistant_messages_with_tool_calls(temp_transcript_with_tool_calls):
+    """Test that we find multiple assistant messages including the last one."""
+    output = review_and_continue.get_last_assistant_messages(temp_transcript_with_tool_calls)
     # Should find the FINAL message
     assert "Final message - should be returned" in output
-    # Should NOT return the first message
-    assert "First message" not in output
+    # With num_messages=3, we now include earlier messages too for context
+    assert "First message" in output
 
 
-def test_get_last_assistant_message_claude_code_format(temp_transcript_claude_code_format):
+def test_get_last_assistant_messages_claude_code_format(temp_transcript_claude_code_format):
     """Test that we handle Claude Code's transcript format (message.role)."""
-    output = review_and_continue.get_last_assistant_message(temp_transcript_claude_code_format)
-    # Should find the LAST assistant message, not the first one
+    output = review_and_continue.get_last_assistant_messages(temp_transcript_claude_code_format)
+    # Should find the LAST assistant message
     assert "Would you like me to merge this PR?" in output
-    # Should NOT contain the earlier message
-    assert "All tests pass" not in output
+    # With num_messages=3, we now include earlier messages too for context
+    assert "All tests pass" in output
 
 
-def test_get_last_assistant_message_file_not_found():
+def test_get_last_assistant_messages_file_not_found():
     """Test handling of missing transcript file."""
-    output = review_and_continue.get_last_assistant_message("/nonexistent/path.jsonl")
+    output = review_and_continue.get_last_assistant_messages("/nonexistent/path.jsonl")
     assert "Error" in output or "not found" in output.lower()
 
 

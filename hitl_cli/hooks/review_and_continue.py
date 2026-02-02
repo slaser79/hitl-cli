@@ -11,23 +11,24 @@ import sys
 import time
 
 
-def get_last_assistant_message(transcript_path: str, retries: int = 5, delay: float = 0.3) -> str:
+def get_last_assistant_messages(transcript_path: str, num_messages: int = 3, retries: int = 5, delay: float = 0.3) -> str:
     """
-    Reads a JSONL transcript file and returns the last assistant message with text content.
+    Reads a JSONL transcript file and returns the last N assistant messages with text content.
 
     Iterates from the END of the file backwards to find the most recent assistant
-    message that contains actual text (not just thinking or tool_use blocks).
+    messages that contain actual text (not just thinking or tool_use blocks).
 
     Note: There's a known race condition where the Stop hook can fire before the
-    transcript is fully written. We retry with a small delay to handle this.
+    transcript is fully written. We add an initial delay and retry to handle this.
 
     Args:
         transcript_path: Path to the JSONL transcript file
-        retries: Number of retry attempts if no message found (default: 3)
-        delay: Delay in seconds between retries (default: 0.2)
+        num_messages: Number of recent assistant messages to return (default: 3)
+        retries: Number of retry attempts if no message found (default: 5)
+        delay: Delay in seconds between retries (default: 0.3)
 
     Returns:
-        The text content of the last assistant message, or an error message if not found.
+        The text content of the last N assistant messages, or an error message if not found.
     """
     # Initial delay to let the transcript file be fully written
     # This handles the race condition where the hook fires before the last message is flushed
@@ -49,8 +50,14 @@ def get_last_assistant_message(transcript_path: str, retries: int = 5, delay: fl
         if not lines:
             continue  # Retry if empty
 
-        # Iterate from the END of the file to find the most recent assistant message with text
+        # Collect the last N assistant messages with text
+        messages = []
+
+        # Iterate from the END of the file to find recent assistant messages with text
         for line in reversed(lines):
+            if len(messages) >= num_messages:
+                break
+
             try:
                 entry = json.loads(line.strip())
             except json.JSONDecodeError:
@@ -88,11 +95,16 @@ def get_last_assistant_message(transcript_path: str, retries: int = 5, delay: fl
                 elif isinstance(item, str) and item.strip():
                     text_parts.append(item)
 
-            # If we found text, return it
+            # If we found text, add to messages
             if text_parts:
-                return "".join(text_parts).strip()
+                messages.append("".join(text_parts).strip())
 
-    return "No recent assistant message found in transcript."
+        # Return messages in chronological order (oldest first)
+        if messages:
+            messages.reverse()
+            return "\n\n---\n\n".join(messages)
+
+    return "No recent assistant messages found in transcript."
 
 
 def main():
@@ -115,13 +127,13 @@ def main():
         # Cannot proceed without the transcript; allow stop
         sys.exit(0)
 
-    # Get the last assistant message
-    last_message = get_last_assistant_message(transcript_path)
+    # Get the last few assistant messages for context
+    last_messages = get_last_assistant_messages(transcript_path, num_messages=3)
 
     # Send the notification to human and wait for response
     try:
         result = subprocess.run(
-            ["hitl-cli", "notify-completion", "--summary", last_message],
+            ["hitl-cli", "notify-completion", "--summary", last_messages],
             check=True,
             capture_output=True,
             text=True,
