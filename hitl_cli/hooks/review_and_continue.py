@@ -11,7 +11,7 @@ import sys
 import time
 
 
-def get_last_assistant_messages(transcript_path: str, num_messages: int = 3, retries: int = 5, delay: float = 0.3) -> str:
+def get_last_assistant_messages(transcript_path: str, num_messages: int = 3, retries: int = 3, delay: float = 0.5) -> str:
     """
     Reads a JSONL transcript file and returns the last N assistant messages with text content.
 
@@ -19,13 +19,14 @@ def get_last_assistant_messages(transcript_path: str, num_messages: int = 3, ret
     messages that contain actual text (not just thinking or tool_use blocks).
 
     Note: There's a known race condition where the Stop hook can fire before the
-    transcript is fully written. We add an initial delay and retry to handle this.
+    transcript is fully written. We use a "stabilization" approach - reading multiple
+    times to ensure the file has stopped changing.
 
     Args:
         transcript_path: Path to the JSONL transcript file
         num_messages: Number of recent assistant messages to return (default: 3)
-        retries: Number of retry attempts if no message found (default: 5)
-        delay: Delay in seconds between retries (default: 0.3)
+        retries: Number of stabilization reads (default: 3)
+        delay: Delay in seconds between reads (default: 0.5)
 
     Returns:
         The text content of the last N assistant messages, or an error message if not found.
@@ -34,9 +35,13 @@ def get_last_assistant_messages(transcript_path: str, num_messages: int = 3, ret
     # This handles the race condition where the hook fires before the last message is flushed
     time.sleep(0.5)
 
-    for attempt in range(retries):
+    last_line_count = 0
+    stable_count = 0
+    final_messages = []
+
+    # Keep reading until the file stabilizes (same line count for consecutive reads)
+    for attempt in range(retries + 3):  # Extra attempts to allow for stabilization
         if attempt > 0:
-            # Wait before retry to allow file to be fully written
             time.sleep(delay)
 
         try:
@@ -46,6 +51,18 @@ def get_last_assistant_messages(transcript_path: str, num_messages: int = 3, ret
             return "Error: Transcript file not found."
         except Exception as e:
             return f"Error reading transcript: {e}"
+
+        current_line_count = len(lines)
+
+        # Check if file has stabilized
+        if current_line_count == last_line_count and current_line_count > 0:
+            stable_count += 1
+            if stable_count >= 2:
+                # File is stable, process what we have
+                break
+        else:
+            stable_count = 0
+            last_line_count = current_line_count
 
         if not lines:
             continue  # Retry if empty
@@ -99,10 +116,14 @@ def get_last_assistant_messages(transcript_path: str, num_messages: int = 3, ret
             if text_parts:
                 messages.append("".join(text_parts).strip())
 
-        # Return messages in chronological order (oldest first)
+        # Store the result for this read
         if messages:
-            messages.reverse()
-            return "\n\n---\n\n".join(messages)
+            final_messages = messages
+
+    # Return messages in chronological order (oldest first)
+    if final_messages:
+        final_messages.reverse()
+        return "\n\n---\n\n".join(final_messages)
 
     return "No recent assistant messages found in transcript."
 
