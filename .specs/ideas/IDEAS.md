@@ -26,6 +26,21 @@
 | 2026-03-03 | researcher | IDEA-013: Stale branch cleanup | PENDING |
 | 2026-03-03 | researcher | IDEA-014: Retry with exponential backoff | PENDING |
 | 2026-03-03 | researcher | IDEA-015: Real async integration tests | PENDING |
+| 2026-03-04 | researcher | IDEA-016: Multi-device E2EE graceful degradation | PENDING |
+| 2026-03-04 | researcher | IDEA-017: Custom exception hierarchy | PENDING |
+| 2026-03-04 | researcher | IDEA-018: Telemetry & observability hooks | PENDING |
+| 2026-03-04 | researcher | IDEA-019: Configuration schema validation | PENDING |
+| 2026-03-04 | researcher | IDEA-020: Streaming response support | PENDING |
+| 2026-03-04 | researcher | IDEA-021: Request deduplication (idempotency keys) | PENDING |
+| 2026-03-04 | researcher | IDEA-022: Deprecated auth flow migration command | PENDING |
+| 2026-03-04 | researcher | IDEA-023: Proxy tool registration race condition fix | PENDING |
+| 2026-03-04 | researcher | IDEA-024: OAuth token expiration warning | PENDING |
+| 2026-03-04 | researcher | IDEA-025: Centralize hardcoded timeout constants (DRY) | PENDING |
+| 2026-03-04 | researcher | IDEA-026: Hook script error propagation | PENDING |
+| 2026-03-04 | researcher | IDEA-027: File permissions validation after write | PENDING |
+| 2026-03-04 | researcher | IDEA-028: CLI help text and examples for advanced options | PENDING |
+| 2026-03-04 | researcher | IDEA-029: Silent E2EE key registration failure fix | PENDING |
+| 2026-03-04 | researcher | IDEA-030: Hook registry & health check commands | PENDING |
 
 ---
 
@@ -423,3 +438,422 @@ Add `tests/integration/` with:
 - Catches race conditions that mocks hide
 - Validates async cleanup and resource management
 - Higher confidence for production deployments
+
+---
+
+## IDEA-016: Multi-Device E2EE Graceful Degradation
+
+**Category:** Reliability / Security
+**Priority Suggestion:** High
+**Effort:** Medium (1 day)
+**Origin:** Codebase analysis (proxy_handler_v2.py:200-202)
+
+### Problem
+`encrypt_arguments()` always selects the first device key when multiple exist: `device_public_key = PublicKey(device_public_keys[0], ...)`. The code comment acknowledges this is incomplete. If the first device is unreachable, encryption silently fails for multi-device users.
+
+### Proposal
+Implement multi-recipient encryption or a fallback strategy:
+```python
+for device_key in device_public_keys:
+    encrypted_copies.append(encrypt_for_device(device_key, payload))
+```
+
+### Impact
+- Enables reliable E2EE for users with multiple devices
+- Prevents silent encryption failure
+- Required for production multi-device support
+
+---
+
+## IDEA-017: Custom Exception Hierarchy
+
+**Category:** Architecture / Error Handling
+**Priority Suggestion:** High
+**Effort:** Medium (1 day)
+**Origin:** Codebase analysis across all modules
+
+### Problem
+Only `NotLoggedInError` exists. All other errors use bare `Exception`, making it impossible for SDK consumers to handle errors precisely:
+- Auth failures vs network timeouts vs encryption errors all look the same
+- `except Exception` is the only catching strategy
+
+### Proposal
+```python
+class HITLError(Exception): pass
+class AuthenticationError(HITLError): pass
+class TokenExpiredError(AuthenticationError): pass
+class EncryptionError(HITLError): pass
+class NetworkError(HITLError): pass
+class TimeoutError(HITLError): pass
+```
+
+### Impact
+- SDK consumers can handle specific error types
+- Better logging and debugging
+- Foundation for retry logic (IDEA-014) — only retry `NetworkError`
+
+---
+
+## IDEA-018: Telemetry & Observability Hooks
+
+**Category:** Observability
+**Priority Suggestion:** Low
+**Effort:** Medium (1-2 days)
+**Origin:** Production observability gap
+
+### Problem
+No hooks for measuring request latency, auth method usage, error rates, or tool popularity. Invisible in production.
+
+### Proposal
+Add an optional telemetry interface:
+```python
+class HITLTelemetry(Protocol):
+    def on_request(self, method: str, latency_ms: float, status: int): ...
+    def on_auth(self, method: str, success: bool): ...
+```
+Users opt-in by setting `HITL.telemetry = MyCollector()`.
+
+### Impact
+- Production visibility for operations teams
+- Data-driven optimization decisions
+- No overhead when disabled
+
+---
+
+## IDEA-019: Configuration Schema Validation
+
+**Category:** Reliability / DX
+**Priority Suggestion:** Medium
+**Effort:** Small (half day)
+**Origin:** config.py is only 13 lines with zero validation
+
+### Problem
+No validation on configuration values. `BACKEND_BASE_URL` could be malformed, timeouts could be negative, log levels could be invalid strings. Failures manifest at runtime, not startup.
+
+### Proposal
+Add Pydantic or dataclass validation:
+```python
+class HITLConfig(BaseModel):
+    server_url: HttpUrl
+    api_timeout: PositiveInt = 30
+    log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR"] = "INFO"
+```
+
+### Impact
+- Fail fast on misconfiguration
+- Self-documenting settings
+- Complements IDEA-003 (centralized config)
+
+---
+
+## IDEA-020: Streaming Response Support
+
+**Category:** Feature / Performance
+**Priority Suggestion:** Low
+**Effort:** Large (2-3 days)
+**Origin:** Roadmap Phase 2 alignment
+
+### Problem
+Current implementation waits for the full HTTP response before returning. For long-running human reviews, the CLI appears frozen with no feedback.
+
+### Proposal
+Support streaming responses via SSE or chunked transfer:
+```python
+async for chunk in client.stream_response(request_id):
+    print(chunk, end='', flush=True)
+```
+
+### Impact
+- Better UX for long wait times
+- Foundation for real-time collaboration features
+- Aligns with Phase 2 roadmap
+
+---
+
+## IDEA-021: Request Deduplication
+
+**Category:** Reliability / Performance
+**Priority Suggestion:** Medium
+**Effort:** Small (half day)
+**Origin:** Codebase analysis
+
+### Problem
+If the same request is sent twice (duplicate CLI invocation, retry misfire), both reach the backend, causing duplicate HITL prompts on the user's phone.
+
+### Proposal
+Add `X-Idempotency-Key` headers to requests:
+```python
+import uuid
+headers["X-Idempotency-Key"] = str(uuid.uuid5(uuid.NAMESPACE_DNS, f"{prompt}:{choices}:{time_window}"))
+```
+
+### Impact
+- Prevents duplicate prompts on mobile
+- Required for reliable retry logic (IDEA-014)
+- Low implementation cost
+
+---
+
+## IDEA-022: Deprecated Auth Flow Migration Command
+
+**Category:** Migration / DX
+**Priority Suggestion:** Medium
+**Effort:** Small (half day)
+**Origin:** mcp_client.py:31-32 blocks traditional flow with bare Exception
+
+### Problem
+Traditional JWT auth is blocked with `Exception("Traditional OAuth flow is no longer supported...")` but there's no guided migration path. Users hit a wall with no instructions.
+
+### Proposal
+Add `hitl-cli auth-migrate` command:
+```bash
+hitl-cli auth-migrate
+# Output: "Migrating from JWT to OAuth 2.1..."
+# 1. Detects existing JWT tokens
+# 2. Runs OAuth login flow
+# 3. Verifies new tokens work
+# 4. Archives old token files
+```
+
+### Impact
+- Smooth migration from legacy to modern auth
+- Reduces support burden
+- Clears deprecated code path adoption
+
+---
+
+## IDEA-023: Proxy Tool Registration Race Condition Fix
+
+**Category:** Bug / Reliability
+**Priority Suggestion:** High
+**Effort:** Small (2 hours)
+**Origin:** proxy_handler_v2.py:369-423
+
+### Problem
+`register_backend_tools()` is async but may not complete before the first tool list request. The proxy server could list zero tools on initial connection.
+
+### Proposal
+Either:
+1. Register tools synchronously during server init
+2. Or add a readiness gate that blocks tool listing until registration completes
+
+### Impact
+- Prevents empty tool list on first MCP connection
+- Eliminates intermittent "no tools available" errors
+- Critical for reliable Claude Desktop integration
+
+---
+
+## IDEA-024: OAuth Token Expiration Warning
+
+**Category:** UX / Reliability
+**Priority Suggestion:** Medium
+**Effort:** Small (2 hours)
+**Origin:** auth.py:427-429, mcp_client.py:55-93
+
+### Problem
+Tokens expire silently during long operations. Users discover expiration only when a request fails.
+
+### Proposal
+```python
+if expires_at and (expires_at - time.time()) < 300:
+    logger.warning(f"OAuth token expires in {int((expires_at - time.time()) / 60)}m — consider refreshing")
+```
+Also add `hitl-cli auth check` to show token status.
+
+### Impact
+- Proactive rather than reactive auth management
+- Fewer mid-operation auth failures
+- Better CI/CD pipeline reliability
+
+---
+
+## IDEA-025: Centralize Hardcoded Timeout Constants (DRY)
+
+**Category:** Architecture / Maintainability
+**Priority Suggestion:** Medium
+**Effort:** Tiny (1 hour)
+**Origin:** 6+ hardcoded timeout values across modules
+
+### Problem
+The value `900.0` (human response timeout) appears in:
+- `api_client.py` lines 142, 149, 156
+- `mcp_client.py` line 27
+- `auth.py` line 395
+
+And `30.0` (API timeout) appears in:
+- `api_client.py` line 19
+- Multiple other locations
+
+Different from IDEA-009 (user-configurable timeouts) — this is about code DRY principle.
+
+### Proposal
+Move to `config.py`:
+```python
+DEFAULT_API_TIMEOUT = 30.0
+DEFAULT_HUMAN_TIMEOUT = 900.0
+```
+Replace all hardcoded values with these constants.
+
+### Impact
+- Single place to adjust defaults
+- Prerequisite for IDEA-009
+- Prevents drift between modules
+
+---
+
+## IDEA-026: Hook Script Error Propagation
+
+**Category:** Reliability / Debugging
+**Priority Suggestion:** Medium
+**Effort:** Small (2 hours)
+**Origin:** hooks/review_and_continue.py:156-166, hooks/codex_notify.py:92-97
+
+### Problem
+Hook scripts catch errors but don't log the full context:
+- No logging of the command being executed
+- No stderr capture from subprocess
+- Users see only "CalledProcessError" with no actionable info
+
+### Proposal
+```python
+try:
+    result = subprocess.run(cmd, capture_output=True, text=True, check=True)
+    logger.debug(f"Hook output: {result.stdout}")
+except subprocess.CalledProcessError as e:
+    logger.error(f"Hook failed: {' '.join(e.cmd)}")
+    logger.error(f"stderr: {e.stderr}")
+    logger.error(f"stdout: {e.stdout}")
+```
+
+### Impact
+- Faster hook debugging
+- Self-service troubleshooting
+- Reduces "hook doesn't work" support tickets
+
+---
+
+## IDEA-027: File Permissions Validation After Write
+
+**Category:** Security
+**Priority Suggestion:** High
+**Effort:** Small (2 hours)
+**Origin:** auth.py:61,449,472 and crypto.py:72
+
+### Problem
+Token and key files are chmod'd to 0o600, but:
+1. No verification that permissions were actually set (could fail silently on some filesystems)
+2. No warning if file already exists with wrong permissions
+3. No secure deletion when tokens are cleared
+
+### Proposal
+```python
+def save_secure_file(path: Path, data: str) -> None:
+    path.write_text(data)
+    path.chmod(0o600)
+    actual = oct(path.stat().st_mode & 0o777)
+    if actual != '0o600':
+        logger.warning(f"Could not set permissions on {path}: got {actual}")
+```
+
+### Impact
+- Validates security posture at runtime
+- Catches filesystem permission issues early
+- Audit-friendly security logging
+
+---
+
+## IDEA-028: CLI Help Text and Examples for Advanced Options
+
+**Category:** UX / Documentation
+**Priority Suggestion:** Low
+**Effort:** Small (2 hours)
+**Origin:** main.py:220-290
+
+### Problem
+Advanced CLI options lack descriptions:
+- `--placeholder-text` — no explanation of what it does
+- `--choice` — unclear if radio buttons or checkboxes
+- `--e2ee` — no guidance on when to use vs automatic detection
+- No usage examples in help output
+
+### Proposal
+Add rich help text with examples:
+```python
+@app.command()
+def request(
+    prompt: str = typer.Option(..., help="Question to present to the human"),
+    choice: list[str] = typer.Option(None, "--choice", help="Predefined response options (e.g., --choice Yes --choice No)"),
+    placeholder_text: str = typer.Option(None, help="Placeholder text shown in the free-text input field"),
+    e2ee: bool = typer.Option(False, help="Force end-to-end encryption (auto-detected when keys exist)"),
+):
+    """Request human input via HITL relay.
+
+    Examples:
+        hitl-cli request --prompt "Deploy to prod?" --choice Yes --choice No
+        hitl-cli request --prompt "Enter API key" --e2ee
+    """
+```
+
+### Impact
+- Better discoverability of CLI features
+- Reduces learning curve for new users
+- Self-documenting interface
+
+---
+
+## IDEA-029: Silent E2EE Key Registration Failure Fix
+
+**Category:** Bug / Security
+**Priority Suggestion:** High
+**Effort:** Small (2 hours)
+**Origin:** crypto.py:148-221
+
+### Problem
+`ensure_agent_keypair()` catches all exceptions during key registration:
+```python
+except Exception as e:
+    logger.error(f"Failed to register public key: {e}")
+    return public_key, private_key  # Returns keys anyway!
+```
+The agent continues with unregistered keys. The backend will reject encrypted messages later, but the user gets no warning at registration time.
+
+### Proposal
+Either:
+1. Propagate the error (fail fast)
+2. Or set a flag and warn on first HITL request: "E2EE keys not registered — encrypted requests will fail"
+3. Or retry registration with backoff
+
+### Impact
+- Prevents mysterious E2EE failures minutes/hours after login
+- Clear error signal for debugging
+- Critical for users relying on E2EE
+
+---
+
+## IDEA-030: Hook Registry & Health Check Commands
+
+**Category:** Feature / Architecture
+**Priority Suggestion:** Medium
+**Effort:** Medium (1 day)
+**Origin:** Codebase analysis — hooks installed as entry points but invisible
+
+### Problem
+Hooks are installed as separate CLI entry points (`hitl-hook-review-and-continue`, `hitl-codex-notify`) but there's no:
+1. Central registry to discover installed hooks
+2. Health check to validate hooks are executable
+3. Testing framework for hooks
+4. Documentation linking CLI commands to available hooks
+
+### Proposal
+Add hook management commands:
+```bash
+hitl-cli hooks list          # Show installed hooks and their entry points
+hitl-cli hooks check         # Validate all hooks are executable and configured
+hitl-cli hooks test <name>   # Dry-run a hook with mock data
+```
+
+### Impact
+- Makes hook ecosystem discoverable
+- Validates hook installation (common source of issues)
+- Enables future hook marketplace/registry
