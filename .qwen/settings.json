@@ -1,0 +1,33 @@
+{
+  "mcpServers": {
+    "agent-workflows": {
+      "command": "nix",
+      "args": [
+        "develop",
+        "/home/slaser79/lab/agent_workflows",
+        "-c",
+        "uv",
+        "run",
+        "--directory",
+        "/home/slaser79/lab/agent_workflows",
+        "python",
+        "-m",
+        "agent_workflows.mcp_server"
+      ],
+      "env": {
+        "PYTHONPATH": "src",
+        "DATABASE_URL": "sqlite:////home/slaser79/lab/agent_workflows/data/tasks.db",
+        "HITL_API_KEY": "mcp_pk_l_Bybv3Cd3MdvbWzr0_-S6Un2oEJjAOmieoA0QmYbks"
+      },
+      "timeout": 3600000
+    },
+    "human": {
+      "httpUrl": "https://hitlrelay.app/mcp-server/mcp",
+      "headers": {
+        "X-API-KEY": "mcp_pk_l_Bybv3Cd3MdvbWzr0_-S6Un2oEJjAOmieoA0QmYbks"
+      },
+      "timeout": 3600000
+    }
+  },
+  "$version": 2
+}
