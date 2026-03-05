@@ -41,6 +41,21 @@
 | 2026-03-04 | researcher | IDEA-028: CLI help text and examples for advanced options | PENDING |
 | 2026-03-04 | researcher | IDEA-029: Silent E2EE key registration failure fix | PENDING |
 | 2026-03-04 | researcher | IDEA-030: Hook registry & health check commands | PENDING |
+| 2026-03-05 | researcher | IDEA-031: Remove dead google-auth dependencies | PENDING |
+| 2026-03-05 | researcher | IDEA-032: Extract E2EE request helper (DRY api_client.py) | PENDING |
+| 2026-03-05 | researcher | IDEA-033: Extract MCP result content parser (DRY mcp_client.py) | PENDING |
+| 2026-03-05 | researcher | IDEA-034: Async context manager for SDK (HITL class) | PENDING |
+| 2026-03-05 | researcher | IDEA-035: Add py.typed marker for PEP 561 compliance | PENDING |
+| 2026-03-05 | researcher | IDEA-036: Add --version flag to CLI | PENDING |
+| 2026-03-05 | researcher | IDEA-037: Remove sync wrapper anti-pattern from ApiClient | PENDING |
+| 2026-03-05 | researcher | IDEA-038: Add ruff to dev dependencies | PENDING |
+| 2026-03-05 | researcher | IDEA-039: Add --plain/--no-emoji output mode | PENDING |
+| 2026-03-05 | researcher | IDEA-040: Gemini CLI / Aider / Windsurf hooks | PENDING |
+| 2026-03-05 | researcher | IDEA-041: Decouple ApiClient from Typer (library-safe errors) | PENDING |
+| 2026-03-05 | researcher | IDEA-042: Request cancellation support | PENDING |
+| 2026-03-05 | researcher | IDEA-043: Server health check command (hitl-cli ping) | PENDING |
+| 2026-03-05 | researcher | IDEA-044: Extract BearerAuth to module-level class | PENDING |
+| 2026-03-05 | researcher | IDEA-045: Document shell completion setup | PENDING |
 
 ---
 
@@ -857,3 +872,431 @@ hitl-cli hooks test <name>   # Dry-run a hook with mock data
 - Makes hook ecosystem discoverable
 - Validates hook installation (common source of issues)
 - Enables future hook marketplace/registry
+
+---
+
+## IDEA-031: Remove Dead google-auth Dependencies
+
+**Category:** Dependency Hygiene
+**Priority Suggestion:** High
+**Effort:** Tiny (30 min)
+**Origin:** Dependency audit + codebase analysis
+
+### Problem
+`google-auth>=2.40.3` and `google-auth-oauthlib>=1.2.2` are in `[project.dependencies]` but are ONLY used in the deprecated traditional JWT/Firebase flow. The flow is blocked in `mcp_client.py:31-32` with `Exception("Traditional OAuth flow is no longer supported...")`. These two packages pull in ~15MB of transitive dependencies (protobuf, cachetools, pyasn1, rsa, requests).
+
+### Proposal
+1. Move `google-auth` and `google-auth-oauthlib` to `[project.optional-dependencies]` under a `legacy` extra
+2. Guard the imports in `auth.py` with try/except
+3. Remove unused `perform_traditional_login()` entirely if the flow is truly dead
+
+### Impact
+- ~15MB smaller install footprint
+- Faster `pip install hitl-cli`
+- Fewer supply chain attack surfaces
+- Cleaner dependency tree for open-source users
+
+---
+
+## IDEA-032: Extract E2EE Request Helper (DRY api_client.py)
+
+**Category:** Architecture / Tech Debt
+**Priority Suggestion:** Medium
+**Effort:** Small (2 hours)
+**Origin:** api_client.py lines 159-265
+
+### Problem
+Three E2EE methods (`request_human_input_e2ee`, `notify_human_e2ee`, `notify_task_completion_e2ee`) share identical 5-step patterns: ensure keypair, fetch user keys, construct payload, encrypt, send. ~100 lines of near-identical code.
+
+### Proposal
+Extract a generic helper:
+```python
+async def _e2ee_request(self, endpoint: str, payload: dict, expects_response: bool = True) -> dict | str:
+    public_key, private_key = await ensure_agent_keypair()
+    user_keys = await self.get("/api/v1/keys/user")
+    encrypted = encrypt_payload(payload, user_keys[0]['public_key'], private_key)
+    response = await self.post(endpoint, {"encrypted_payload": encrypted}, timeout=900.0)
+    if expects_response:
+        return decrypt_payload(response["encrypted_response"], user_keys[0]['public_key'], private_key)
+    return response.get("status", "OK")
+```
+
+### Impact
+- Reduces ~100 lines to ~30
+- Single point to fix E2EE bugs
+- Prerequisite for IDEA-016 (multi-device E2EE)
+
+---
+
+## IDEA-033: Extract MCP Result Content Parser (DRY mcp_client.py)
+
+**Category:** Architecture / Tech Debt
+**Priority Suggestion:** Medium
+**Effort:** Tiny (1 hour)
+**Origin:** mcp_client.py lines 109-127 duplicated at 166-184
+
+### Problem
+The 19-line MCP result extraction block is copy-pasted verbatim twice in `call_tool()` — once for API key auth path and once for OAuth/JWT path. It handles `result.content[0].text`, `result.content.text`, `result.text`, and `str(result)` fallback.
+
+### Proposal
+```python
+@staticmethod
+def _extract_text(result) -> str:
+    if hasattr(result, 'content'):
+        if isinstance(result.content, list) and len(result.content) > 0:
+            item = result.content[0]
+            if hasattr(item, 'text'): return item.text
+            if isinstance(item, dict) and 'text' in item: return item['text']
+        elif hasattr(result.content, 'text'):
+            return result.content.text
+    if hasattr(result, 'text'): return result.text
+    return str(result) if not isinstance(result, str) else result
+```
+
+### Impact
+- Eliminates exact code duplication
+- Single place to handle new MCP content types
+- Testable in isolation
+
+---
+
+## IDEA-034: Async Context Manager for SDK
+
+**Category:** SDK / DX
+**Priority Suggestion:** Medium
+**Effort:** Small (2 hours)
+**Origin:** sdk.py lacks __aenter__/__aexit__
+
+### Problem
+The `HITL` class has no async context manager support. Users can't do:
+```python
+async with HITL() as hitl:
+    await hitl.request_input(...)
+```
+More importantly, there's no cleanup of httpx clients or MCP connections. Each operation creates and discards an `httpx.AsyncClient`.
+
+### Proposal
+```python
+class HITL:
+    async def __aenter__(self):
+        self._client = httpx.AsyncClient(timeout=30)
+        return self
+
+    async def __aexit__(self, *exc):
+        await self._client.aclose()
+```
+
+### Impact
+- Proper resource cleanup
+- Pythonic API (matches httpx, aiohttp patterns)
+- Foundation for connection pooling (IDEA-008)
+- Better for long-running SDK consumers (agent loops)
+
+---
+
+## IDEA-035: Add py.typed Marker (PEP 561)
+
+**Category:** Packaging / DX
+**Priority Suggestion:** Medium
+**Effort:** Tiny (10 min)
+**Origin:** Missing PEP 561 compliance
+
+### Problem
+The package has type annotations throughout but no `py.typed` marker file. Type checkers (mypy, pyright) won't recognize `hitl_cli` as a typed package, causing `module "hitl_cli" has no type stubs or py.typed marker` warnings for downstream users.
+
+### Proposal
+Create `hitl_cli/py.typed` (empty file) and ensure it's included in the package distribution:
+```bash
+touch hitl_cli/py.typed
+```
+
+### Impact
+- Full PEP 561 compliance
+- Type checkers work for SDK consumers
+- 10 minutes of work, permanent benefit
+
+---
+
+## IDEA-036: Add --version Flag
+
+**Category:** UX
+**Priority Suggestion:** Medium
+**Effort:** Tiny (15 min)
+**Origin:** CLI usability gap
+
+### Problem
+`hitl-cli --version` doesn't work. Standard CLI convention. Typer supports this trivially.
+
+### Proposal
+```python
+def version_callback(value: bool):
+    if value:
+        from importlib.metadata import version
+        typer.echo(f"hitl-cli {version('hitl-cli')}")
+        raise typer.Exit()
+
+app = typer.Typer(...)
+
+@app.callback()
+def main_callback(version: bool = typer.Option(False, "--version", callback=version_callback, is_eager=True)):
+    pass
+```
+
+### Impact
+- Standard CLI convention satisfied
+- Helps with debugging ("what version are you running?")
+- Useful for CI/CD version pinning verification
+
+---
+
+## IDEA-037: Remove Sync Wrapper Anti-Pattern from ApiClient
+
+**Category:** Architecture / Code Quality
+**Priority Suggestion:** Low
+**Effort:** Small (1 hour)
+**Origin:** api_client.py lines 102-127
+
+### Problem
+`post_sync()` defines an ad-hoc `MockResponse` class inside the method body to wrap async results for testing. This is testing infrastructure polluting production code. The `get_sync()` method also calls `asyncio.run()` directly.
+
+### Proposal
+1. Remove `get_sync()` and `post_sync()` from `ApiClient`
+2. In tests, use `pytest-asyncio` and `await` directly
+3. If sync wrappers are needed, create them in a test helper module
+
+### Impact
+- Cleaner production code
+- Tests use proper async patterns
+- Removes `asyncio.run()` nesting risk
+
+---
+
+## IDEA-038: Add ruff to Dev Dependencies
+
+**Category:** DX / CI Parity
+**Priority Suggestion:** High
+**Effort:** Tiny (5 min)
+**Origin:** pyproject.toml vs CI pipeline mismatch
+
+### Problem
+CI workflow (`.github/workflows/python-app.yml`) runs `ruff check .` but `ruff` is NOT listed in `[tool.uv.dev-dependencies]`. Developers who run `uv sync --all-extras` don't get ruff. They either skip linting locally or install it separately, leading to "works on my machine" CI failures.
+
+### Proposal
+Add to `pyproject.toml`:
+```toml
+[tool.uv]
+dev-dependencies = [
+    ...,
+    "ruff>=0.8.0",
+]
+```
+
+### Impact
+- Dev environment matches CI exactly
+- New contributors can lint immediately
+- 5 minutes, zero risk
+
+---
+
+## IDEA-039: Add --plain/--no-emoji Output Mode
+
+**Category:** UX / Accessibility
+**Priority Suggestion:** Low
+**Effort:** Small (half day)
+**Origin:** main.py hardcoded emoji throughout
+
+### Problem
+All CLI output uses hardcoded emoji characters. This breaks in:
+- CI runners with no Unicode support
+- Windows cmd.exe (legacy)
+- Piped output to files/scripts
+- Screen readers for accessibility
+
+### Proposal
+Add `--plain` global flag or `HITL_PLAIN_OUTPUT=1` env var:
+```python
+def echo(msg: str):
+    if PLAIN_MODE:
+        msg = re.sub(r'[\U0001f300-\U0001f9ff]', '', msg).strip()
+    typer.echo(msg)
+```
+
+### Impact
+- Accessibility improvement
+- CI/CD-friendly output
+- Machine-parseable output for scripting
+
+---
+
+## IDEA-040: Gemini CLI / Aider / Windsurf Hooks
+
+**Category:** Feature / Ecosystem
+**Priority Suggestion:** Medium
+**Effort:** Medium (1-2 days)
+**Origin:** Hook ecosystem analysis
+
+### Problem
+Hooks exist for Claude Code (stop hook) and Codex (notify), but not for:
+- **Gemini CLI** — has a plugin/extension mechanism
+- **Aider** — has event hooks via `--event-hook` flag
+- **Windsurf/Cursor** — MCP-based integration possible
+
+The HITL value proposition is agent-agnostic, but the hook ecosystem only covers 2 agents.
+
+### Proposal
+Create hooks for at least the top 3 additional agents:
+1. `hitl-aider-hook` — Aider event hook integration
+2. `hitl-gemini-hook` — Gemini CLI notification
+3. Document MCP setup for Windsurf/Cursor (same as Claude Desktop)
+
+### Impact
+- Broader adoption across AI coding agent ecosystem
+- Reference implementations for community contributions
+- Validates "agent-agnostic" positioning
+
+---
+
+## IDEA-041: Decouple ApiClient from Typer
+
+**Category:** Architecture / SDK
+**Priority Suggestion:** High
+**Effort:** Medium (1 day)
+**Origin:** api_client.py:83-84, 93-95
+
+### Problem
+`ApiClient._handle_response()` calls `typer.echo()` and `raise typer.Exit(1)` on errors. This means:
+1. Importing `ApiClient` in a non-CLI context requires `typer` installed
+2. Errors in SDK/library usage call `sys.exit()` instead of raising exceptions
+3. Error messages are printed to stdout instead of returned
+
+This blocks `ApiClient` from being a true library component.
+
+### Proposal
+1. Have `ApiClient._handle_response()` raise typed exceptions (see IDEA-017)
+2. Let CLI commands catch exceptions and call `typer.echo()` + `typer.Exit()`
+3. SDK consumers catch exceptions natively
+
+```python
+# api_client.py
+class ApiClient:
+    def _handle_response(self, response):
+        if response.status_code == 401:
+            raise AuthenticationError("Token expired or invalid")
+        if response.status_code >= 400:
+            raise APIError(f"HTTP {response.status_code}")
+```
+
+### Impact
+- `ApiClient` becomes a true library class
+- SDK consumers get proper exceptions
+- Foundation for IDEA-017 (exception hierarchy)
+- Removes `typer` as transitive dependency for SDK-only users
+
+---
+
+## IDEA-042: Request Cancellation Support
+
+**Category:** Feature / Reliability
+**Priority Suggestion:** Medium
+**Effort:** Medium (1 day)
+**Origin:** No cancellation mechanism exists
+
+### Problem
+Once `hitl-cli request --prompt "..."` sends a request, there's no way to cancel it. If the agent crashes, is killed, or the user changes their mind, the request sits pending on the phone indefinitely.
+
+### Proposal
+1. Return a `request_id` from the initial request
+2. Add `hitl-cli cancel --request-id <id>` command
+3. SDK: `await hitl.cancel(request_id)`
+4. Auto-cancel on SIGINT/SIGTERM in CLI mode
+
+### Impact
+- Better UX for long-running operations
+- Prevents orphaned requests
+- Enables graceful shutdown in agent pipelines
+
+---
+
+## IDEA-043: Server Health Check Command
+
+**Category:** Feature / DevOps
+**Priority Suggestion:** Medium
+**Effort:** Small (2 hours)
+**Origin:** No connectivity check exists
+
+### Problem
+No way to verify server connectivity without sending an actual HITL request. Users debug auth failures when the problem is simply that the server is unreachable. Different from IDEA-006 (status shows local auth state).
+
+### Proposal
+```bash
+hitl-cli ping
+# Output:
+# Server: https://hitlrelay.app
+# Status: OK (response: 42ms)
+# Version: 2.1.0
+```
+
+Implementation: `GET /health` endpoint call with latency measurement.
+
+### Impact
+- Faster debugging (is it auth or network?)
+- Useful for monitoring/alerting scripts
+- Prerequisite for any health dashboard
+
+---
+
+## IDEA-044: Extract BearerAuth to Module-Level Class
+
+**Category:** Architecture / Code Quality
+**Priority Suggestion:** Low
+**Effort:** Tiny (30 min)
+**Origin:** mcp_client.py lines 150-157
+
+### Problem
+`BearerAuth(httpx.Auth)` is defined inside `call_tool()`. It gets recreated on every MCP call and can't be tested or reused independently.
+
+### Proposal
+Move to module level or to a shared `auth_helpers.py`:
+```python
+class BearerAuth(httpx.Auth):
+    def __init__(self, token: str):
+        self.token = token
+    def auth_flow(self, request):
+        request.headers["Authorization"] = f"Bearer {self.token}"
+        yield request
+```
+
+### Impact
+- Reusable across modules
+- Testable independently
+- Minor cleanup, zero risk
+
+---
+
+## IDEA-045: Document Shell Completion Setup
+
+**Category:** Documentation / DX
+**Priority Suggestion:** Low
+**Effort:** Tiny (30 min)
+**Origin:** Typer supports completion but it's undiscoverable
+
+### Problem
+Typer provides `--install-completion` and `--show-completion` automatically, but:
+1. Not documented in README or help text
+2. Users don't know it exists
+3. Shell completion significantly improves CLI DX
+
+### Proposal
+Add a "Shell Completion" section to README:
+```bash
+# Install completion for your shell
+hitl-cli --install-completion
+
+# Or manually for bash
+eval "$(hitl-cli --show-completion bash)"
+```
+
+### Impact
+- Free DX win (feature already exists)
+- Better discoverability
+- Faster command entry for power users
