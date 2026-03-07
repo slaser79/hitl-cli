@@ -41,6 +41,21 @@
 | 2026-03-04 | researcher | IDEA-028: CLI help text and examples for advanced options | PENDING |
 | 2026-03-04 | researcher | IDEA-029: Silent E2EE key registration failure fix | PENDING |
 | 2026-03-04 | researcher | IDEA-030: Hook registry & health check commands | PENDING |
+| 2026-03-06 | researcher | IDEA-046: Interactive Configuration Wizard (`hitl-cli init`) | PENDING |
+| 2026-03-06 | researcher | IDEA-047: Formal Plugin System for Hooks | PENDING |
+| 2026-03-06 | researcher | IDEA-048: Support for Structured Human Responses (JSON) | PENDING |
+| 2026-03-06 | researcher | IDEA-049: Web-based Login Fallback for Auth | PENDING |
+| 2026-03-06 | researcher | IDEA-050: Notification Priority Levels (LOW to CRITICAL) | PENDING |
+| 2026-03-06 | researcher | IDEA-051: Local Human UI for Testing (Mock Relay) | PENDING |
+| 2026-03-06 | researcher | IDEA-052: Agent Health Check / Heartbeat Command | PENDING |
+| 2026-03-06 | researcher | IDEA-053: Multiple Profile Support (Concurrent Sessions) | PENDING |
+| 2026-03-06 | researcher | IDEA-054: SDK-level Rate Limiting & Retry Configuration | PENDING |
+| 2026-03-06 | researcher | IDEA-055: Quiet Mode for Script Integration (`--quiet`) | PENDING |
+| 2026-03-06 | researcher | IDEA-056: E2EE Key Rotation Command | PENDING |
+| 2026-03-06 | researcher | IDEA-057: Async Resource Management (Shared Session) | PENDING |
+| 2026-03-06 | researcher | IDEA-058: Enhanced Human Input: Multi-line and Rich Text | PENDING |
+| 2026-03-06 | researcher | IDEA-059: Human Response Callbacks (Local Webhooks) | PENDING |
+| 2026-03-06 | researcher | IDEA-060: Offline Mode with Request Queueing | PENDING |
 
 ---
 
@@ -857,3 +872,365 @@ hitl-cli hooks test <name>   # Dry-run a hook with mock data
 - Makes hook ecosystem discoverable
 - Validates hook installation (common source of issues)
 - Enables future hook marketplace/registry
+
+---
+
+## IDEA-046: Interactive Configuration Wizard (`hitl-cli init`)
+
+**Category:** DX / UX
+**Priority Suggestion:** Medium
+**Effort:** Small (half day)
+**Origin:** Codebase analysis + IDEA-003 follow-up
+
+### Problem
+New users must manually set environment variables or edit JSON config files to get started. `hitl-cli login` only handles OAuth registration, not other preferences.
+
+### Proposal
+Add `hitl-cli init` command that walks the user through:
+- Backend URL selection (with defaults)
+- Preferred agent name
+- Default auth method (API Key vs OAuth)
+- Logging preferences
+- Optional: Verify E2EE key registration
+
+### Impact
+- Reduces barrier to entry for new developers
+- Prevents misconfiguration errors
+- Complements the centralized config class (IDEA-003)
+
+---
+
+## IDEA-047: Formal Plugin System for Hooks
+
+**Category:** Architecture / Extensibility
+**Priority Suggestion:** Medium
+**Effort:** Medium (1-2 days)
+**Origin:** Codebase analysis (hooks are currently hardcoded in repo)
+
+### Problem
+Hooks are currently hardcoded as entry points within the main `hitl-cli` package. Users cannot easily add their own hooks without modifying the core codebase or manually creating entry points.
+
+### Proposal
+Implement a formal plugin system (e.g., using `importlib.metadata` entry points):
+- Define a standard `hitl_cli.hook` group in `pyproject.toml`
+- Allow the CLI to discover and load hooks from external Python packages
+- Provide a `hitl-cli hooks register <path>` command to link local scripts as hooks
+
+### Impact
+- Enables a community ecosystem of hooks
+- Keeps the core codebase lean
+- Allows users to maintain proprietary hooks in private repos
+
+---
+
+## IDEA-048: Support for Structured Human Responses (JSON)
+
+**Category:** Feature / SDK
+**Priority Suggestion:** Medium
+**Effort:** Medium (1 day)
+**Origin:** Codebase analysis (all responses are strings)
+
+### Problem
+Currently, all human responses are treated as strings. If an agent needs structured data (e.g., a list of items or a complex object), the human must format it manually, and the agent must parse it (often with error-prone regex or LLM calls).
+
+### Proposal
+Add support for structured responses:
+- `hitl-cli request --format json --schema schema.json`
+- SDK: `hitl.request_input(..., format="json", schema=my_schema)`
+- The relay/mobile app renders form-like inputs based on the schema
+- The CLI returns a parsed Python dictionary
+
+### Impact
+- Eliminates parsing errors for complex human inputs
+- Enables form-based data collection via HITL
+- Significant DX improvement for complex automation
+
+---
+
+## IDEA-049: Web-based Login Fallback for Auth
+
+**Category:** UX / Authentication
+**Priority Suggestion:** Medium
+**Effort:** Small (half day)
+**Origin:** Codebase analysis (dynamic registration is the only modern flow)
+
+### Problem
+In some environments, dynamic client registration might be restricted or fail due to network policies. Users need a reliable fallback.
+
+### Proposal
+If `perform_dynamic_oauth_flow()` fails or if `--web` is passed:
+- Open the system browser to the relay's login page
+- Use a local callback server (loopback) to receive the authorization code
+- Exchange the code for tokens
+
+### Impact
+- Higher reliability of the login process
+- Better compatibility with enterprise auth providers
+- Familiar login experience for users
+
+---
+
+## IDEA-050: Notification Priority Levels (LOW to CRITICAL)
+
+**Category:** Feature / UX
+**Priority Suggestion:** Low
+**Effort:** Small (2 hours)
+**Origin:** Roadmap Phase 2 alignment
+
+### Problem
+All notifications are equal. A human might want to be interrupted for "System Down" but not for "Task 42 Completed".
+
+### Proposal
+Add `--priority` flag to `notify` and `notify-completion`:
+- `hitl-cli notify --message "CRITICAL ERROR" --priority high`
+- Backend/App can use this to:
+  - Trigger different alert sounds
+  - Send push notifications even in "Do Not Disturb"
+  - Filter low-priority notifications in a history view
+
+### Impact
+- Prevents "notification fatigue"
+- Ensures critical events are addressed immediately
+- Aligns with production-grade monitoring systems
+
+---
+
+## IDEA-051: Local Human UI for Testing (Mock Relay)
+
+**Category:** DX / Testing
+**Priority Suggestion:** Medium
+**Effort:** Medium (1 day)
+**Origin:** Developer experience gap
+
+### Problem
+Testing HITL flows requires a running backend relay and a human (often the developer) reacting via a mobile app or another terminal. This is slow for rapid development.
+
+### Proposal
+Add `hitl-cli-mock-relay`:
+- A local MCP server that implements the same tools
+- Instead of calling a remote relay, it prompts the human directly in the terminal:
+  ```
+  [HITL MOCK] Agent "Worker" is asking: "Deploy to production?"
+  [HITL MOCK] Choices: [Yes, No]
+  Response: _
+  ```
+
+### Impact
+- Enables offline development of HITL integrations
+- Faster feedback loop for developers
+- Can be used in CI to simulate human behavior
+
+---
+
+## IDEA-052: Agent Health Check / Heartbeat Command
+
+**Category:** Reliability / Ops
+**Priority Suggestion:** Medium
+**Effort:** Small (2 hours)
+**Origin:** Production observability gap
+
+### Problem
+Users don't know if their agent is correctly registered and reachable by the relay until they try a real request.
+
+### Proposal
+Add `hitl-cli health`:
+- Pings the relay as the configured agent
+- Verifies E2EE key registration
+- Checks token validity
+- Returns a structured health report (JSON or human-readable)
+
+### Impact
+- Proactive troubleshooting
+- Useful for Kubernetes liveness/readiness probes
+- Complements IDEA-006 (`status` command)
+
+---
+
+## IDEA-053: Multiple Profile Support (Concurrent Sessions)
+
+**Category:** UX / DX
+**Priority Suggestion:** Low
+**Effort:** Medium (1 day)
+**Origin:** Developer experience (working across dev/prod environments)
+
+### Problem
+`hitl-cli` stores config and tokens in fixed paths in `~/.hitl/`. Switching between different servers (e.g., local dev vs production) requires manually deleting/moving files.
+
+### Proposal
+Add `--profile` support:
+- `hitl-cli --profile prod login`
+- `hitl-cli --profile local request ...`
+- Config stored in `~/.hitl/profiles/<profile_name>.json`
+
+### Impact
+- Seamless switching between multiple environments
+- Supports developers working on multiple projects/accounts
+- Standard CLI pattern (e.g., `aws --profile`)
+
+---
+
+## IDEA-054: SDK-level Rate Limiting & Retry Configuration
+
+**Category:** SDK / Reliability
+**Priority Suggestion:** Medium
+**Effort:** Small (half day)
+**Origin:** Codebase analysis (retries are currently not configurable)
+
+### Problem
+IDEA-014 adds retries to the client, but SDK users might want different strategies for different commands (e.g., retry notifications aggressively, but not human requests).
+
+### Proposal
+Expose retry configuration in the `HITL` class constructor:
+```python
+from hitl_cli import HITL, RetryConfig
+
+hitl = HITL(
+    retry_config=RetryConfig(max_attempts=5, backoff_factor=1.5)
+)
+```
+
+### Impact
+- Gives SDK users control over reliability
+- Prevents hardcoding "one size fits all" retry logic
+- Professionalizes the SDK interface
+
+---
+
+## IDEA-055: Quiet Mode for Script Integration (`--quiet`)
+
+**Category:** UX / Scripting
+**Priority Suggestion:** Low
+**Effort:** Small (2 hours)
+**Origin:** User request / typical CLI pattern
+
+### Problem
+`hitl-cli` outputs many informational messages (logging, emojis, status). This makes it hard to use in shell pipes where only the human's response is needed.
+
+### Proposal
+Add `--quiet` or `-q` flag:
+- Suppress all output except the actual response string
+- Error messages go to stderr
+- Enables: `RESPONSE=$(hitl-cli request --prompt "..." --quiet)`
+
+### Impact
+- Better integration with shell scripts and automation
+- Follows Unix philosophy of "only output what is requested"
+
+---
+
+## IDEA-056: E2EE Key Rotation Command
+
+**Category:** Security
+**Priority Suggestion:** Medium
+**Effort:** Small (half day)
+**Origin:** Security best practices
+
+### Problem
+E2EE keys are generated once during login and never changed. If a local device is compromised, the keys remain valid forever unless the user logs out and back in.
+
+### Proposal
+Add `hitl-cli crypto rotate`:
+- Generate a new keypair locally
+- Register the new public key with the relay
+- Revoke the old key (if supported by relay)
+- Transition existing sessions smoothly
+
+### Impact
+- Improved security posture
+- Compliance with security standards requiring regular key rotation
+- Self-service security management
+
+---
+
+## IDEA-057: Async Resource Management (Shared Session)
+
+**Category:** Performance / SDK
+**Priority Suggestion:** Medium
+**Effort:** Small (half day)
+**Origin:** IDEA-008 follow-up
+
+### Problem
+Even with connection pooling, we need a way to ensure the `httpx.AsyncClient` is properly closed when the SDK is no longer needed.
+
+### Proposal
+Support async context manager protocol in `HITL` and `ApiClient`:
+```python
+async with HITL() as hitl:
+    await hitl.notify("Started")
+    response = await hitl.request_input("Proceed?")
+# Client is automatically closed here
+```
+
+### Impact
+- Prevents resource leaks (unclosed sessions)
+- Cleaner SDK usage pattern
+- Essential for long-running agents or batch processes
+
+---
+
+## IDEA-058: Enhanced Human Input: Multi-line and Rich Text
+
+**Category:** Feature / UX
+**Priority Suggestion:** Low
+**Effort:** Medium (1 day)
+**Origin:** User experience gap
+
+### Problem
+Prompts are limited to short strings. Complex reviews might need Markdown formatting for clarity. Human responses are limited to single-line inputs in many terminal wrappers.
+
+### Proposal
+- Support Markdown in the `--prompt` (relay renders it nicely)
+- Add `--editor` flag to `request`:
+  - Opens the user's default `$EDITOR` (vim/nano) for the human response
+  - Allows multi-line, structured feedback
+
+### Impact
+- Enables complex "Code Review" or "Design Feedback" via HITL
+- Better readability for long prompts
+- Professional-grade input capabilities
+
+---
+
+## IDEA-059: Human Response Callbacks (Local Webhooks)
+
+**Category:** Feature / Architecture
+**Priority Suggestion:** Low
+**Effort:** Medium (2 days)
+**Origin:** Advanced automation use cases
+
+### Problem
+`hitl-cli request` is blocking. For long-running human tasks, the agent must wait. Sometimes the agent wants to "fire and forget" but get notified when the human finally responds.
+
+### Proposal
+Add a `--callback` option:
+- `hitl-cli request --prompt "..." --callback "scripts/on_response.sh"`
+- The CLI registers the request, exits immediately
+- A background process (or the CLI when run again) triggers the callback script when the response arrives
+
+### Impact
+- Enables truly asynchronous, non-blocking HITL flows
+- Better for agents with high concurrency
+- Integrates with local automation (bash, python, etc.)
+
+---
+
+## IDEA-060: Offline Mode with Request Queueing
+
+**Category:** Reliability / UX
+**Priority Suggestion:** Medium
+**Effort:** Medium (2 days)
+**Origin:** Unreliable network environments
+
+### Problem
+If the relay is down or network is disconnected, `hitl-cli` fails immediately. In some workflows, it's better to queue the request and send it when connectivity returns.
+
+### Proposal
+Add `--queue-if-offline`:
+- Store the request in `~/.hitl/queue.jsonl` if sending fails
+- A background "syncer" periodically attempts to flush the queue
+- SDK provides `hitl.get_pending_requests()`
+
+### Impact
+- Resilience against network outages
+- Better UX for mobile/edge agents
+- Prevents losing "important but non-urgent" notifications
