@@ -56,6 +56,21 @@
 | 2026-03-06 | researcher | IDEA-058: Enhanced Human Input: Multi-line and Rich Text | PENDING |
 | 2026-03-06 | researcher | IDEA-059: Human Response Callbacks (Local Webhooks) | PENDING |
 | 2026-03-06 | researcher | IDEA-060: Offline Mode with Request Queueing | PENDING |
+| 2026-03-07 | researcher | IDEA-061: Command Aliases for common actions (`ask`, `completion`) | PENDING |
+| 2026-03-07 | researcher | IDEA-062: Rich Terminal UI with Tables and Progress Spinners | PENDING |
+| 2026-03-07 | researcher | IDEA-063: Agent Filtering and Search in `agents list` | PENDING |
+| 2026-03-07 | researcher | IDEA-064: Export/Import non-sensitive Configuration | PENDING |
+| 2026-03-07 | researcher | IDEA-065: Per-command Backend URL Override (`--server`) | PENDING |
+| 2026-03-07 | researcher | IDEA-066: Dynamic OAuth Callback Port Selection | PENDING |
+| 2026-03-07 | researcher | IDEA-067: Documentation Links for API Error Messages | PENDING |
+| 2026-03-07 | researcher | IDEA-068: CLI Update Notification Checker | PENDING |
+| 2026-03-07 | researcher | IDEA-069: Integration with OS Secret Management (Keyring) | PENDING |
+| 2026-03-07 | researcher | IDEA-070: Extended User-Agent with System Info and App Name | PENDING |
+| 2026-03-07 | researcher | IDEA-071: Local File Attachments for Human Review | PENDING |
+| 2026-03-07 | researcher | IDEA-072: Unified Global Debug/Verbose Logging System | PENDING |
+| 2026-03-07 | researcher | IDEA-073: Interactive Multi-Request Mode (REPL) | PENDING |
+| 2026-03-07 | researcher | IDEA-074: Telemetry Privacy Controls (Opt-out) | PENDING |
+| 2026-03-07 | researcher | IDEA-075: Local Webhook Callbacks for HITL Responses | PENDING |
 
 ---
 
@@ -1234,3 +1249,316 @@ Add `--queue-if-offline`:
 - Resilience against network outages
 - Better UX for mobile/edge agents
 - Prevents losing "important but non-urgent" notifications
+
+---
+
+## IDEA-061: Command Aliases for Common Actions
+
+**Category:** UX
+**Priority Suggestion:** Low
+**Effort:** Tiny (1 hour)
+**Origin:** User feedback / common CLI patterns
+
+### Problem
+Commands like `notify-completion` and `request` are descriptive but can be verbose for frequent users.
+
+### Proposal
+Add command aliases to Typer:
+- `ask` as alias for `request`
+- `completion` as alias for `notify-completion`
+- `ls` as alias for `agents list`
+
+### Impact
+- Faster typing for power users
+- More intuitive interface (matches other popular CLIs)
+- Zero risk to existing functionality
+
+---
+
+## IDEA-062: Rich Terminal UI with Tables and Progress Spinners
+
+**Category:** UX
+**Priority Suggestion:** Medium
+**Effort:** Small (half day)
+**Origin:** General CLI best practices
+
+### Problem
+Current output is plain text. Tables are manually formatted with dashes, and long-running operations (like waiting for human response) have no visual indicator of activity.
+
+### Proposal
+Integrate the `rich` library:
+- Use `rich.table.Table` for `agents list` and `history`
+- Use `rich.progress.Spinner` while waiting for HITL responses
+- Use color-coded log levels (Error: Red, Warning: Yellow)
+
+### Impact
+- Modern, professional "look and feel"
+- Improved readability of complex data
+- Better feedback during long waits (reduces user anxiety)
+
+---
+
+## IDEA-063: Agent Filtering and Search in `agents list`
+
+**Category:** DX / UX
+**Priority Suggestion:** Low
+**Effort:** Small (2 hours)
+**Origin:** Scale requirements
+
+### Problem
+Users with dozens of agents (e.g., in a large team or testing environment) must scroll through a long list to find the one they need.
+
+### Proposal
+Add filtering options to the list command:
+- `hitl-cli agents list --search "deploy"`
+- `hitl-cli agents list --limit 10`
+
+### Impact
+- Faster navigation for heavy users
+- Foundation for better management of large agent fleets
+
+---
+
+## IDEA-064: Export/Import Non-Sensitive Configuration
+
+**Category:** DX
+**Priority Suggestion:** Low
+**Effort:** Small (half day)
+**Origin:** Multi-machine workflow
+
+### Problem
+Setting up `hitl-cli` on a new machine requires manually setting the backend URL and other preferences.
+
+### Proposal
+Add export/import commands that handle everything *except* tokens and private keys:
+- `hitl-cli config export --output config_backup.json`
+- `hitl-cli config import --file config_backup.json`
+
+### Impact
+- Easier setup for developers across multiple machines
+- Shareable "team configuration" for standardizing server URLs
+
+---
+
+## IDEA-065: Per-command Backend URL Override (`--server`)
+
+**Category:** DX
+**Priority Suggestion:** Medium
+**Effort:** Small (2 hours)
+**Origin:** Development/Testing workflows
+
+### Problem
+To test against a local backend, a user must change their global environment variable or config file.
+
+### Proposal
+Add a global `--server` (or `-s`) flag to all commands:
+`hitl-cli --server http://localhost:8000 request --prompt "Test"`
+
+### Impact
+- Faster testing against different environments (local, dev, prod)
+- No need to toggle persistent configuration for one-off tests
+
+---
+
+## IDEA-066: Dynamic OAuth Callback Port Selection
+
+**Category:** Reliability / UX
+**Priority Suggestion:** Medium
+**Effort:** Small (4 hours)
+**Origin:** Troubleshooting history (port collisions)
+
+### Problem
+The OAuth login flow hardcodes port 8080. If another service (like a local web server) is using 8080, login fails with a "Port already in use" error.
+
+### Proposal
+In `OAuthDynamicClient`, attempt to bind to 8080, and if it fails, increment and try 8081, 8082, etc. (or use port 0 for random). Update the `redirect_uri` sent to the server accordingly.
+
+### Impact
+- Fewer "random" login failures
+- "Just works" experience in crowded development environments
+
+---
+
+## IDEA-067: Documentation Links for API Error Messages
+
+**Category:** DX
+**Priority Suggestion:** Low
+**Effort:** Small (2 hours)
+**Origin:** API Client analysis
+
+### Problem
+API errors like "403 Forbidden" or "429 Too Many Requests" are returned as raw text, leaving users to guess the cause or search documentation manually.
+
+### Proposal
+Update `_handle_response` in `api_client.py` to append relevant doc links:
+"Error 429: Rate limit exceeded. See https://docs.hitlrelay.app/errors#429 for limits."
+
+### Impact
+- Faster self-service troubleshooting
+- Reduces support load for common errors
+
+---
+
+## IDEA-068: CLI Update Notification Checker
+
+**Category:** UX
+**Priority Suggestion:** Low
+**Effort:** Small (4 hours)
+**Origin:** Maintenance best practices
+
+### Problem
+Users might be running outdated versions with security bugs or missing features without knowing an update is available on PyPI.
+
+### Proposal
+On command execution (once every 24h), check the latest version on PyPI. If a newer version exists, print a non-intrusive message:
+"💡 A new version of hitl-cli (1.5.0) is available! Run 'pip install --upgrade hitl-cli' to update."
+
+### Impact
+- Ensures users have the latest security patches
+- Improves feature adoption rates
+
+---
+
+## IDEA-069: Integration with OS Secret Management (Keyring)
+
+**Category:** Security
+**Priority Suggestion:** High
+**Effort:** Medium (1 day)
+**Origin:** Security hardening
+
+### Problem
+Tokens and private keys are currently stored as plain text files in `~/.config/hitl-cli/`. Although protected by chmod 600, they are still vulnerable to local file system access.
+
+### Proposal
+Use the `keyring` library to store sensitive data (access tokens, refresh tokens, private keys) in the system's native secure storage (macOS Keychain, Windows Credential Manager, SecretService on Linux).
+
+### Impact
+- High-grade security for sensitive credentials
+- Compliance with enterprise security requirements
+- Prevents accidental exposure via config backups
+
+---
+
+## IDEA-070: Extended User-Agent with System Info and App Name
+
+**Category:** Observability
+**Priority Suggestion:** Low
+**Effort:** Tiny (1 hour)
+**Origin:** API best practices
+
+### Problem
+Backend logs show generic HTTP clients, making it impossible to identify which OS or CLI version is causing specific errors.
+
+### Proposal
+Structure the User-Agent header:
+`hitl-cli/1.2.3 (Linux 6.1; x86_64) python/3.12`
+Optionally allow SDK users to append their own ID: `agent-framework/0.5.0`.
+
+### Impact
+- Better debugging for server-side developers
+- Usage analytics by platform and version
+- Faster identification of platform-specific bugs
+
+---
+
+## IDEA-071: Local File Attachments for Human Review
+
+**Category:** Feature
+**Priority Suggestion:** Medium
+**Effort:** Large (3-4 days)
+**Origin:** Advanced use cases (UI review, log analysis)
+
+### Problem
+Agents often need a human to review something that isn't just text (e.g., a screenshot of a bug, a PDF report, or a large log file).
+
+### Proposal
+Add `--attach` flag to `request` and `notify`:
+`hitl-cli request --prompt "Is this UI correct?" --attach screenshot.png`
+The file is uploaded to the relay (or a secure bucket) and displayed in the human's app.
+
+### Impact
+- Enables complex "visual" human-in-the-loop tasks
+- Critical for agents working on frontend or document-heavy tasks
+
+---
+
+## IDEA-072: Unified Global Debug/Verbose Logging System
+
+**Category:** Architecture
+**Priority Suggestion:** Medium
+**Effort:** Small (4 hours)
+**Origin:** Tech debt analysis
+
+### Problem
+Logging is currently configured in `main.py`, but some modules use their own loggers, and there's no easy way to toggle DEBUG mode for specific components from the CLI.
+
+### Proposal
+Centralize logging in `config.py` or a new `logger.py`:
+- Support `--debug` (DEBUG level) and `--verbose` (INFO level) global flags
+- Use structured logging (JSON) if a flag is set, for better log ingestion
+
+### Impact
+- Standardized troubleshooting experience
+- Better integration with log management systems
+- Easier to debug SDK issues
+
+---
+
+## IDEA-073: Interactive Multi-Request Mode (REPL)
+
+**Category:** UX
+**Priority Suggestion:** Low
+**Effort:** Medium (1 day)
+**Origin:** Developer efficiency
+
+### Problem
+Developers testing complex multi-step human interactions must re-invoke `hitl-cli` for every prompt, which is slow due to startup overhead.
+
+### Proposal
+Add a `shell` or `interactive` command:
+`hitl-cli shell`
+Entering a REPL where the user can type prompts and get responses without leaving the program.
+
+### Impact
+- Much faster iteration for developers
+- "Power user" mode for manual agent testing
+
+---
+
+## IDEA-074: Telemetry Privacy Controls (Opt-out)
+
+**Category:** Compliance / UX
+**Priority Suggestion:** Medium
+**Effort:** Small (2 hours)
+**Origin:** Privacy best practices
+
+### Problem
+If telemetry (IDEA-018) is added, some users in privacy-conscious environments will want to disable it immediately.
+
+### Proposal
+Add a `telemetry_enabled: bool` flag to the config file and a `--no-telemetry` global flag. Respect `DO_NOT_TRACK` environment variable.
+
+### Impact
+- Respects user privacy
+- Required for adoption in enterprise/government sectors
+- Transparent data collection policy
+
+---
+
+## IDEA-075: Local Webhook Callbacks for HITL Responses
+
+**Category:** Architecture
+**Priority Suggestion:** Low
+**Effort:** Large (2 days)
+**Origin:** Advanced automation
+
+### Problem
+Currently, `hitl-cli` must be running and waiting to receive a response. For long-running human tasks, this might not be ideal for the calling system.
+
+### Proposal
+Allow specifying a local URL or script that the CLI will trigger when a response arrives:
+`hitl-cli request --prompt "..." --on-response "http://localhost:5000/callback"`
+
+### Impact
+- Enables truly asynchronous HITL flows for local agents
+- Integrates with local web servers or automated trigger systems
