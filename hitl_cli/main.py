@@ -443,11 +443,26 @@ def proxy(
 
 
 @app.command("daily-report")
-def daily_report(
+def daily_report_command(
     repo: str = typer.Option("slaser79/hitl-cli", "--repo", "-r", help="Repository to generate report for"),
     days: int = typer.Option(1, "--days", "-d", help="Number of days to look back (default: 1)")
 ):
     """Generate a daily activity report for the repository"""
+    _generate_report(repo, days)
+
+
+def daily_report():
+    """Entry point for hitl-daily-report console script.
+
+    This wrapper properly parses CLI arguments before invoking the Typer command.
+    """
+    import sys
+    # Invoke the Typer app with 'daily-report' command and any passed arguments
+    app(["daily-report", *sys.argv[1:]])
+
+
+def _generate_report(repo: str, days: int):
+    """Internal function to generate the daily report"""
     try:
         # Calculate date range
         today = date.today()
