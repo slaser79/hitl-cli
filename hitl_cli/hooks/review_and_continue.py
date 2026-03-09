@@ -24,17 +24,22 @@ def _extract_human_response(stdout: str) -> str:
     Returns:
         The extracted human response, or the stripped stdout if parsing fails
     """
-    for line in stdout.splitlines():
-        if line.startswith("✅ Human response received:"):
-            # Extract the response after the prefix
-            prefix = "✅ Human response received:"
-            return line[len(prefix):].strip()
+    prefix = "✅ Human response received:"
+    if prefix in stdout:
+        # Extract everything after the first occurrence of the prefix
+        # This handles multi-line responses correctly
+        return stdout.split(prefix, 1)[1].strip()
 
     # Fallback: return stripped stdout if we can't parse it
     return stdout.strip()
 
 
-def get_last_assistant_messages(transcript_path: str, num_messages: int = 3, retries: int = 3, delay: float = 0.5) -> str:
+def get_last_assistant_messages(
+    transcript_path: str,
+    num_messages: int = 3,
+    retries: int = 3,
+    delay: float = 0.5
+) -> str:
     """
     Reads a JSONL transcript file and returns the last N assistant messages with text content.
 

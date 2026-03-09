@@ -4,7 +4,6 @@ import json
 from unittest.mock import MagicMock, patch
 
 import pytest
-
 from hitl_cli.hooks import review_and_continue
 
 
@@ -256,14 +255,22 @@ def test_main_hook_always_prompts_even_when_stop_hook_active(temp_transcript_sim
                     mock_print.assert_called()  # block decision was printed
 
 
-def test_main_hook_blocks_on_any_response_except_explicit_done(temp_transcript_simple):
-    """Test that any response except 'YOU ARE DONE' blocks and continues."""
+def test_extract_human_response_multi_line():
+    """Test that multi-line responses are correctly extracted."""
+    stdout = "📋 Task Completion Notification\n========================================\nSummary: Test\n\n✅ Human response received: YOU ARE DONE\nPlease also update the README"
+    response = review_and_continue._extract_human_response(stdout)
+    assert response == "YOU ARE DONE\nPlease also update the README"
+
+
+def test_main_hook_blocks_on_multi_line_with_instructions(temp_transcript_simple):
+    """Test that multi-line response containing 'YOU ARE DONE' but with extra instructions blocks."""
     input_data = {"transcript_path": temp_transcript_simple}
 
     with patch("hitl_cli.hooks.review_and_continue.json.load", return_value=input_data):
         with patch("hitl_cli.hooks.review_and_continue.subprocess.run") as mock_run:
-            # Any response that isn't exactly "YOU ARE DONE" should block
-            mock_run.return_value = MagicMock(stdout="looks good", returncode=0)
+            # Multi-line response: first line says DONE, but second line has instructions
+            stdout = "✅ Human response received: YOU ARE DONE\nBut wait, please also update the README"
+            mock_run.return_value = MagicMock(stdout=stdout, returncode=0)
 
             with patch("hitl_cli.hooks.review_and_continue.sys.exit") as mock_exit:
                 mock_exit.side_effect = SystemExit(0)
@@ -273,8 +280,10 @@ def test_main_hook_blocks_on_any_response_except_explicit_done(temp_transcript_s
                     except SystemExit:
                         pass
 
-                    # Should print a block decision, NOT allow stop
+                    # Should print a block decision because it's NOT EXACTLY "YOU ARE DONE"
                     mock_print.assert_called()
                     call_args = mock_print.call_args[0][0]
                     output = json.loads(call_args)
                     assert output["decision"] == "block"
+                    assert "README" in output["reason"]
+                    assert "YOU ARE DONE" in output["reason"]

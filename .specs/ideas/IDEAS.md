@@ -81,6 +81,11 @@
 | 2026-03-08 | researcher | IDEA-083: Automated "What's New" on First Run | PENDING |
 | 2026-03-08 | researcher | IDEA-084: Shell Autocompletion | PENDING |
 | 2026-03-08 | researcher | IDEA-085: Configuration Linting/Doctor Command | PENDING |
+| 2026-03-09 | researcher | IDEA-086: `hitl-cli audit` for Security Compliance | PENDING |
+| 2026-03-09 | researcher | IDEA-087: SDK support for custom HTTP transports | PENDING |
+| 2026-03-09 | researcher | IDEA-088: CLI `--json` output for all commands | PENDING |
+| 2026-03-09 | researcher | IDEA-089: Support for `.hitlignore` file | PENDING |
+| 2026-03-09 | researcher | IDEA-090: Integration with `pre-commit` hooks | PENDING |
 
 ---
 
@@ -1777,3 +1782,110 @@ Add \`hitl-cli doctor\` that checks for common issues:
 - Reduces support burden
 - Enables users to self-diagnose setup problems
 - Faster time-to-first-request for new users
+
+---
+
+## IDEA-086: `hitl-cli audit` for Security Compliance
+
+**Category:** Security / Compliance
+**Priority Suggestion:** High
+**Effort:** Medium (1 day)
+**Origin:** Security analysis (expansion of IDEA-027)
+
+### Problem
+While `doctor` checks for setup issues, it doesn't perform a deep security audit. Credentials stored in plain text (even with 600 permissions) or in system keyrings need periodic validation against security policies.
+
+### Proposal
+Add `hitl-cli audit` command:
+- Scan all config and token files for exposure.
+- Verify key strength and rotation status.
+- Check for "zombie" agents or sessions that haven't been used recently.
+- Validate that E2EE is actually being used for sensitive requests.
+
+### Impact
+- Improved security posture for enterprise users.
+- Compliance with automated security scanning requirements.
+- Proactive detection of potential credential leaks.
+
+---
+
+## IDEA-087: SDK Support for Custom HTTP Transports
+
+**Category:** SDK / Architecture
+**Priority Suggestion:** Medium
+**Effort:** Small (half day)
+**Origin:** Developer experience analysis
+
+### Problem
+The SDK currently hardcodes its own `httpx.AsyncClient` usage. Advanced users might need to use specific proxies, mock transports for testing, or custom middleware (e.g., for logging or tracing).
+
+### Proposal
+Allow injecting a custom `httpx.BaseTransport` or a pre-configured `httpx.AsyncClient` into the `HITL` and `ApiClient` constructors.
+
+### Impact
+- Higher flexibility for complex integrations.
+- Easier unit testing for SDK consumers without network mocking.
+- Better support for enterprise networking environments.
+
+---
+
+## IDEA-088: CLI `--json` Output for all Commands
+
+**Category:** DX / Automation
+**Priority Suggestion:** Medium
+**Effort:** Medium (1 day)
+**Origin:** User automation requirements
+
+### Problem
+Currently, most CLI commands output human-readable text. While `daily-report` and `agents list` have some JSON support, it's not consistent across the entire CLI.
+
+### Proposal
+Add a global `--json` flag that forces all commands to output a valid JSON object. Errors should also be formatted as JSON in this mode.
+
+### Impact
+- Enables seamless integration of `hitl-cli` into complex shell pipelines and automation tools (e.g., `jq`).
+- Consistent machine-readable interface.
+- Prerequisite for building GUIs or dashboards on top of the CLI.
+
+---
+
+## IDEA-089: Support for `.hitlignore` File
+
+**Category:** Feature / Security
+**Priority Suggestion:** Medium
+**Effort:** Small (half day)
+**Origin:** Expansion of IDEA-071 (File Attachments)
+
+### Problem
+If file attachments are supported, users might accidentally attach sensitive files (like `.env` or `.git` contents).
+
+### Proposal
+Implement a `.hitlignore` file (similar to `.gitignore`) that the CLI checks before attaching any file. If a file matches a pattern in `.hitlignore`, the CLI should refuse to attach it unless explicitly overridden.
+
+### Impact
+- Prevents accidental data leaks during HITL interactions.
+- familiar experience for developers using git.
+- Increases confidence in using the attachment feature.
+
+---
+
+## IDEA-090: Integration with `pre-commit` Hooks
+
+**Category:** DX / Quality
+**Priority Suggestion:** Low
+**Effort:** Small (4 hours)
+**Origin:** Developer workflow analysis
+
+### Problem
+Developers might commit changes that break their HITL configuration or use an outdated `hitl-cli` version in their automated scripts.
+
+### Proposal
+Provide an official `pre-commit` hook that:
+- Runs `hitl-cli doctor` (or a subset of it).
+- Validates the schema of any local `notifications.json` or configuration files.
+- Checks if the current environment has valid HITL credentials (optional).
+
+### Impact
+- Catches configuration issues before they reach the repository.
+- Standardizes development workflows across teams.
+- Promotes best practices for HITL-enabled projects.
