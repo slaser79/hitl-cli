@@ -199,7 +199,7 @@ Add `hitl-cli config show` and `hitl-cli config set <key> <value>` commands.
 `proxy_handler_v2.py` has an `encrypt_arguments()` function (line ~178) that encrypts tool call arguments using the device's public key. However, this function is **never called** in `create_fastmcp_proxy_server()`. The proxy passes arguments through unencrypted.
 
 ### Proposal
-Wire \`encrypt_arguments()\` into the proxy's tool call handler, or explicitly document that E2EE in proxy mode only covers the transport layer (HTTPS), not argument encryption.
+Wire `encrypt_arguments()` into the proxy's tool call handler, or explicitly document that E2EE in proxy mode only covers the transport layer (HTTPS), not argument encryption.
 
 ### Impact
 - Closes a gap between documented E2EE claims and actual behavior
@@ -535,7 +535,7 @@ class TimeoutError(HITLError): pass
 ### Impact
 - SDK consumers can handle specific error types
 - Better logging and debugging
-- Foundation for retry logic (IDEA-014) — only retry \`NetworkError\`
+- Foundation for retry logic (IDEA-014) — only retry `NetworkError`
 
 ---
 
@@ -1210,8 +1210,8 @@ Prompts are limited to short strings. Complex reviews might need Markdown format
 
 ### Proposal
 - Support Markdown in the `--prompt` (relay renders it nicely)
-- Add `--editor` flag to \`request\`:
-  - Opens the user's default \`\$EDITOR\` (vim/nano) for the human response
+- Add `--editor` flag to `request`:
+  - Opens the user's default `$EDITOR` (vim/nano) for the human response
   - Allows multi-line, structured feedback
 
 ### Impact
@@ -1229,11 +1229,11 @@ Prompts are limited to short strings. Complex reviews might need Markdown format
 **Origin:** Advanced automation use cases
 
 ### Problem
-\`hitl-cli request\` is blocking. For long-running human tasks, the agent must wait. Sometimes the agent wants to "fire and forget" but get notified when the human finally responds.
+`hitl-cli request` is blocking. For long-running human tasks, the agent must wait. Sometimes the agent wants to "fire and forget" but get notified when the human finally responds.
 
 ### Proposal
-Add a \`--callback\` option:
-- \`hitl-cli request --prompt "..." --callback "scripts/on_response.sh"\`
+Add a `--callback` option:
+- `hitl-cli request --prompt "..." --callback "scripts/on_response.sh"`
 - The CLI registers the request, exits immediately
 - A background process (or the CLI when run again) triggers the callback script when the response arrives
 
@@ -1252,13 +1252,13 @@ Add a \`--callback\` option:
 **Origin:** Unreliable network environments
 
 ### Problem
-If the relay is down or network is disconnected, \`hitl-cli\` fails immediately. In some workflows, it's better to queue the request and send it when connectivity returns.
+If the relay is down or network is disconnected, `hitl-cli` fails immediately. In some workflows, it's better to queue the request and send it when connectivity returns.
 
 ### Proposal
-Add \`--queue-if-offline\`:
-- Store the request in \`~/.hitl/queue.jsonl\` if sending fails
+Add `--queue-if-offline`:
+- Store the request in `~/.hitl/queue.jsonl` if sending fails
 - A background "syncer" periodically attempts to flush the queue
-- SDK provides \`hitl.get_pending_requests()\`
+- SDK provides `hitl.get_pending_requests()`
 
 ### Impact
 - Resilience against network outages
@@ -1275,13 +1275,13 @@ Add \`--queue-if-offline\`:
 **Origin:** User feedback / common CLI patterns
 
 ### Problem
-Commands like \`notify-completion\` and \`request\` are descriptive but can be verbose for frequent users.
+Commands like `notify-completion` and `request` are descriptive but can be verbose for frequent users.
 
 ### Proposal
 Add command aliases to Typer:
-- \`ask\` as alias for \`request\`
-- \`completion\` as alias for \`notify-completion\`
-- \`ls\` as alias for \`agents list\`
+- `ask` as alias for `request`
+- `completion` as alias for `notify-completion`
+- `ls` as alias for `agents list`
 
 ### Impact
 - Faster typing for power users
@@ -1301,9 +1301,9 @@ Add command aliases to Typer:
 Current output is plain text. Tables are manually formatted with dashes, and long-running operations (like waiting for human response) have no visual indicator of activity.
 
 ### Proposal
-Integrate the \`rich\` library:
-- Use \`rich.table.Table\` for \`agents list\` and \`history\`
-- Use \`rich.progress.Spinner\` while waiting for HITL responses
+Integrate the `rich` library:
+- Use `rich.table.Table` for `agents list` and `history`
+- Use `rich.progress.Spinner` while waiting for HITL responses
 - Use color-coded log levels (Error: Red, Warning: Yellow)
 
 ### Impact
@@ -1313,7 +1313,7 @@ Integrate the \`rich\` library:
 
 ---
 
-## IDEA-063: Agent Filtering and Search in \`agents list\`
+## IDEA-063: Agent Filtering and Search in `agents list`
 
 **Category:** DX / UX
 **Priority Suggestion:** Low
@@ -1325,8 +1325,8 @@ Users with dozens of agents (e.g., in a large team or testing environment) must 
 
 ### Proposal
 Add filtering options to the list command:
-- \`hitl-cli agents list --search "deploy"\`
-- \`hitl-cli agents list --limit 10\`
+- `hitl-cli agents list --search "deploy"`
+- `hitl-cli agents list --limit 10`
 
 ### Impact
 - Faster navigation for heavy users
@@ -1342,12 +1342,12 @@ Add filtering options to the list command:
 **Origin:** Multi-machine workflow
 
 ### Problem
-Setting up \`hitl-cli\` on a new machine requires manually setting the backend URL and other preferences.
+Setting up `hitl-cli` on a new machine requires manually setting the backend URL and other preferences.
 
 ### Proposal
 Add export/import commands that handle everything *except* tokens and private keys:
-- \`hitl-cli config export --output config_backup.json\`
-- \`hitl-cli config import --file config_backup.json\`
+- `hitl-cli config export --output config_backup.json`
+- `hitl-cli config import --file config_backup.json`
 
 ### Impact
 - Easier setup for developers across multiple machines
@@ -1355,7 +1355,7 @@ Add export/import commands that handle everything *except* tokens and private ke
 
 ---
 
-## IDEA-065: Per-command Backend URL Override (\`--server\`)
+## IDEA-065: Per-command Backend URL Override (`--server`)
 
 **Category:** DX
 **Priority Suggestion:** Medium
@@ -1366,8 +1366,8 @@ Add export/import commands that handle everything *except* tokens and private ke
 To test against a local backend, a user must change their global environment variable or config file.
 
 ### Proposal
-Add a global \`--server\` (or \`-s\`) flag to all commands:
-\`hitl-cli --server http://localhost:8000 request --prompt "Test"\`
+Add a global `--server` (or `-s`) flag to all commands:
+`hitl-cli --server http://localhost:8000 request --prompt "Test"`
 
 ### Impact
 - Faster testing against different environments (local, dev, prod)
@@ -1386,7 +1386,7 @@ Add a global \`--server\` (or \`-s\`) flag to all commands:
 The OAuth login flow hardcodes port 8080. If another service (like a local web server) is using 8080, login fails with a "Port already in use" error.
 
 ### Proposal
-In \`OAuthDynamicClient\`, attempt to bind to 8080, and if it fails, increment and try 8081, 8082, etc. (or use port 0 for random). Update the \`redirect_uri\` sent to the server accordingly.
+In `OAuthDynamicClient`, attempt to bind to 8080, and if it fails, increment and try 8081, 8082, etc. (or use port 0 for random). Update the `redirect_uri` sent to the server accordingly.
 
 ### Impact
 - Fewer "random" login failures
@@ -1405,7 +1405,7 @@ In \`OAuthDynamicClient\`, attempt to bind to 8080, and if it fails, increment a
 API errors like "403 Forbidden" or "429 Too Many Requests" are returned as raw text, leaving users to guess the cause or search documentation manually.
 
 ### Proposal
-Update \`_handle_response\` in \`api_client.py\` to append relevant doc links:
+Update `_handle_response` in `api_client.py` to append relevant doc links:
 "Error 429: Rate limit exceeded. See https://docs.hitlrelay.app/errors#429 for limits."
 
 ### Impact
@@ -1442,10 +1442,10 @@ On command execution (once every 24h), check the latest version on PyPI. If a ne
 **Origin:** Security hardening
 
 ### Problem
-Tokens and private keys are currently stored as plain text files in \`~/.config/hitl-cli/\`. Although protected by chmod 600, they are still vulnerable to local file system access.
+Tokens and private keys are currently stored as plain text files in `~/.config/hitl-cli/`. Although protected by chmod 600, they are still vulnerable to local file system access.
 
 ### Proposal
-Use the \`keyring\` library to store sensitive data (access tokens, refresh tokens, private keys) in the system's native secure storage (macOS Keychain, Windows Credential Manager, SecretService on Linux).
+Use the `keyring` library to store sensitive data (access tokens, refresh tokens, private keys) in the system's native secure storage (macOS Keychain, Windows Credential Manager, SecretService on Linux).
 
 ### Impact
 - High-grade security for sensitive credentials
@@ -1466,8 +1466,8 @@ Backend logs show generic HTTP clients, making it impossible to identify which O
 
 ### Proposal
 Structure the User-Agent header:
-\`hitl-cli/1.2.3 (Linux 6.1; x86_64) python/3.12\`
-Optionally allow SDK users to append their own ID: \`agent-framework/0.5.0\`.
+`hitl-cli/1.2.3 (Linux 6.1; x86_64) python/3.12`
+Optionally allow SDK users to append their own ID: `agent-framework/0.5.0`.
 
 ### Impact
 - Better debugging for server-side developers
@@ -1487,8 +1487,8 @@ Optionally allow SDK users to append their own ID: \`agent-framework/0.5.0\`.
 Agents often need a human to review something that isn't just text (e.g., a screenshot of a bug, a PDF report, or a large log file).
 
 ### Proposal
-Add \`--attach\` flag to \`request\` and \`notify\`:
-\`hitl-cli request --prompt "Is this UI correct?" --attach screenshot.png\`
+Add `--attach` flag to `request` and `notify`:
+`hitl-cli request --prompt "Is this UI correct?" --attach screenshot.png`
 The file is uploaded to the relay (or a secure bucket) and displayed in the human's app.
 
 ### Impact
@@ -1505,11 +1505,11 @@ The file is uploaded to the relay (or a secure bucket) and displayed in the huma
 **Origin:** Tech debt analysis
 
 ### Problem
-Logging is currently configured in \`main.py\`, but some modules use their own loggers, and there's no easy way to toggle DEBUG mode for specific components from the CLI.
+Logging is currently configured in `main.py`, but some modules use their own loggers, and there's no easy way to toggle DEBUG mode for specific components from the CLI.
 
 ### Proposal
-Centralize logging in \`config.py\` or a new \`logger.py\`:
-- Support \`--debug\` (DEBUG level) and \`--verbose\` (INFO level) global flags
+Centralize logging in `config.py` or a new `logger.py`:
+- Support `--debug` (DEBUG level) and `--verbose` (INFO level) global flags
 - Use structured logging (JSON) if a flag is set, for better log ingestion
 
 ### Impact
@@ -1527,11 +1527,11 @@ Centralize logging in \`config.py\` or a new \`logger.py\`:
 **Origin:** Developer efficiency
 
 ### Problem
-Developers testing complex multi-step human interactions must re-invoke \`hitl-cli\` for every prompt, which is slow due to startup overhead.
+Developers testing complex multi-step human interactions must re-invoke `hitl-cli` for every prompt, which is slow due to startup overhead.
 
 ### Proposal
-Add a \`shell\` or \`interactive\` command:
-\`hitl-cli shell\`
+Add a `shell` or `interactive` command:
+`hitl-cli shell`
 Entering a REPL where the user can type prompts and get responses without leaving the program.
 
 ### Impact
@@ -1551,7 +1551,7 @@ Entering a REPL where the user can type prompts and get responses without leavin
 If telemetry (IDEA-018) is added, some users in privacy-conscious environments will want to disable it immediately.
 
 ### Proposal
-Add a \`telemetry_enabled: bool\` flag to the config file and a \`--no-telemetry\` global flag. Respect \`DO_NOT_TRACK\` environment variable.
+Add a `telemetry_enabled: bool` flag to the config file and a `--no-telemetry` global flag. Respect `DO_NOT_TRACK` environment variable.
 
 ### Impact
 - Respects user privacy
@@ -1568,17 +1568,15 @@ Add a \`telemetry_enabled: bool\` flag to the config file and a \`--no-telemetry
 **Origin:** Advanced automation
 
 ### Problem
-Currently, \`hitl-cli\` must be running and waiting to receive a response. For long-running human tasks, this might not be ideal for the calling system.
+Currently, `hitl-cli` must be running and waiting to receive a response. For long-running human tasks, this might not be ideal for the calling system.
 
 ### Proposal
 Allow specifying a local URL or script that the CLI will trigger when a response arrives:
-\`hitl-cli request --prompt "..." --on-response "http://localhost:5000/callback"\`
+`hitl-cli request --prompt "..." --on-response "http://localhost:5000/callback"`
 
 ### Impact
 - Enables truly asynchronous HITL flows for local agents
 - Integrates with local web servers or automated trigger systems
-
----
 
 ## IDEA-076: SDK E2EE Support
 
