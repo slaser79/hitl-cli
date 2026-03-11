@@ -86,6 +86,21 @@
 | 2026-03-09 | researcher | IDEA-088: CLI `--json` output for all commands | PENDING |
 | 2026-03-09 | researcher | IDEA-089: Support for `.hitlignore` file | PENDING |
 | 2026-03-09 | researcher | IDEA-090: Integration with `pre-commit` hooks | PENDING |
+| 2026-03-11 | researcher | IDEA-091: SDK `wait_for_human()` method | PENDING |
+| 2026-03-11 | researcher | IDEA-092: CLI `agents rename` Command | PENDING |
+| 2026-03-11 | researcher | IDEA-093: Support for `HITL_LOG_FORMAT` | PENDING |
+| 2026-03-11 | researcher | IDEA-094: SDK Support for "Cancel Request" | PENDING |
+| 2026-03-11 | researcher | IDEA-095: CLI `config diff` Command | PENDING |
+| 2026-03-11 | researcher | IDEA-096: Support for "Priority" and "Tags" in SDK | PENDING |
+| 2026-03-11 | researcher | IDEA-097: Integrated "Self-Test" command | PENDING |
+| 2026-03-11 | researcher | IDEA-098: Support for "Ephemeral" Agents | PENDING |
+| 2026-03-11 | researcher | IDEA-099: CLI `auth list-clients` Command | PENDING |
+| 2026-03-11 | researcher | IDEA-100: SDK support for `aiohttp` or other backends | PENDING |
+| 2026-03-11 | researcher | IDEA-101: Support for "Progress Updates" on pending requests | PENDING |
+| 2026-03-11 | researcher | IDEA-102: CLI `history tail` Command | PENDING |
+| 2026-03-11 | researcher | IDEA-103: Support for "Group" notifications | PENDING |
+| 2026-03-11 | researcher | IDEA-104: SDK `as_mcp_tool` wrapper | PENDING |
+| 2026-03-11 | researcher | IDEA-105: CLI `auth revoke-token` Command | PENDING |
 
 ---
 
@@ -1887,3 +1902,308 @@ Provide an official `pre-commit` hook that:
 - Catches configuration issues before they reach the repository.
 - Standardizes development workflows across teams.
 - Promotes best practices for HITL-enabled projects.
+
+---
+
+## IDEA-091: SDK `wait_for_human()` method
+
+**Category:** SDK / DX
+**Priority Suggestion:** Medium
+**Effort:** Medium (1 day)
+**Origin:** SDK analysis
+
+### Problem
+Currently, `request_input()` is a single blocking call. If an application wants to do other work while waiting for a human (e.g., heartbeats, other async tasks), it's hard to separate the request creation from the polling/waiting.
+
+### Proposal
+```python
+request_id = await hitl.send_request("Proceed?")
+# ... do other work ...
+response = await hitl.wait_for_response(request_id, timeout=300)
+```
+
+### Impact
+- Enables complex async patterns in agent frameworks.
+- Allows polling status of a request without blocking the main loop.
+
+---
+
+## IDEA-092: CLI `agents rename` Command
+
+**Category:** Feature / UX
+**Priority Suggestion:** Low
+**Effort:** Small (2 hours)
+**Origin:** CRUD completeness
+
+### Problem
+Users can list and create agents, but if they make a typo or want to update an agent's name, they have to delete and recreate it (if they can even delete it).
+
+### Proposal
+`hitl-cli agents rename <id> "New Name"`
+
+### Impact
+- Better management of persistent agents.
+- Improves user experience for agent fleet owners.
+
+---
+
+## IDEA-093: Support for `HITL_LOG_FORMAT`
+
+**Category:** Architecture / Observability
+**Priority Suggestion:** Medium
+**Effort:** Small (2 hours)
+**Origin:** IDEA-072/IDEA-079 follow-up
+
+### Problem
+CLI output is optimized for humans. When running in a container or log aggregator, structured JSON logs are preferred.
+
+### Proposal
+Set `HITL_LOG_FORMAT=json` to output logs as structured JSON objects instead of plain text.
+
+### Impact
+- Easier integration with ELK/Datadog/CloudWatch.
+- Professional-grade observability for deployed agents.
+
+---
+
+## IDEA-094: SDK Support for "Cancel Request"
+
+**Category:** Feature / SDK
+**Priority Suggestion:** Medium
+**Effort:** Medium (half day)
+**Origin:** Reliability / UX
+
+### Problem
+Once a request is sent, there's no way to "un-send" it. If the agent finds the answer elsewhere or the task is cancelled, the human still sees the notification on their phone.
+
+### Proposal
+`await hitl.cancel_request(request_id)`
+Backend should remove the notification from the human's device.
+
+### Impact
+- Reduces human interruption for stale tasks.
+- Improved reliability of agent-human collaboration.
+
+---
+
+## IDEA-095: CLI `config diff` Command
+
+**Category:** DX / UX
+**Priority Suggestion:** Low
+**Effort:** Small (2 hours)
+**Origin:** IDEA-003/IDEA-019 follow-up
+
+### Problem
+Users might forget what they've changed in their config file.
+
+### Proposal
+`hitl-cli config diff`
+Shows only settings that differ from the hardcoded defaults.
+
+### Impact
+- Faster troubleshooting of "it works on my machine" issues.
+- Clearer understanding of local overrides.
+
+---
+
+## IDEA-096: Support for "Priority" and "Tags" in SDK
+
+**Category:** Feature / SDK
+**Priority Suggestion:** Medium
+**Effort:** Small (4 hours)
+**Origin:** IDEA-050 follow-up
+
+### Problem
+IDEA-050 adds priority to CLI, but it should be first-class in the SDK too. Tags allow grouping requests (e.g., "deploy", "security", "customer-x").
+
+### Proposal
+`await hitl.notify("Message", priority="high", tags=["alert", "prod"])`
+
+### Impact
+- Enables complex filtering and routing on the backend/app side.
+- Richer metadata for HITL interactions.
+
+---
+
+## IDEA-097: Integrated "Self-Test" command
+
+**Category:** DX / Quality
+**Priority Suggestion:** Medium
+**Effort:** Medium (half day)
+**Origin:** IDEA-085 (Doctor) expansion
+
+### Problem
+Even if the "doctor" command says everything is configured correctly, a real round-trip might still fail.
+
+### Proposal
+`hitl-cli self-test`
+Sends a "Test Request" and expects a "Test Response" from the relay (mocked or real) to verify the entire pipeline (Auth -> Network -> E2EE -> Backend).
+
+### Impact
+- End-to-end validation of the installation.
+- Instant feedback on whether the system is "live".
+
+---
+
+## IDEA-098: Support for "Ephemeral" Agents
+
+**Category:** Feature
+**Priority Suggestion:** Low
+**Effort:** Medium (1 day)
+**Origin:** Scale / Security
+
+### Problem
+Many agents are one-off tasks. Leaving them in the list forever creates clutter and potential security risk.
+
+### Proposal
+`hitl-cli request --ephemeral`
+Agent is auto-deleted by the backend after the human responds or the request times out.
+
+### Impact
+- Zero cleanup needed for transient tasks.
+- Improved security by reducing the "agent surface area".
+
+---
+
+## IDEA-099: CLI `auth list-clients` Command
+
+**Category:** Security / Admin
+**Priority Suggestion:** Medium
+**Effort:** Small (4 hours)
+**Origin:** Security visibility
+
+### Problem
+Users don't know how many dynamic OAuth clients they have registered across different machines.
+
+### Proposal
+`hitl-cli auth list-clients`
+Shows all clients associated with the current user.
+
+### Impact
+- Security auditing of registered devices.
+- Foundation for revoking specific clients.
+
+---
+
+## IDEA-100: SDK support for `aiohttp` or other backends
+
+**Category:** SDK / Architecture
+**Priority Suggestion:** Low
+**Effort:** Medium (2 days)
+**Origin:** IDEA-087 expansion
+
+### Problem
+`httpx` is great, but some environments might prefer or require `aiohttp`, `requests`, or a custom corporate HTTP wrapper.
+
+### Proposal
+Implement a `Transport` abstraction in the SDK.
+`hitl = HITL(transport=AiohttpTransport())`
+
+### Impact
+- Maximum flexibility for SDK consumers.
+- No dependency on `httpx` for core logic.
+
+---
+
+## IDEA-101: Support for "Progress Updates" on pending requests
+
+**Category:** Feature / UX
+**Priority Suggestion:** Medium
+**Effort:** Large (2 days)
+**Origin:** User experience (long wait times)
+
+### Problem
+While waiting for a human, the human doesn't know what the agent is doing, and the agent doesn't know if the human has even seen the request.
+
+### Proposal
+`await hitl.update_request(request_id, status="Human is typing...")`
+Or the human app sends "Read" receipts to the agent.
+
+### Impact
+- Better collaborative feel between human and agent.
+- Reduces "did it hang?" anxiety.
+
+---
+
+## IDEA-102: CLI `history tail` Command
+
+**Category:** Observability / UX
+**Priority Suggestion:** Low
+**Effort:** Small (4 hours)
+**Origin:** IDEA-012 expansion
+
+### Problem
+Monitoring a live agent requires repeatedly running `hitl-cli history`.
+
+### Proposal
+`hitl-cli history --tail`
+Streams new request/response events to the terminal as they happen (using the audit log file).
+
+### Impact
+- Real-time monitoring of agent activity.
+- Developer-friendly "log tailing" experience.
+
+---
+
+## IDEA-103: Support for "Group" notifications
+
+**Category:** Feature
+**Priority Suggestion:** Medium
+**Effort:** Large (3 days)
+**Origin:** Roadmap Phase 2 alignment
+
+### Problem
+Sometimes you want to notify a whole team, but only need one person to approve.
+
+### Proposal
+`hitl-cli request --group "DevOps" --prompt "Approve release?"`
+First human to respond wins; notification is dismissed for others.
+
+### Impact
+- Critical for team-based operations.
+- Reduces single-point-of-failure in HITL flows.
+
+---
+
+## IDEA-104: SDK `as_mcp_tool` wrapper
+
+**Category:** SDK / DX
+**Priority Suggestion:** High
+**Effort:** Small (4 hours)
+**Origin:** Integration with AI agents
+
+### Problem
+Exposing HITL functions to an LLM via MCP requires writing boilerplate tool definitions.
+
+### Proposal
+```python
+from hitl_cli import HITL
+
+hitl = HITL()
+mcp.tool()(hitl.request_input)
+```
+
+### Impact
+- Near-zero effort to make an LLM "HITL-capable".
+- Significant boost for the "Agent" value proposition.
+
+---
+
+## IDEA-105: CLI `auth revoke-token` Command
+
+**Category:** Security
+**Priority Suggestion:** High
+**Effort:** Small (half day)
+**Origin:** Security best practices
+
+### Problem
+`logout` deletes local files, but it doesn't necessarily tell the server to invalidate the tokens.
+
+### Proposal
+`hitl-cli auth revoke`
+Calls the RFC 7009 token revocation endpoint on the server to immediately invalidate the current access and refresh tokens.
+
+### Impact
+- Proper security hygiene.
+- Immediate protection after logout or if a token is suspected stolen.
+
