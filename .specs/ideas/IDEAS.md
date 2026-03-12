@@ -86,6 +86,21 @@
 | 2026-03-09 | researcher | IDEA-088: CLI `--json` output for all commands | PENDING |
 | 2026-03-09 | researcher | IDEA-089: Support for `.hitlignore` file | PENDING |
 | 2026-03-09 | researcher | IDEA-090: Integration with `pre-commit` hooks | PENDING |
+| 2026-03-12 | researcher | IDEA-091: GitHub Action for Mobile-First HITL Approvals | PENDING |
+| 2026-03-12 | researcher | IDEA-092: Multi-User Consensus for Critical Actions | PENDING |
+| 2026-03-12 | researcher | IDEA-093: HITL-Proxy for SSH (Human 2FA) | PENDING |
+| 2026-03-12 | researcher | IDEA-094: LangChain / LlamaIndex First-Class Tools | PENDING |
+| 2026-03-12 | researcher | IDEA-095: "Silent" Background Status Updates (Heartbeats) | PENDING |
+| 2026-03-12 | researcher | IDEA-096: Web Framework Dependency Injection (FastAPI/Flask) | PENDING |
+| 2026-03-12 | researcher | IDEA-097: "Proxy-as-a-Service" (Daemon Mode) | PENDING |
+| 2026-03-12 | researcher | IDEA-098: Session Persistence & Resumption (Interrupt Protection) | PENDING |
+| 2026-03-12 | researcher | IDEA-099: "Wait-for-Agent" (Online Check) | PENDING |
+| 2026-03-12 | researcher | IDEA-100: Shell Prompt Integration (`hitl-cli status --pending-count`) | PENDING |
+| 2026-03-12 | researcher | IDEA-101: "Sandbox Mode" for Risk-Free Development | PENDING |
+| 2026-03-12 | researcher | IDEA-102: `hitl-sudo` Wrapper for Sensitive Operations | PENDING |
+| 2026-03-12 | researcher | IDEA-103: Adaptive Timeouts Based on Historical Response Times | PENDING |
+| 2026-03-12 | researcher | IDEA-104: Client-Side "Quiet Hours" Support | PENDING |
+| 2026-03-12 | researcher | IDEA-105: SDK Mocking & Null-Client for Testing | PENDING |
 
 ---
 
