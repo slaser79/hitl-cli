@@ -175,7 +175,22 @@
 | 2026-03-25 | researcher | IDEA-177: SDK Response Interceptors (Local Pre-Processing) | PENDING |
 | 2026-03-25 | researcher | IDEA-178: Contextual Deep Linking from Notifications | PENDING |
 | 2026-03-25 | researcher | IDEA-179: Automated "Agent Capabilities" Onboarding | PENDING |
-| 2026-03-25 | researcher | IDEA-180: Battery and Connection-Aware SDK Polling | PENDING |
+| 2026-03-12 | researcher | IDEA-180: Battery and Connection-Aware SDK Polling | PENDING |
+| 2026-03-26 | researcher | IDEA-181: "Smart" Request Retries with Human Feedback | PENDING |
+| 2026-03-26 | researcher | IDEA-182: "Agent Group" Shared Identity (Cluster Support) | PENDING |
+| 2026-03-26 | researcher | IDEA-183: `hitl-cli doctor --fix` (Automated Repair) | PENDING |
+| 2026-03-26 | researcher | IDEA-184: Integration with System-Level "Share" Sheet on Mobile | PENDING |
+| 2026-03-26 | researcher | IDEA-185: "Agent Pulse" — Live Context Streaming to Mobile | PENDING |
+| 2026-03-26 | researcher | IDEA-186: "Auto-Delegate" Rules for Team Escalation | PENDING |
+| 2026-03-26 | researcher | IDEA-187: SDK support for "Callback-Based" Human Interaction | PENDING |
+| 2026-03-26 | researcher | IDEA-188: "Cost-Aware" HITL Interventions | PENDING |
+| 2026-03-26 | researcher | IDEA-189: Support for Hardware Security Keys (FIDO2) on Mobile | PENDING |
+| 2026-03-26 | researcher | IDEA-190: "Hands-Free" Voice Approval for Mobile | PENDING |
+| 2026-03-26 | researcher | IDEA-191: "Time-Travel" System Snapshot on Approval | PENDING |
+| 2026-03-26 | researcher | IDEA-192: SDK support for "Human-Driven Remote Config" | PENDING |
+| 2026-03-26 | researcher | IDEA-193: Global "Quiet Hours" Group Policy | PENDING |
+| 2026-03-26 | researcher | IDEA-194: "Shadow Concordance" Mode (Trust Building) | PENDING |
+| 2026-03-26 | researcher | IDEA-195: Integration with Jupyter Notebooks (IPython Magics) | PENDING |
 
 ---
 
