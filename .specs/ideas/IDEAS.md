@@ -191,6 +191,21 @@
 | 2026-03-26 | researcher | IDEA-193: Global "Quiet Hours" Group Policy | PENDING |
 | 2026-03-26 | researcher | IDEA-194: "Shadow Concordance" Mode (Trust Building) | PENDING |
 | 2026-03-26 | researcher | IDEA-195: Integration with Jupyter Notebooks (IPython Magics) | PENDING |
+| 2026-03-27 | researcher | IDEA-196: Offline Mode with Local Sync | PENDING |
+| 2026-03-27 | researcher | IDEA-197: Interactive "Dry Run" Mode for Agents | PENDING |
+| 2026-03-27 | researcher | IDEA-198: Support for Structured Human Responses (JSON Schema) | PENDING |
+| 2026-03-27 | researcher | IDEA-199: "On-Call" Team Rotation Integration | PENDING |
+| 2026-03-27 | researcher | IDEA-200: Biometric Challenge for High-Risk Approvals | PENDING |
+| 2026-03-27 | researcher | IDEA-201: Global "Quiet Hours" for Non-Critical Notifications | PENDING |
+| 2026-03-27 | researcher | IDEA-202: "Agent Heartbeat" — Low-Bandwidth Status Streaming | PENDING |
+| 2026-03-27 | researcher | IDEA-203: Support for File Attachments in Requests | PENDING |
+| 2026-03-27 | researcher | IDEA-204: "Shadow Concordance" Mode (Trust Building) | PENDING |
+| 2026-03-27 | researcher | IDEA-205: Integration with Jupyter Notebooks (%hitl magic) | PENDING |
+| 2026-03-27 | researcher | IDEA-206: Multi-User Consensus (Poll Mode) | PENDING |
+| 2026-03-27 | researcher | IDEA-207: `hitl-cli doctor --fix` (Automated Configuration Repair) | PENDING |
+| 2026-03-27 | researcher | IDEA-208: "Context Injection" from Git / Env | PENDING |
+| 2026-03-27 | researcher | IDEA-209: SDK support for "Human-Driven Remote Config" | PENDING |
+| 2026-03-27 | researcher | IDEA-210: Adaptive Timeouts Based on Human Response History | PENDING |
 
 ---
 
