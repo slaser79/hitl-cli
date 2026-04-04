@@ -206,6 +206,21 @@
 | 2026-03-27 | researcher | IDEA-208: "Context Injection" from Git / Env | PENDING |
 | 2026-03-27 | researcher | IDEA-209: SDK support for "Human-Driven Remote Config" | PENDING |
 | 2026-03-27 | researcher | IDEA-210: Adaptive Timeouts Based on Human Response History | PENDING |
+| 2026-04-04 | researcher | IDEA-211: Automated "Agent Reputation" Scoring | PENDING |
+| 2026-04-04 | researcher | IDEA-212: "Scripted Response Injection" for Automated Testing | PENDING |
+| 2026-04-04 | researcher | IDEA-213: "Smart-Collapse" for Duplicate Notifications | PENDING |
+| 2026-04-04 | researcher | IDEA-214: HITL SDK Middleware Support | PENDING |
+| 2026-04-04 | researcher | IDEA-215: Interactive "History Search" in CLI | PENDING |
+| 2026-04-04 | researcher | IDEA-216: "Proxy-only" Mode for SDK (E2EE Hardening) | PENDING |
+| 2026-04-04 | researcher | IDEA-217: Support for "Custom Emojis" and Project Icons | PENDING |
+| 2026-04-04 | researcher | IDEA-218: "One-Click Remediation Buttons" in SDK | PENDING |
+| 2026-04-04 | researcher | IDEA-219: Native "Health-Check" Endpoint in `hitl-cli serve` | PENDING |
+| 2026-04-04 | researcher | IDEA-220: Support for `GIT_EDITOR` as Fallback for Complex Input | PENDING |
+| 2026-04-04 | researcher | IDEA-221: "Time-of-Day" Adaptive Priority Shifting | PENDING |
+| 2026-04-04 | researcher | IDEA-222: SDK Support for `contextvars` (Async Scoping) | PENDING |
+| 2026-04-04 | researcher | IDEA-223: "Encrypted-at-Rest" for Local Auth Tokens | PENDING |
+| 2026-04-04 | researcher | IDEA-224: Support for "Conditional Choices" (Local Branching) | PENDING |
+| 2026-04-04 | researcher | IDEA-225: "Agent-to-Agent" HITL Handover | PENDING |
 
 ---
 
