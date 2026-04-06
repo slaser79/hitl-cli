@@ -194,7 +194,7 @@ def test_main_hook_allows_stop_on_explicit_done(temp_transcript_simple):
 
     with patch("hitl_cli.hooks.review_and_continue.json.load", return_value=input_data):
         with patch("hitl_cli.hooks.review_and_continue.subprocess.run") as mock_run:
-            mock_run.return_value = MagicMock(stdout="YOU ARE DONE", returncode=0)
+            mock_run.return_value = MagicMock(stdout="📋 Task Completion Notification\n✅ Human response received: YOU ARE DONE", returncode=0)
 
             with patch("hitl_cli.hooks.review_and_continue.sys.exit") as mock_exit:
                 mock_exit.side_effect = SystemExit(0)
@@ -213,7 +213,7 @@ def test_main_hook_blocks_on_new_instructions(temp_transcript_simple):
 
     with patch("hitl_cli.hooks.review_and_continue.json.load", return_value=input_data):
         with patch("hitl_cli.hooks.review_and_continue.subprocess.run") as mock_run:
-            mock_run.return_value = MagicMock(stdout="Please also update the README", returncode=0)
+            mock_run.return_value = MagicMock(stdout="📋 Task Completion Notification\n✅ Human response received: Please also update the README", returncode=0)
 
             with patch("hitl_cli.hooks.review_and_continue.sys.exit") as mock_exit:
                 mock_exit.side_effect = SystemExit(0)
@@ -241,7 +241,7 @@ def test_main_hook_always_prompts_even_when_stop_hook_active(temp_transcript_sim
     with patch("hitl_cli.hooks.review_and_continue.json.load", return_value=input_data):
         with patch("hitl_cli.hooks.review_and_continue.subprocess.run") as mock_run:
             # User says to continue
-            mock_run.return_value = MagicMock(stdout="keep going", returncode=0)
+            mock_run.return_value = MagicMock(stdout="📋 Task Completion Notification\n✅ Human response received: keep going", returncode=0)
 
             with patch("hitl_cli.hooks.review_and_continue.sys.exit") as mock_exit:
                 mock_exit.side_effect = SystemExit(0)
@@ -263,7 +263,7 @@ def test_main_hook_blocks_on_any_response_except_explicit_done(temp_transcript_s
     with patch("hitl_cli.hooks.review_and_continue.json.load", return_value=input_data):
         with patch("hitl_cli.hooks.review_and_continue.subprocess.run") as mock_run:
             # Any response that isn't exactly "YOU ARE DONE" should block
-            mock_run.return_value = MagicMock(stdout="looks good", returncode=0)
+            mock_run.return_value = MagicMock(stdout="📋 Task Completion Notification\n✅ Human response received: looks good", returncode=0)
 
             with patch("hitl_cli.hooks.review_and_continue.sys.exit") as mock_exit:
                 mock_exit.side_effect = SystemExit(0)
