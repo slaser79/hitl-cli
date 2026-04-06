@@ -177,7 +177,7 @@ def main():
         sys.exit(0)
 
     # Get the last few assistant messages for context
-    last_messages = get_last_assistant_messages(transcript_path, num_messages=3)
+    last_messages = get_last_assistant_messages(transcript_path, num_messages=1)
 
     # Send the notification to human and wait for response
     try:
