@@ -149,7 +149,7 @@ def main():
         sys.exit(0)
 
     # Get the last few assistant messages for context
-    last_messages = get_last_assistant_messages(transcript_path, num_messages=3)
+    last_messages = get_last_assistant_messages(transcript_path, num_messages=1)
 
     # Send the notification to human and wait for response
     try:
@@ -160,7 +160,14 @@ def main():
             text=True,
             timeout=900  # 15 minute timeout
         )
-        user_response = result.stdout.strip()
+        # Parse the actual human response from the notify-completion output.
+        # The output includes banner text; the response is on the line:
+        #   "✅ Human response received: <response>"
+        user_response = ""
+        for line in result.stdout.splitlines():
+            if "Human response received:" in line:
+                user_response = line.split("Human response received:", 1)[1].strip()
+                break
     except subprocess.CalledProcessError as e:
         print(f"HITL Stop Hook: notify-completion failed: {e}", file=sys.stderr)
         sys.exit(1)
@@ -171,7 +178,7 @@ def main():
     # Interpret the user's response
     # Only allow stop if the response is exactly "YOU ARE DONE" (case-sensitive)
     # Any other response means continue with the user's instructions
-    if user_response.strip() == "YOU ARE DONE":
+    if user_response == "YOU ARE DONE":
         # User explicitly confirms done - allow Claude to stop
         sys.exit(0)
     else:
