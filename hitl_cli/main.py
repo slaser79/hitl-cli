@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 
 import asyncio
+import json
 import logging
+import subprocess
+from datetime import date, timedelta
 
 import httpx
 import typer
@@ -437,6 +440,184 @@ def proxy(
 
     # Run the async function using asyncio.run
     asyncio.run(_async_proxy())
+
+
+@app.command("daily-report")
+def daily_report_command(
+    repo: str = typer.Option("slaser79/hitl-cli", "--repo", "-r", help="Repository to generate report for"),
+    days: int = typer.Option(1, "--days", "-d", help="Number of days to look back (default: 1)")
+):
+    """Generate a daily activity report for the repository"""
+    _generate_report(repo, days)
+
+
+def daily_report():
+    """Entry point for hitl-daily-report console script.
+
+    This wrapper properly parses CLI arguments before invoking the Typer command.
+    """
+    import sys
+    # Invoke the Typer app with 'daily-report' command and any passed arguments
+    app(["daily-report", *sys.argv[1:]])
+
+
+def _generate_report(repo: str, days: int):
+    """Internal function to generate the daily report"""
+    try:
+        # Calculate date range
+        today = date.today()
+        start_date = today - timedelta(days=days)
+        date_str = start_date.strftime("%Y-%m-%d")
+
+        typer.echo(f"📊 Generating Daily Activity Report for {repo}")
+        typer.echo(f"📅 Period: {date_str} to {today}")
+        typer.echo("=" * 60)
+        typer.echo()
+
+        # 1. Fetch merged PRs
+        merged_prs = []
+        try:
+            result = subprocess.run(
+                [
+                    "gh", "pr", "list",
+                    "-s", "merged",
+                    "--json", "title,number,mergedAt",
+                    "-R", repo,
+                    "--search", f"merged:>{date_str}"
+                ],
+                capture_output=True,
+                text=True,
+                check=True
+            )
+            if result.stdout.strip():
+                merged_prs = json.loads(result.stdout)
+        except subprocess.CalledProcessError as e:
+            typer.echo(f"⚠️  Warning: Could not fetch merged PRs: {e.stderr.strip() if e.stderr else str(e)}")
+        except json.JSONDecodeError:
+            pass  # Empty result
+
+        # 2. Fetch closed issues
+        closed_issues = []
+        try:
+            result = subprocess.run(
+                [
+                    "gh", "issue", "list",
+                    "-s", "closed",
+                    "--json", "title,number,closedAt",
+                    "-R", repo,
+                    "--search", f"closed:>{date_str}"
+                ],
+                capture_output=True,
+                text=True,
+                check=True
+            )
+            if result.stdout.strip():
+                closed_issues = json.loads(result.stdout)
+        except subprocess.CalledProcessError as e:
+            typer.echo(f"⚠️  Warning: Could not fetch closed issues: {e.stderr.strip() if e.stderr else str(e)}")
+        except json.JSONDecodeError:
+            pass  # Empty result
+
+        # 3. Fetch commits to main
+        commits = []
+        try:
+            result = subprocess.run(
+                ["git", "log", "--since=" + str(date_str), "--oneline", "origin/main"],
+                capture_output=True,
+                text=True,
+                check=True
+            )
+            if result.stdout.strip():
+                commits = result.stdout.strip().split("\n")
+        except subprocess.CalledProcessError as e:
+            typer.echo(f"⚠️  Warning: Could not fetch commits: {e.stderr.strip() if e.stderr else str(e)}")
+
+        # 4. Fetch open blockers (high priority issues)
+        blockers = []
+        try:
+            result = subprocess.run(
+                [
+                    "gh", "issue", "list",
+                    "-l", "priority:high",
+                    "-s", "open",
+                    "-R", repo,
+                    "--json", "title,number"
+                ],
+                capture_output=True,
+                text=True,
+                check=True
+            )
+            if result.stdout.strip():
+                blockers = json.loads(result.stdout)
+        except subprocess.CalledProcessError as e:
+            typer.echo(f"⚠️  Warning: Could not fetch blockers: {e.stderr.strip() if e.stderr else str(e)}")
+        except json.JSONDecodeError:
+            pass  # Empty result
+
+        # Generate report
+        typer.echo()
+        typer.echo("## Highlights")
+        typer.echo("-" * 40)
+
+        # Generate highlights summary
+        highlights = []
+        if merged_prs:
+            highlights.append(f"{len(merged_prs)} PR(s) merged")
+        if closed_issues:
+            highlights.append(f"{len(closed_issues)} issue(s) closed")
+        if commits:
+            highlights.append(f"{len(commits)} commit(s) to main")
+
+        if highlights:
+            typer.echo(", ".join(highlights) + ".")
+        else:
+            typer.echo("No activity detected in the specified period.")
+
+        typer.echo()
+
+        # PRs Merged section
+        typer.echo("## PRs Merged")
+        typer.echo("-" * 40)
+        if merged_prs:
+            for pr in merged_prs:
+                typer.echo(f"- #{pr['number']}: {pr['title']}")
+        else:
+            typer.echo("None")
+        typer.echo()
+
+        # Issues Closed section
+        typer.echo("## Issues Closed")
+        typer.echo("-" * 40)
+        if closed_issues:
+            for issue in closed_issues:
+                typer.echo(f"- #{issue['number']}: {issue['title']}")
+        else:
+            typer.echo("None")
+        typer.echo()
+
+        # Blockers section
+        typer.echo("## Blockers (P0/P1 Open Issues)")
+        typer.echo("-" * 40)
+        if blockers:
+            for blocker in blockers:
+                typer.echo(f"- #{blocker['number']}: {blocker['title']}")
+        else:
+            typer.echo("None")
+        typer.echo()
+
+        # Stats section
+        typer.echo("## Stats")
+        typer.echo("-" * 40)
+        typer.echo(f"Commits to main: {len(commits)}")
+        typer.echo(f"Open blockers: {len(blockers)}")
+        typer.echo(f"PRs merged: {len(merged_prs)}")
+        typer.echo(f"Issues closed: {len(closed_issues)}")
+
+    except Exception as e:
+        logger.error(f"Daily report generation failed: {e}")
+        typer.echo(f"❌ Daily report generation failed: {e}")
+        raise typer.Exit(1)
+
 
 if __name__ == "__main__":
     app()

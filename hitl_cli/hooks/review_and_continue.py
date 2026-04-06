@@ -11,7 +11,35 @@ import sys
 import time
 
 
-def get_last_assistant_messages(transcript_path: str, num_messages: int = 3, retries: int = 3, delay: float = 0.5) -> str:
+def _extract_human_response(stdout: str) -> str:
+    """
+    Extract the human response from notify-completion stdout.
+
+    The notify-completion command outputs multiple lines including headers.
+    The actual response is in the line: "✅ Human response received: {response}"
+
+    Args:
+        stdout: The full stdout from the notify-completion command
+
+    Returns:
+        The extracted human response, or the stripped stdout if parsing fails
+    """
+    prefix = "✅ Human response received:"
+    if prefix in stdout:
+        # Extract everything after the first occurrence of the prefix
+        # This handles multi-line responses correctly
+        return stdout.split(prefix, 1)[1].strip()
+
+    # Fallback: return stripped stdout if we can't parse it
+    return stdout.strip()
+
+
+def get_last_assistant_messages(
+    transcript_path: str,
+    num_messages: int = 3,
+    retries: int = 3,
+    delay: float = 0.5
+) -> str:
     """
     Reads a JSONL transcript file and returns the last N assistant messages with text content.
 
@@ -160,14 +188,10 @@ def main():
             text=True,
             timeout=900  # 15 minute timeout
         )
-        # Parse the actual human response from the notify-completion output.
-        # The output includes banner text; the response is on the line:
-        #   "✅ Human response received: <response>"
-        user_response = ""
-        for line in result.stdout.splitlines():
-            if "Human response received:" in line:
-                user_response = line.split("Human response received:", 1)[1].strip()
-                break
+        # Extract just the human response from the stdout
+        # The notify-completion command outputs: "✅ Human response received: {response}"
+        # We need to parse this line to get just the response value
+        user_response = _extract_human_response(result.stdout)
     except subprocess.CalledProcessError as e:
         print(f"HITL Stop Hook: notify-completion failed: {e}", file=sys.stderr)
         sys.exit(1)
