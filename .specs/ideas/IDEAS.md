@@ -221,6 +221,21 @@
 | 2026-04-04 | researcher | IDEA-223: "Encrypted-at-Rest" for Local Auth Tokens | PENDING |
 | 2026-04-04 | researcher | IDEA-224: Support for "Conditional Choices" (Local Branching) | PENDING |
 | 2026-04-04 | researcher | IDEA-225: "Agent-to-Agent" HITL Handover | PENDING |
+| 2026-04-11 | researcher | IDEA-226: "Confidence-Threshold" Auto-Approval | PENDING |
+| 2026-04-11 | researcher | IDEA-227: "Interactive Debugger" Session Attachment | PENDING |
+| 2026-04-11 | researcher | IDEA-228: "Network-Agnostic" Sidecar Transport (Serial/Bluetooth) | PENDING |
+| 2026-04-11 | researcher | IDEA-229: "Plug-and-Play" Enterprise Auth Providers (OIDC/SAML) | PENDING |
+| 2026-04-11 | researcher | IDEA-230: "Semantic Conflict" Detection across Agents | PENDING |
+| 2026-04-11 | researcher | IDEA-231: "Response-Consistency" Audit & Warning | PENDING |
+| 2026-04-11 | researcher | IDEA-232: "Relay-Bypassing" Secure Tunnel for Large Assets | PENDING |
+| 2026-04-11 | researcher | IDEA-233: "Shell-Command" Interactive Diff Preview | PENDING |
+| 2026-04-11 | researcher | IDEA-234: "Agent Identity" Request Signing | PENDING |
+| 2026-04-11 | researcher | IDEA-235: "Environment-Aware" Priority Escalation | PENDING |
+| 2026-04-11 | researcher | IDEA-236: "Global-Search" across Multi-Agent Audit Logs | PENDING |
+| 2026-04-11 | researcher | IDEA-237: "Just-in-Time" (JIT) Credential Injection | PENDING |
+| 2026-04-11 | researcher | IDEA-238: "Recursive" HITL (Human-to-Human Handover) | PENDING |
+| 2026-04-11 | researcher | IDEA-239: "Low-Bandwidth" Mode for Edge/Satellite Links | PENDING |
+| 2026-04-11 | researcher | IDEA-240: "Carbon-Aware" HITL Throttling | PENDING |
 
 ---
 
