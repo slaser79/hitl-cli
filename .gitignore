@@ -162,6 +162,8 @@ result-*
 .ai_rules/
 .gemini/
 .qwen/
+.claude/
+!.claude/empire_context.yaml
 .ai_worktrees/
 log/
 logs/
