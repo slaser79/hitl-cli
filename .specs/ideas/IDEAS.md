@@ -236,6 +236,21 @@
 | 2026-04-11 | researcher | IDEA-238: "Recursive" HITL (Human-to-Human Handover) | PENDING |
 | 2026-04-11 | researcher | IDEA-239: "Low-Bandwidth" Mode for Edge/Satellite Links | PENDING |
 | 2026-04-11 | researcher | IDEA-240: "Carbon-Aware" HITL Throttling | PENDING |
+| 2026-04-18 | researcher | IDEA-241: "Semantic Prompt Optimization" for Human Clarity | PENDING |
+| 2026-04-18 | researcher | IDEA-242: "Predictive Human Availability" for Request Timing | PENDING |
+| 2026-04-18 | researcher | IDEA-243: "Collaborative Human Review" (Shared Workspace) | PENDING |
+| 2026-04-18 | researcher | IDEA-244: "E2EE Proof-of-Work" for Spam Prevention | PENDING |
+| 2026-04-18 | researcher | IDEA-245: "Agent-side" Input Validation (Client-side Schemas) | PENDING |
+| 2026-04-18 | researcher | IDEA-246: "Context-Rich" Multi-media Attachments (Video/Audio) | PENDING |
+| 2026-04-18 | researcher | IDEA-247: "Just-in-Time" SDK Telemetry Export | PENDING |
+| 2026-04-18 | researcher | IDEA-248: "Shadow-Request" for Agent Consistency Verification | PENDING |
+| 2026-04-18 | researcher | IDEA-249: "Zero-Trust" Agent-to-Human Handshake (QR Pair) | PENDING |
+| 2026-04-18 | researcher | IDEA-250: "Workflow-specific" Mobile Dashboard Widgets | PENDING |
+| 2026-04-18 | researcher | IDEA-251: "Automatic Proxy Discovery" via mDNS/Bonjour | PENDING |
+| 2026-04-18 | researcher | IDEA-252: "Human-in-the-Loop" for Large-Scale Data Labeling | PENDING |
+| 2026-04-18 | researcher | IDEA-253: "Proxy-side" Request Interception & Rewriting | PENDING |
+| 2026-04-18 | researcher | IDEA-254: "Interactive-Wait" Terminal TUI | PENDING |
+| 2026-04-18 | researcher | IDEA-255: "Agent-as-a-Proxy" (Chained HITL) | PENDING |
 
 ---
 
