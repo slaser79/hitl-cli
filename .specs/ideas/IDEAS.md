@@ -251,6 +251,21 @@
 | 2026-04-18 | researcher | IDEA-253: "Proxy-side" Request Interception & Rewriting | PENDING |
 | 2026-04-18 | researcher | IDEA-254: "Interactive-Wait" Terminal TUI | PENDING |
 | 2026-04-18 | researcher | IDEA-255: "Agent-as-a-Proxy" (Chained HITL) | PENDING |
+| 2026-04-25 | researcher | IDEA-256: "Verifiable Agent Origin" (Security) | PENDING |
+| 2026-04-25 | researcher | IDEA-257: "Streaming Live Logs" to Mobile (UX) | PENDING |
+| 2026-04-25 | researcher | IDEA-258: "Conditional Hook Execution" (Integration) | PENDING |
+| 2026-04-25 | researcher | IDEA-259: "Adaptive SDK Wait-Strategy" (Performance) | PENDING |
+| 2026-04-25 | researcher | IDEA-260: "HITL-CLI" Git Credential Helper (Integration) | PENDING |
+| 2026-04-25 | researcher | IDEA-261: "Dynamic Choice Refresh" (Feature) | PENDING |
+| 2026-04-25 | researcher | IDEA-262: "Geo-Fenced Approval Constraints" (Security) | PENDING |
+| 2026-04-25 | researcher | IDEA-263: "Mobile Visualization" (Vega-Lite support) (UX) | PENDING |
+| 2026-04-25 | researcher | IDEA-264: "Voice-to-JSON" Response Parsing (UX) | PENDING |
+| 2026-04-25 | researcher | IDEA-265: "Agent-to-Agent" Review Delegation (Architecture) | PENDING |
+| 2026-04-25 | researcher | IDEA-266: "HITL-CLI" Docker Extension (UX) | PENDING |
+| 2026-04-25 | researcher | IDEA-267: "Memory-Resident" E2EE Keys (Security) | PENDING |
+| 2026-04-25 | researcher | IDEA-268: "Human-Cost" Budgeting SDK (Performance) | PENDING |
+| 2026-04-25 | researcher | IDEA-269: "One-Time-Sign" Challenge/Response (Security) | PENDING |
+| 2026-04-25 | researcher | IDEA-270: "Interactive-Shell" inside HITL (Feature) | PENDING |
 
 ---
 
