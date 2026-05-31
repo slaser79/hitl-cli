@@ -111,22 +111,28 @@ def get_last_assistant_messages(
             if not isinstance(entry, dict):
                 continue
 
-            # Get the message object
-            message = entry.get("message", {})
-            if not isinstance(message, dict):
-                continue
+            # Get the message object (Claude schema)
+            message = entry.get("message")
 
             # Check if this is an assistant message (handle both formats)
             is_assistant = (
                 entry.get("type") == "assistant" or
-                message.get("role") == "assistant"
+                (message and isinstance(message, dict) and message.get("role") == "assistant") or
+                (entry.get("source") == "MODEL" and entry.get("type") == "PLANNER_RESPONSE")
             )
 
             if not is_assistant:
                 continue
 
             # Extract text content from the message
-            content = message.get("content", [])
+            content = []
+            if message and isinstance(message, dict):
+                content = message.get("content", [])
+            elif "content" in entry:
+                flat_content = entry.get("content")
+                if isinstance(flat_content, str):
+                    content = [flat_content]
+
             if not isinstance(content, list):
                 continue
 
@@ -171,7 +177,7 @@ def main():
     # We want the hook to ALWAYS prompt the user until they say "YOU ARE DONE",
     # even if we're in a recursive stop hook situation.
 
-    transcript_path = input_data.get("transcript_path")
+    transcript_path = input_data.get("transcript_path") or input_data.get("transcriptPath")
     if not transcript_path:
         # Cannot proceed without the transcript; allow stop
         sys.exit(0)
