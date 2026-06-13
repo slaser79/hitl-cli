@@ -6,6 +6,7 @@ This hook intercepts Claude's stop events, extracts the last assistant message,
 and sends it to a human for review via the HITL notification system.
 """
 import json
+import os
 import subprocess
 import sys
 import time
@@ -172,6 +173,18 @@ def main():
     except json.JSONDecodeError as e:
         print(f"HITL Stop Hook: Failed to parse input: {e}", file=sys.stderr)
         sys.exit(1)
+
+    # Detect if we are in Antigravity scope
+    is_antigravity = ("--antigravity" in sys.argv) or (os.environ.get("IS_ANTIGRAVITY") == "1")
+
+    # In Antigravity Stop hooks, 'fullyIdle' indicates whether background/async tasks are done
+    if is_antigravity and not input_data.get("fullyIdle", False):
+        output = {
+            "decision": "block",
+            "reason": "Agent is not fully idle. Waiting for background tasks to complete."
+        }
+        print(json.dumps(output))
+        sys.exit(0)
 
     # NOTE: We intentionally do NOT check stop_hook_active here.
     # We want the hook to ALWAYS prompt the user until they say "YOU ARE DONE",

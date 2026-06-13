@@ -287,3 +287,80 @@ def test_main_hook_blocks_on_multi_line_with_instructions(temp_transcript_simple
                     assert output["decision"] == "block"
                     assert "README" in output["reason"]
                     assert "YOU ARE DONE" in output["reason"]
+
+
+def test_main_hook_blocks_when_not_fully_idle_under_antigravity(temp_transcript_simple):
+    """Test that under Antigravity, if the agent is not fully idle, the stop is blocked."""
+    input_data = {
+        "transcript_path": temp_transcript_simple,
+        "fullyIdle": False
+    }
+
+    with patch("hitl_cli.hooks.review_and_continue.json.load", return_value=input_data):
+        with patch("hitl_cli.hooks.review_and_continue.sys.argv", ["review_and_continue.py", "--antigravity"]):
+            with patch("hitl_cli.hooks.review_and_continue.subprocess.run") as mock_run:
+                with patch("hitl_cli.hooks.review_and_continue.sys.exit") as mock_exit:
+                    mock_exit.side_effect = SystemExit(0)
+                    with patch("builtins.print") as mock_print:
+                        try:
+                            review_and_continue.main()
+                        except SystemExit:
+                            pass
+
+                        # Should not call notify-completion (subprocess.run)
+                        mock_run.assert_not_called()
+                        
+                        # Should print a block decision
+                        mock_print.assert_called()
+                        call_args = mock_print.call_args[0][0]
+                        output = json.loads(call_args)
+                        assert output["decision"] == "block"
+                        assert "not fully idle" in output["reason"]
+                        mock_exit.assert_called_with(0)
+
+
+def test_main_hook_prompts_when_not_fully_idle_without_antigravity(temp_transcript_simple):
+    """Test that without Antigravity scope, fullyIdle=False is ignored and human prompt occurs."""
+    input_data = {
+        "transcript_path": temp_transcript_simple,
+        "fullyIdle": False
+    }
+
+    with patch("hitl_cli.hooks.review_and_continue.json.load", return_value=input_data):
+        with patch("hitl_cli.hooks.review_and_continue.sys.argv", ["review_and_continue.py"]):
+            with patch.dict("os.environ", {}):
+                with patch("hitl_cli.hooks.review_and_continue.subprocess.run") as mock_run:
+                    mock_run.return_value = MagicMock(stdout="✅ Human response received: YOU ARE DONE", returncode=0)
+                    with patch("hitl_cli.hooks.review_and_continue.sys.exit") as mock_exit:
+                        mock_exit.side_effect = SystemExit(0)
+                        try:
+                            review_and_continue.main()
+                        except SystemExit:
+                            pass
+
+                        # Should call notify-completion (subprocess.run)
+                        mock_run.assert_called_once()
+                        mock_exit.assert_called_with(0)
+
+
+def test_main_hook_prompts_when_fully_idle_under_antigravity(temp_transcript_simple):
+    """Test that under Antigravity, if the agent is fully idle, human prompt occurs."""
+    input_data = {
+        "transcript_path": temp_transcript_simple,
+        "fullyIdle": True
+    }
+
+    with patch("hitl_cli.hooks.review_and_continue.json.load", return_value=input_data):
+        with patch("hitl_cli.hooks.review_and_continue.sys.argv", ["review_and_continue.py", "--antigravity"]):
+            with patch("hitl_cli.hooks.review_and_continue.subprocess.run") as mock_run:
+                mock_run.return_value = MagicMock(stdout="✅ Human response received: YOU ARE DONE", returncode=0)
+                with patch("hitl_cli.hooks.review_and_continue.sys.exit") as mock_exit:
+                    mock_exit.side_effect = SystemExit(0)
+                    try:
+                        review_and_continue.main()
+                    except SystemExit:
+                        pass
+
+                    # Should call notify-completion (subprocess.run)
+                    mock_run.assert_called_once()
+                    mock_exit.assert_called_with(0)
