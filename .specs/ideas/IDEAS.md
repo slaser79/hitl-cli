@@ -341,6 +341,21 @@
 | 2026-06-06 | researcher | IDEA-343: "SDK-Integrated" Circuit Breaker Pattern | PENDING |
 | 2026-06-06 | researcher | IDEA-344: "Custom-UI" JSON Schema Extensions | PENDING |
 | 2026-06-06 | researcher | IDEA-345: "Auto-Diagnostic" Support Bundle | PENDING |
+| 2026-06-13 | researcher | IDEA-346: "Agent-Persona" Customization | PENDING |
+| 2026-06-13 | researcher | IDEA-347: "Just-in-Time" Credential Injection | PENDING |
+| 2026-06-13 | researcher | IDEA-348: "Request Priority" with OS-level Critical Alerts | PENDING |
+| 2026-06-13 | researcher | IDEA-349: "Human-in-the-Loop" Git Hook Integration | PENDING |
+| 2026-06-13 | researcher | IDEA-350: "Agent Collaboration" - Human-Mediated Handover | PENDING |
+| 2026-06-13 | researcher | IDEA-351: "SDK" Support for Python Logging Handler | PENDING |
+| 2026-06-13 | researcher | IDEA-352: "mDNS" Discovery for Local-Only HITL | PENDING |
+| 2026-06-13 | researcher | IDEA-353: "Interactive-Terminal" via E2EE Proxy | PENDING |
+| 2026-06-13 | researcher | IDEA-354: "Shell-Alias" Generator for Common Tasks | PENDING |
+| 2026-06-13 | researcher | IDEA-355: "Streaming" Human Input for Long Responses | PENDING |
+| 2026-06-13 | researcher | IDEA-356: "Request Dependency" Chaining | PENDING |
+| 2026-06-13 | researcher | IDEA-357: "Local" SQLite Audit Log for Forensic Integrity | PENDING |
+| 2026-06-13 | researcher | IDEA-358: "Agent-to-Agent" HITL (Recursive Supervision) | PENDING |
+| 2026-06-13 | researcher | IDEA-359: "Predictive" Choice Suggestion | PENDING |
+| 2026-06-13 | researcher | IDEA-360: "Protocol-Level" Compression for E2EE Payloads | PENDING |
 
 ---
 
