@@ -356,6 +356,18 @@
 | 2026-06-13 | researcher | IDEA-358: "Agent-to-Agent" HITL (Recursive Supervision) | PENDING |
 | 2026-06-13 | researcher | IDEA-359: "Predictive" Choice Suggestion | PENDING |
 | 2026-06-13 | researcher | IDEA-360: "Protocol-Level" Compression for E2EE Payloads | PENDING |
+| 2026-06-27 | researcher | IDEA-361: "Ephemeral" Dynamic Clients | PENDING |
+| 2026-06-27 | researcher | IDEA-362: "Auto-Fallback" to Non-E2EE with Security Guardrails | PENDING |
+| 2026-06-27 | researcher | IDEA-363: "Progress-Bar" / "Heartbeat" updates for long-running HITL Requests | PENDING |
+| 2026-06-27 | researcher | IDEA-364: "Dry-Run" Mode for HITL CLI/SDK | PENDING |
+| 2026-06-27 | researcher | IDEA-365: "Interactive Multi-Choice" with Default Timeouts | PENDING |
+| 2026-06-27 | researcher | IDEA-366: "Structured Output" Validation using Pydantic in SDK | PENDING |
+| 2026-06-27 | researcher | IDEA-367: "Local Mock Relay" Dev Server Mode | PENDING |
+| 2026-06-27 | researcher | IDEA-368: "Diagnostic Self-Test" Command (`hitl-cli doctor`) | PENDING |
+| 2026-06-27 | researcher | IDEA-369: "Configurable Storage Directory Override via Env Var" | PENDING |
+| 2026-06-27 | researcher | IDEA-370: "Configurable Log Redaction" for E2EE Payloads | PENDING |
+| 2026-06-27 | researcher | IDEA-371: "Pre-Auth Hook" for Custom Corporate SSO | PENDING |
+| 2026-06-27 | researcher | IDEA-372: "SDK Connection Heartbeat" for Persistent Daemon Modes | PENDING |
 
 ---
 
