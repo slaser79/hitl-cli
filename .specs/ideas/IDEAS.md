@@ -368,6 +368,21 @@
 | 2026-06-27 | researcher | IDEA-370: "Configurable Log Redaction" for E2EE Payloads | PENDING |
 | 2026-06-27 | researcher | IDEA-371: "Pre-Auth Hook" for Custom Corporate SSO | PENDING |
 | 2026-06-27 | researcher | IDEA-372: "SDK Connection Heartbeat" for Persistent Daemon Modes | PENDING |
+| 2026-07-04 | researcher | IDEA-373: Dynamic Command-Line Argument Autocomplete based on Remote CLI State | PENDING |
+| 2026-07-04 | researcher | IDEA-374: Cryptographic Audit Log Validation Utility | PENDING |
+| 2026-07-04 | researcher | IDEA-375: Configurable In-Memory Secret Store for Transient Agents | PENDING |
+| 2026-07-04 | researcher | IDEA-376: Automatic Notification Fallback to Email / Slack Webhook | PENDING |
+| 2026-07-04 | researcher | IDEA-377: Incremental Log and Artifact Streaming for Human Context | PENDING |
+| 2026-07-04 | researcher | IDEA-378: Offline Mode with Local SQLite Pending Queue | PENDING |
+| 2026-07-04 | researcher | IDEA-379: Standardized SDK Mocking Framework for Unit Testing | PENDING |
+| 2026-07-04 | researcher | IDEA-380: HTTP Proxy Authentication Tunneling | PENDING |
+| 2026-07-04 | researcher | IDEA-381: Local Dev Dashboard with Live Web Interface | PENDING |
+| 2026-07-04 | researcher | IDEA-382: Graceful JWT/OAuth Token Revocation Command | PENDING |
+| 2026-07-04 | researcher | IDEA-383: SDK Multi-Tenant Client Connection Pool | PENDING |
+| 2026-07-04 | researcher | IDEA-384: Dynamic E2EE Key Rotation Protocol | PENDING |
+| 2026-07-04 | researcher | IDEA-385: Interactive Prompt Configuration Generator | PENDING |
+| 2026-07-04 | researcher | IDEA-386: Agent-to-Human Dynamic Screen Overlay Sharing | PENDING |
+| 2026-07-04 | researcher | IDEA-387: SDK Event-Driven Callback Handlers | PENDING |
 
 ---
 
