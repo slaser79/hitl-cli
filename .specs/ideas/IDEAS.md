@@ -383,6 +383,21 @@
 | 2026-07-04 | researcher | IDEA-385: Interactive Prompt Configuration Generator | PENDING |
 | 2026-07-04 | researcher | IDEA-386: Agent-to-Human Dynamic Screen Overlay Sharing | PENDING |
 | 2026-07-04 | researcher | IDEA-387: SDK Event-Driven Callback Handlers | PENDING |
+| 2026-07-11 | researcher | IDEA-388: Structured CLI Output Options for Scripting Automation (JSON, YAML, CSV) | PENDING |
+| 2026-07-11 | researcher | IDEA-389: Encrypted Local Config Verification and Lockfile | PENDING |
+| 2026-07-11 | researcher | IDEA-390: Multi-Device OAuth Session Syncing | PENDING |
+| 2026-07-11 | researcher | IDEA-391: Automatic Latency Optimization with Nearest Edge Endpoint Selection | PENDING |
+| 2026-07-11 | researcher | IDEA-392: Unified CLI Context Attachment for Requests | PENDING |
+| 2026-07-11 | researcher | IDEA-393: SDK Local-First Fallback Mode with Timeout Guardrails | PENDING |
+| 2026-07-11 | researcher | IDEA-394: E2EE Payload Compression for Large Payloads | PENDING |
+| 2026-07-11 | researcher | IDEA-395: Typer Command Registry Refactoring to Support CLI Plugins | PENDING |
+| 2026-07-11 | researcher | IDEA-396: Zero-Dependency Verification Script for CI Pipelines | PENDING |
+| 2026-07-11 | researcher | IDEA-397: OAuth Client Credentials Grant Flow for Daemon Integration | PENDING |
+| 2026-07-11 | researcher | IDEA-398: Real-time CLI Status Bar for Interactive Approvals | PENDING |
+| 2026-07-11 | researcher | IDEA-399: Client-Side Rate Limiter and Traffic Shaping | PENDING |
+| 2026-07-11 | researcher | IDEA-400: Cryptographically Verifiable Session Revocation | PENDING |
+| 2026-07-11 | researcher | IDEA-401: SDK Automatic Environment Context Ingestion | PENDING |
+| 2026-07-11 | researcher | IDEA-402: Multi-Channel Interactive Console Fallback | PENDING |
 
 ---
 
