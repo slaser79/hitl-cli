@@ -398,6 +398,21 @@
 | 2026-07-11 | researcher | IDEA-400: Cryptographically Verifiable Session Revocation | PENDING |
 | 2026-07-11 | researcher | IDEA-401: SDK Automatic Environment Context Ingestion | PENDING |
 | 2026-07-11 | researcher | IDEA-402: Multi-Channel Interactive Console Fallback | PENDING |
+| 2026-07-18 | researcher | IDEA-403: Security-Hardened SDK Sandbox with Restricted Command Execution | PENDING |
+| 2026-07-18 | researcher | IDEA-404: SDK Heartbeat-Driven Liveness Detection for Long-Running Agent Hooks | PENDING |
+| 2026-07-18 | researcher | IDEA-405: CLI `doctor` diagnostic bundle with E2EE payload validation | PENDING |
+| 2026-07-18 | researcher | IDEA-406: Interactive Command-Line Prompt Editor (Interactive TUI Editor) | PENDING |
+| 2026-07-18 | researcher | IDEA-407: Real-time Audio Alert Bridge for Urgent Notifications | PENDING |
+| 2026-07-18 | researcher | IDEA-408: Hierarchical Multi-Agent Context Aggregation | PENDING |
+| 2026-07-18 | researcher | IDEA-409: Pre-Registered Mock Response Profiles for Non-Interactive Testing | PENDING |
+| 2026-07-18 | researcher | IDEA-410: Adaptive Rate Limiting with Backpressure Negotiation | PENDING |
+| 2026-07-18 | researcher | IDEA-411: Local Audit Log Deduplication and Compaction | PENDING |
+| 2026-07-18 | researcher | IDEA-412: Declarative Command Routing via Config Policies | PENDING |
+| 2026-07-18 | researcher | IDEA-413: Automated SDK Dependency Lazy Loading | PENDING |
+| 2026-07-18 | researcher | IDEA-414: Native Integration with System Keychains for E2EE Private Keys | PENDING |
+| 2026-07-18 | researcher | IDEA-415: Human Presence-Aware Intelligent Polling Intervals | PENDING |
+| 2026-07-18 | researcher | IDEA-416: CLI Shell Alias Generator for Common HITL Tasks | PENDING |
+| 2026-07-18 | researcher | IDEA-417: Federated Multi-Relay Fallback Support | PENDING |
 
 ---
 
