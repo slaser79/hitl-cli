@@ -413,6 +413,21 @@
 | 2026-07-18 | researcher | IDEA-415: Human Presence-Aware Intelligent Polling Intervals | PENDING |
 | 2026-07-18 | researcher | IDEA-416: CLI Shell Alias Generator for Common HITL Tasks | PENDING |
 | 2026-07-18 | researcher | IDEA-417: Federated Multi-Relay Fallback Support | PENDING |
+| 2026-07-25 | researcher | IDEA-418: Zero-Trust Per-Session Approval Delegation Tokens | PENDING |
+| 2026-07-25 | researcher | IDEA-419: Native OpenTelemetry Tracing Integration for Agent-HITL Interactions | PENDING |
+| 2026-07-25 | researcher | IDEA-420: Multi-Tenant Vault Integration for Secret-Masked HITL Prompts | PENDING |
+| 2026-07-25 | researcher | IDEA-421: Interactive Asynchronous Polling Mode with WebSocket Push Fallback | PENDING |
+| 2026-07-25 | researcher | IDEA-422: Automated CLI Crash Diagnostic Dump and Self-Healing Recovery | PENDING |
+| 2026-07-25 | researcher | IDEA-423: Agent-Side Multi-Choice Response Timeout and Fallback Actions | PENDING |
+| 2026-07-25 | researcher | IDEA-424: Offline Notification Queue Compression and Batch Sync Protocol | PENDING |
+| 2026-07-25 | researcher | IDEA-425: Dynamic Rich-Text & Media Markdown Rendering for CLI Approvals | PENDING |
+| 2026-07-25 | researcher | IDEA-426: Granular Config Schema Migration Engine | PENDING |
+| 2026-07-25 | researcher | IDEA-427: FastMCP Proxy Dynamic Tool Registration & Discovery | PENDING |
+| 2026-07-25 | researcher | IDEA-428: Local Replay Debugger for Offline SDK Testing | PENDING |
+| 2026-07-25 | researcher | IDEA-429: Hardware-Backed YubiKey/WebAuthn Approval Signature Verification | PENDING |
+| 2026-07-25 | researcher | IDEA-430: Asynchronous PyNaCl Key Generation and Caching Worker | PENDING |
+| 2026-07-25 | researcher | IDEA-431: Typer CLI Auto-Completion for Dynamic Configuration Options | PENDING |
+| 2026-07-25 | researcher | IDEA-432: Standardized Cross-Language SDK Interoperability Test Suite | PENDING |
 
 ---
 
