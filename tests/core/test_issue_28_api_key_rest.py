@@ -2,6 +2,7 @@ import os
 from unittest.mock import AsyncMock, patch
 
 import pytest
+
 from hitl_cli.mcp_client import MCPClient
 from hitl_cli.sdk import HITL
 

@@ -1,8 +1,9 @@
 from unittest.mock import AsyncMock, patch
 
 import pytest
-from hitl_cli.main import app
 from typer.testing import CliRunner
+
+from hitl_cli.main import app
 
 runner = CliRunner()
 

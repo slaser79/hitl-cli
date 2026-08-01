@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 def generate_agent_keypair() -> tuple[str, str]:
     """
     Generate a new PyNaCl keypair for the agent.
-    
+
     Returns:
         Tuple of (public_key_base64, private_key_base64)
     """
@@ -52,10 +52,10 @@ def get_agent_keys_path() -> Path:
 def save_agent_keypair(public_key: str, private_key: str, keys_path: Path | None = None) -> None:
     """
     Save agent keypair to secure file storage.
-    
+
     Args:
         public_key: Base64-encoded public key
-        private_key: Base64-encoded private key  
+        private_key: Base64-encoded private key
         keys_path: Optional custom path (defaults to get_agent_keys_path())
     """
     if keys_path is None:
@@ -77,13 +77,13 @@ def save_agent_keypair(public_key: str, private_key: str, keys_path: Path | None
 def load_agent_keypair(keys_path: Path | None = None) -> tuple[str, str]:
     """
     Load agent keypair from file storage.
-    
+
     Args:
         keys_path: Optional custom path (defaults to get_agent_keys_path())
-        
+
     Returns:
         Tuple of (public_key_base64, private_key_base64)
-        
+
     Raises:
         FileNotFoundError: If key file doesn't exist
         ValueError: If key file is invalid
@@ -118,7 +118,7 @@ def load_agent_keypair(keys_path: Path | None = None) -> tuple[str, str]:
 async def ensure_agent_keypair() -> tuple[str, str]:
     """
     Ensure agent keypair exists, creating and registering if necessary.
-    
+
     Returns:
         Tuple of (public_key_base64, private_key_base64)
     """

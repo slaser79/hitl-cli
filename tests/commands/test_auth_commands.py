@@ -7,9 +7,10 @@ These tests validate the CLI command behavior and user interactions.
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
+from typer.testing import CliRunner
+
 from hitl_cli.auth import save_token
 from hitl_cli.main import app
-from typer.testing import CliRunner
 
 
 class TestLoginCommand:

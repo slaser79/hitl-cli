@@ -13,6 +13,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 import typer
+
 from hitl_cli.api_client import ApiClient
 from hitl_cli.auth import save_token
 

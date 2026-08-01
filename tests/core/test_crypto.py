@@ -12,6 +12,9 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 pytest.importorskip("nacl")
+from nacl.encoding import Base64Encoder
+from nacl.public import PrivateKey, PublicKey
+
 from hitl_cli.crypto import (
     ensure_agent_keypair,
     generate_agent_keypair,
@@ -20,8 +23,6 @@ from hitl_cli.crypto import (
     register_public_key_with_backend,
     save_agent_keypair,
 )
-from nacl.encoding import Base64Encoder
-from nacl.public import PrivateKey, PublicKey
 
 
 class TestKeyGeneration:

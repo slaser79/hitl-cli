@@ -27,14 +27,14 @@ logger = logging.getLogger(__name__)
 class BackendMCPClient:
     """
     MCP client for communicating with the backend server.
-    
+
     Handles authentication and tool execution on the backend.
     """
 
     def __init__(self, backend_url: str):
         """
         Initialize backend MCP client.
-        
+
         Args:
             backend_url: URL of the backend MCP server
         """
@@ -51,10 +51,10 @@ class BackendMCPClient:
     async def list_tools(self) -> list[dict[str, Any]]:
         """
         List tools available on the backend MCP server.
-        
+
         Returns:
             List of tool definitions
-            
+
         Raises:
             Exception: If backend request fails
         """
@@ -99,14 +99,14 @@ class BackendMCPClient:
     async def call_tool(self, tool_name: str, arguments: dict[str, Any]) -> Any:
         """
         Call a tool on the backend MCP server.
-        
+
         Args:
             tool_name: Name of the tool to call
             arguments: Tool arguments
-            
+
         Returns:
             Tool execution result
-            
+
         Raises:
             Exception: If tool call fails
         """
@@ -140,10 +140,10 @@ class BackendMCPClient:
 async def get_device_public_keys() -> list[str]:
     """
     Retrieve public keys of user's mobile devices from backend.
-    
+
     Returns:
         List of base64-encoded device public keys
-        
+
     Raises:
         Exception: If backend request fails
     """
@@ -178,15 +178,15 @@ async def get_device_public_keys() -> list[str]:
 def encrypt_arguments(arguments: dict[str, Any], device_public_keys: list[str], agent_private_key: PrivateKey) -> str:
     """
     Encrypt arguments for multiple device recipients.
-    
+
     Args:
         arguments: Dictionary of arguments to encrypt
         device_public_keys: List of base64-encoded device public keys
         agent_private_key: Agent's private key for encryption
-        
+
     Returns:
         Base64-encoded encrypted payload
-        
+
     Raises:
         ValueError: If no device keys provided
     """
@@ -214,15 +214,15 @@ def encrypt_arguments(arguments: dict[str, Any], device_public_keys: list[str], 
 def decrypt_response(encrypted_data: str, device_public_key: str, agent_private_key: PrivateKey) -> str:
     """
     Decrypt response from device.
-    
+
     Args:
         encrypted_data: Base64-encoded encrypted response
         device_public_key: Base64-encoded device public key
         agent_private_key: Agent's private key for decryption
-        
+
     Returns:
         Decrypted plaintext string
-        
+
     Raises:
         Exception: If decryption fails
     """
@@ -260,16 +260,16 @@ def decrypt_response(encrypted_data: str, device_public_key: str, agent_private_
 def create_fastmcp_proxy_server(backend_url: str) -> FastMCP:
     """
     Create a FastMCP-based proxy server for E2EE communication.
-    
+
     This function creates a proper MCP server using FastMCP 2.0 that:
     1. Filters backend tools to hide _e2ee variants from Claude
-    2. Transparently encrypts request_human_input calls 
+    2. Transparently encrypts request_human_input calls
     3. Decrypts responses before returning to Claude
     4. Maintains full MCP protocol compliance
-    
+
     Args:
         backend_url: URL of the backend MCP server
-        
+
     Returns:
         Configured FastMCP server instance
     """
@@ -295,7 +295,7 @@ def create_fastmcp_proxy_server(backend_url: str) -> FastMCP:
     async def request_human_input(prompt: str, choices: list[str] | None = None) -> str:
         """
         Request input from human with transparent E2EE encryption.
-        
+
         This tool transparently handles encryption by:
         1. Getting device public keys
         2. Encrypting the arguments
@@ -337,7 +337,7 @@ def create_fastmcp_proxy_server(backend_url: str) -> FastMCP:
     async def notify_human(message: str) -> str:
         """
         Send notification to human with transparent E2EE encryption.
-        
+
         Similar to request_human_input but for notifications.
         """
         try:
@@ -370,7 +370,7 @@ def create_fastmcp_proxy_server(backend_url: str) -> FastMCP:
     async def register_backend_tools():
         """
         Dynamically register backend tools, filtering out E2EE variants.
-        
+
         This ensures Claude only sees plaintext tools while proxy handles encryption.
         """
         try:
@@ -429,7 +429,7 @@ def create_fastmcp_proxy_server(backend_url: str) -> FastMCP:
 async def get_backend_tools() -> list[dict[str, Any]]:
     """
     Helper function to get backend tools for testing.
-    
+
     This function is used by tests to mock backend tool retrieval.
     """
     # This is a test helper - in real implementation, tools come from BackendMCPClient
