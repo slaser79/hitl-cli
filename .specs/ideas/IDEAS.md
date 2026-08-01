@@ -428,6 +428,21 @@
 | 2026-07-25 | researcher | IDEA-430: Asynchronous PyNaCl Key Generation and Caching Worker | PENDING |
 | 2026-07-25 | researcher | IDEA-431: Typer CLI Auto-Completion for Dynamic Configuration Options | PENDING |
 | 2026-07-25 | researcher | IDEA-432: Standardized Cross-Language SDK Interoperability Test Suite | PENDING |
+| 2026-08-01 | researcher | IDEA-433: Agent-to-Human Dynamic Attachment & File Payload Support | PENDING |
+| 2026-08-01 | researcher | IDEA-434: CLI Session Record & Interactive Replay Terminal | PENDING |
+| 2026-08-01 | researcher | IDEA-435: Automated JWT/OAuth Token Pre-Fetch Daemon for Background CLI Jobs | PENDING |
+| 2026-08-01 | researcher | IDEA-436: Configurable Webhook & Slack Event Forwarder in E2EE Proxy Mode | PENDING |
+| 2026-08-01 | researcher | IDEA-437: Deterministic Response Schema Validation for Structured Choice Outputs | PENDING |
+| 2026-08-01 | researcher | IDEA-438: Adaptive Exponential Backoff & Connection Health Probing in Stdio Proxy | PENDING |
+| 2026-08-01 | researcher | IDEA-439: Granular CLI Scope & Permissions Policy Profiles | PENDING |
+| 2026-08-01 | researcher | IDEA-440: Interactive Shell Mode with Tab Auto-Execution (`hitl-cli shell`) | PENDING |
+| 2026-08-01 | researcher | IDEA-441: Zero-Overhead Ephemeral SDK Memory Caching for Request Statuses | PENDING |
+| 2026-08-01 | researcher | IDEA-442: Hierarchical Multi-User Escalation Policy in Python SDK | PENDING |
+| 2026-08-01 | researcher | IDEA-443: Automated Security Audit Log & Redaction Filter for CLI Operations | PENDING |
+| 2026-08-01 | researcher | IDEA-444: Native Python Async Context Managers for Managed HITL Sessions | PENDING |
+| 2026-08-01 | researcher | IDEA-445: Multi-Environment Relay Profile Switching (`hitl-cli env switch`) | PENDING |
+| 2026-08-01 | researcher | IDEA-446: Cross-Platform System Tray Status Indicator for MCP Proxy | PENDING |
+| 2026-08-01 | researcher | IDEA-447: Standardized Pre-Commit Hook for CLI Secrets & Schema Validation | PENDING |
 
 ---
 
