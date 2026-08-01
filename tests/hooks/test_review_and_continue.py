@@ -4,6 +4,7 @@ import json
 from unittest.mock import MagicMock, patch
 
 import pytest
+
 from hitl_cli.hooks import review_and_continue
 
 
@@ -309,7 +310,7 @@ def test_main_hook_blocks_when_not_fully_idle_under_antigravity(temp_transcript_
 
                         # Should not call notify-completion (subprocess.run)
                         mock_run.assert_not_called()
-                        
+
                         # Should print a block decision
                         mock_print.assert_called()
                         call_args = mock_print.call_args[0][0]

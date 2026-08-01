@@ -5,6 +5,7 @@ import subprocess
 import sys
 import time
 
+
 def get_last_assistant_message(transcript_path):
     time.sleep(0.5)
     for _ in range(5):
@@ -14,19 +15,19 @@ def get_last_assistant_message(transcript_path):
             if not lines:
                 time.sleep(0.5)
                 continue
-            
+
             # Find the most recent message from MODEL/PLANNER_RESPONSE
             for line in reversed(lines):
                 try:
                     entry = json.loads(line.strip())
-                except:
+                except Exception:
                     continue
                 if entry.get("source") == "MODEL" and entry.get("type") == "PLANNER_RESPONSE":
                     content = entry.get("content")
                     if content and isinstance(content, str) and content.strip():
                         return content.strip()
             time.sleep(0.5)
-        except Exception as e:
+        except Exception:
             time.sleep(0.5)
     return "Antigravity Task Completed (Stop Hook triggered)."
 
@@ -48,13 +49,13 @@ def main():
         }
         print(json.dumps(output))
         sys.exit(0)
-        
+
     transcript_path = input_data.get("transcriptPath") or input_data.get("transcript_path")
     if not transcript_path:
         sys.exit(0)
-        
+
     last_message = get_last_assistant_message(transcript_path)
-    
+
     # Run hitl-cli notify-completion using the absolute result bin path
     try:
         result = subprocess.run(
@@ -68,13 +69,13 @@ def main():
     except Exception as e:
         print(f"Antigravity Hook notify-completion failed: {e}", file=sys.stderr)
         sys.exit(1)
-        
+
     # Extract response
     prefix = "✅ Human response received:"
     user_response = stdout.strip()
     if prefix in stdout:
         user_response = stdout.split(prefix, 1)[1].strip()
-        
+
     if user_response == "YOU ARE DONE":
         sys.exit(0)
     else:

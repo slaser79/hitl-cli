@@ -11,6 +11,7 @@ These tests validate:
 from unittest.mock import MagicMock, Mock, patch
 
 import pytest
+
 from hitl_cli.mcp_client import MCPClient
 
 
@@ -412,6 +413,7 @@ class TestJWTDecoding:
         """Test that get_current_agent_id returns agent ID for valid JWT"""
         # Create a valid JWT token using PyJWT library
         import jwt
+
         from hitl_cli.auth import get_current_agent_id
         payload = {"agent_id": "test-agent-123", "sub": "user@example.com", "exp": 9999999999}
         jwt_token = jwt.encode(payload, "secret", algorithm="HS256")
@@ -425,6 +427,7 @@ class TestJWTDecoding:
         """Test that get_current_agent_id uses PyJWT library for robust decoding"""
         # Create a real JWT token with PyJWT
         import jwt
+
         from hitl_cli.auth import get_current_agent_id
         payload = {"agent_id": "test-agent-456", "sub": "user@example.com", "exp": 9999999999}
         jwt_token = jwt.encode(payload, "secret", algorithm="HS256")

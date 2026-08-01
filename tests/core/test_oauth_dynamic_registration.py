@@ -15,8 +15,9 @@ import json
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
-from hitl_cli.main import app
 from typer.testing import CliRunner
+
+from hitl_cli.main import app
 
 
 class TestOAuthDynamicRegistration:

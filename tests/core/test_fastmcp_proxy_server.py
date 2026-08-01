@@ -14,6 +14,7 @@ import pytest
 # Import the new implementation (will fail initially)
 try:
     from fastmcp import Client, FastMCP
+
     from hitl_cli.proxy_handler_v2 import create_fastmcp_proxy_server
 except ImportError:
     # These imports will fail initially - that's expected
@@ -32,7 +33,7 @@ class TestFastMCPProxyServerCompliance:
     @pytest.mark.asyncio
     async def test_proxy_server_is_valid_mcp_server(self):
         """Test that proxy is a valid MCP server using FastMCP testing utilities.
-        
+
         This test MUST FAIL initially until proper FastMCP implementation.
         """
         if create_fastmcp_proxy_server is None:
@@ -100,7 +101,7 @@ class TestFastMCPProxyServerCompliance:
     @pytest.mark.asyncio
     async def test_mcp_server_initialization_and_capabilities(self):
         """Test proper MCP server initialization and capabilities.
-        
+
         This test MUST FAIL initially until proper FastMCP implementation.
         """
         if create_fastmcp_proxy_server is None:
@@ -137,7 +138,7 @@ class TestFastMCPProxyServerCompliance:
     @pytest.mark.asyncio
     async def test_request_human_input_e2ee_transparency(self):
         """Test that request_human_input transparently handles E2EE encryption.
-        
+
         This test MUST FAIL initially until E2EE implementation.
         """
         if create_fastmcp_proxy_server is None:
@@ -188,7 +189,7 @@ class TestFastMCPProxyServerCompliance:
     @pytest.mark.asyncio
     async def test_proper_json_rpc_error_handling(self):
         """Test proper JSON-RPC 2.0 error handling in FastMCP server.
-        
+
         This test MUST FAIL initially until proper error handling.
         """
         if create_fastmcp_proxy_server is None:
@@ -222,7 +223,7 @@ class TestFastMCPProxyServerIntegration:
     @pytest.mark.asyncio
     async def test_fastmcp_server_preserves_existing_proxy_behavior(self):
         """Test that FastMCP implementation preserves all existing proxy behaviors.
-        
+
         This validates that the new implementation maintains compatibility
         with existing test expectations from test_tool_interception.py.
         """

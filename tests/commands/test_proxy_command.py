@@ -7,8 +7,9 @@ end-to-end encryption by acting as an MCP proxy between Claude and the backend.
 
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from hitl_cli.main import app
 from typer.testing import CliRunner
+
+from hitl_cli.main import app
 
 
 class TestProxyCommand:

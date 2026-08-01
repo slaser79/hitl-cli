@@ -2,14 +2,12 @@
 name = "hitl-cli"
 version = "1.2.1"
 description = "Command-line interface and SDK for Human-in-the-Loop services."
-# Add a longer description from your README
 readme = "README.md"
 license = {text = "MIT"}
 authors = [
     {name = "HITL CLI Team", email = "contact@hitlrelay.app"},
 ]
 requires-python = ">=3.10"
-# Add classifiers to help users find your package
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
@@ -21,7 +19,6 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Topic :: Terminals",
 ]
-# Add keywords for better searchability
 keywords = ["hitl", "human-in-the-loop", "mcp", "cli", "sdk", "ai", "agent"]
 dependencies = [
     "google-auth>=2.40.3",
@@ -50,9 +47,17 @@ hitl-daily-report = "hitl_cli.main:daily_report"
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
-# Add pytest configuration
 [tool.pytest.ini_options]
 timeout = 30
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.0",
+    "pytest-cov>=5.0.0",
+    "pytest-timeout>=2.4.0",
+    "ruff>=0.8.0",
+]
 
 [tool.uv]
 dev-dependencies = [
@@ -60,4 +65,12 @@ dev-dependencies = [
     "pytest-asyncio>=0.23.0",
     "pytest-cov>=5.0.0",
     "pytest-timeout>=2.4.0",
+    "ruff>=0.8.0",
 ]
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]
+ignore = ["E501"]
