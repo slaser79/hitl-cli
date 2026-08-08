@@ -443,6 +443,21 @@
 | 2026-08-01 | researcher | IDEA-445: Multi-Environment Relay Profile Switching (`hitl-cli env switch`) | PENDING |
 | 2026-08-01 | researcher | IDEA-446: Cross-Platform System Tray Status Indicator for MCP Proxy | PENDING |
 | 2026-08-01 | researcher | IDEA-447: Standardized Pre-Commit Hook for CLI Secrets & Schema Validation | PENDING |
+| 2026-08-08 | researcher | IDEA-448: Client-Side SHA-256 Idempotency Engine for Fault-Tolerant Agent Retries | PENDING |
+| 2026-08-08 | researcher | IDEA-449: Single-Key Interactive Hotkey Binds in Terminal Approval Mode | PENDING |
+| 2026-08-08 | researcher | IDEA-450: Automatic Multi-Part Envelope Chunking for Large Context Diffs | PENDING |
+| 2026-08-08 | researcher | IDEA-451: Zero-Config Docker & Kubernetes Secret Mount Auto-Discovery | PENDING |
+| 2026-08-08 | researcher | IDEA-452: Cryptographic Payload Signature Verification for Non-Repudiable Approvals | PENDING |
+| 2026-08-08 | researcher | IDEA-453: Local Shell Hook Plugin Framework for Post-Response Actions | PENDING |
+| 2026-08-08 | researcher | IDEA-454: Adaptive Priority Tagging & Emergency Push Escalation | PENDING |
+| 2026-08-08 | researcher | IDEA-455: Unified Workspace Profile Management & Auto-Switching (`hitl-cli profile`) | PENDING |
+| 2026-08-08 | researcher | IDEA-456: Microsecond-Precision Latency Telemetry for MCP Proxy Tracing | PENDING |
+| 2026-08-08 | researcher | IDEA-457: Embedded Standalone Mock Relay Harness for Zero-Dependency CI Testing | PENDING |
+| 2026-08-08 | researcher | IDEA-458: Automatic Pre-Flight PII and Secret Redaction Scanner for Attachments | PENDING |
+| 2026-08-08 | researcher | IDEA-459: Typer Standardization & Type-Annotated Subcommand Refactoring | PENDING |
+| 2026-08-08 | researcher | IDEA-460: Real-Time Server-Sent Events (SSE) Proxy Transport Listener | PENDING |
+| 2026-08-08 | researcher | IDEA-461: Interactive Terminal Preview Generator for Markdown & Attachment Payloads | PENDING |
+| 2026-08-08 | researcher | IDEA-462: Proactive OAuth Token Expiration Warning and Auto-Refresh Banner | PENDING |
 
 ---
 
