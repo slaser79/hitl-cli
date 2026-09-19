@@ -443,6 +443,111 @@
 | 2026-08-01 | researcher | IDEA-445: Multi-Environment Relay Profile Switching (`hitl-cli env switch`) | PENDING |
 | 2026-08-01 | researcher | IDEA-446: Cross-Platform System Tray Status Indicator for MCP Proxy | PENDING |
 | 2026-08-01 | researcher | IDEA-447: Standardized Pre-Commit Hook for CLI Secrets & Schema Validation | PENDING |
+| 2026-08-08 | researcher | IDEA-448: Client-Side SHA-256 Idempotency Engine for Fault-Tolerant Agent Retries | PENDING |
+| 2026-08-08 | researcher | IDEA-449: Single-Key Interactive Hotkey Binds in Terminal Approval Mode | PENDING |
+| 2026-08-08 | researcher | IDEA-450: Automatic Multi-Part Envelope Chunking for Large Context Diffs | PENDING |
+| 2026-08-08 | researcher | IDEA-451: Zero-Config Docker & Kubernetes Secret Mount Auto-Discovery | PENDING |
+| 2026-08-08 | researcher | IDEA-452: Cryptographic Payload Signature Verification for Non-Repudiable Approvals | PENDING |
+| 2026-08-08 | researcher | IDEA-453: Local Shell Hook Plugin Framework for Post-Response Actions | PENDING |
+| 2026-08-08 | researcher | IDEA-454: Adaptive Priority Tagging & Emergency Push Escalation | PENDING |
+| 2026-08-08 | researcher | IDEA-455: Unified Workspace Profile Management & Auto-Switching (`hitl-cli profile`) | PENDING |
+| 2026-08-08 | researcher | IDEA-456: Microsecond-Precision Latency Telemetry for MCP Proxy Tracing | PENDING |
+| 2026-08-08 | researcher | IDEA-457: Embedded Standalone Mock Relay Harness for Zero-Dependency CI Testing | PENDING |
+| 2026-08-08 | researcher | IDEA-458: Automatic Pre-Flight PII and Secret Redaction Scanner for Attachments | PENDING |
+| 2026-08-08 | researcher | IDEA-459: Typer Standardization & Type-Annotated Subcommand Refactoring | PENDING |
+| 2026-08-08 | researcher | IDEA-460: Real-Time Server-Sent Events (SSE) Proxy Transport Listener | PENDING |
+| 2026-08-08 | researcher | IDEA-461: Interactive Terminal Preview Generator for Markdown & Attachment Payloads | PENDING |
+| 2026-08-08 | researcher | IDEA-462: Proactive OAuth Token Expiration Warning and Auto-Refresh Banner | PENDING |
+| 2026-08-15 | researcher | IDEA-463: Interactive Multi-Turn Dialog Threading in CLI & SDK (`--thread-id`) | PENDING |
+| 2026-08-15 | researcher | IDEA-464: Automated Keyring & 1Password/Bitwarden Secret Provider Integration for Headless CI | PENDING |
+| 2026-08-15 | researcher | IDEA-465: Intelligent Rich Terminal Progress Bar and Human-Waiting Activity Indicator | PENDING |
+| 2026-08-15 | researcher | IDEA-466: Configurable Default Fallback Action on Timeout (`--on-timeout approve|reject|default`) | PENDING |
+| 2026-08-15 | researcher | IDEA-467: Local Response Polling Interval Exponential Decay & Push Wakeup Optimization | PENDING |
+| 2026-08-15 | researcher | IDEA-468: Native OpenHands, CrewAI, and LangChain Agent Framework Adapter Middleware | PENDING |
+| 2026-08-15 | researcher | IDEA-469: Unified Async HTTP Client Session Lifecycle Management across SDK & CLI | PENDING |
+| 2026-08-15 | researcher | IDEA-470: Granular Request Authorization Scopes & Action Budget Guardrails | PENDING |
+| 2026-08-15 | researcher | IDEA-471: Automated QR Code Pairing Terminal Display for Instant Mobile App Login | PENDING |
+| 2026-08-15 | researcher | IDEA-472: Local Webhook Ingestion Server for Instant Low-Latency Human Response Dispatch | PENDING |
+| 2026-08-15 | researcher | IDEA-473: E2EE Key Generation Benchmarking and Pre-Computed Ephemeral Key Pool | PENDING |
+| 2026-08-15 | researcher | IDEA-474: Interactive Schema Builder & Dry-Run Prompt Tester (`hitl-cli prompt test`) | PENDING |
+| 2026-08-15 | researcher | IDEA-475: Full Pydantic v2 Settings and Payload Validation Engine Integration | PENDING |
+| 2026-08-15 | researcher | IDEA-476: GitHub Actions and GitLab CI Human Gate Step Action (`hitl-cli/action`) | PENDING |
+| 2026-08-15 | researcher | IDEA-477: Client-Side Ephemeral Session Encryption with Auto-Expiring One-Time Keys | PENDING |
+| 2026-08-22 | researcher | IDEA-478: Git Worktree & Dirty State Auto-Detection Snapshot in HITL Prompt Context | PENDING |
+| 2026-08-22 | researcher | IDEA-479: Post-Quantum Cryptography (PQC) Kyber/ML-KEM Key Exchange Hybrid Support | PENDING |
+| 2026-08-22 | researcher | IDEA-480: Interactive TUI Fleet Monitor (`hitl-cli top`) for Multi-Agent Task Tracking | PENDING |
+| 2026-08-22 | researcher | IDEA-481: Async Zero-Copy Binary IPC Transport for Local MCP Proxy Daemon | PENDING |
+| 2026-08-22 | researcher | IDEA-482: Pluggable Transport Layer Architecture with Decoupled Protocol Adapters | PENDING |
+| 2026-08-22 | researcher | IDEA-483: Ephemeral "Magic-Link" Web Review Generation for Non-App Stakeholders | PENDING |
+| 2026-08-22 | researcher | IDEA-484: In-Memory Secret Zeroization & Automated Terminal Redaction Filter | PENDING |
+| 2026-08-22 | researcher | IDEA-485: Dynamic Payload Delta Compression with Content-Defined Chunking for Multi-Turn Agent Loops | PENDING |
+| 2026-08-22 | researcher | IDEA-486: Multi-Stage Escalation Ladder with Dynamic Tiered Timeouts (`--escalate`) | PENDING |
+| 2026-08-22 | researcher | IDEA-487: Kubernetes Operator & Custom Resource Definition (CRD) for Declarative Pipeline Approval Gates | PENDING |
+| 2026-08-22 | researcher | IDEA-488: Syntax-Highlighted Split-Diff Visualizer for Code Review Approvals (`--diff`) | PENDING |
+| 2026-08-22 | researcher | IDEA-489: Standardized OpenTelemetry Semantic Convention Tracing Exporter | PENDING |
+| 2026-08-22 | researcher | IDEA-490: Smart Audio-Visual Terminal Alerts & Configurable Desktop Bell (`--alert`) | PENDING |
+| 2026-08-22 | researcher | IDEA-491: Agent Execution Replay Sandbox with Interactive Time-Travel Debugging | PENDING |
+| 2026-08-22 | researcher | IDEA-492: Automated OAuth Scope Downgrade & Read-Only CI Token Provisioning (`hitl-cli token mint`) | PENDING |
+| 2026-08-29 | researcher | IDEA-493: Interactive File Patch Applicator with Selective Line-Level Discard (`hitl-cli patch`) | PENDING |
+| 2026-08-29 | researcher | IDEA-494: Automated Hardware Security Module (HSM) & PKCS#11 Provider Bridge for E2EE Signing | PENDING |
+| 2026-08-29 | researcher | IDEA-495: Real-Time Human Reviewer Presence & Typing Indicator in CLI/SDK (`--presence`) | PENDING |
+| 2026-08-29 | researcher | IDEA-496: Connection Warm-Up & Background SSL/TLS Pre-Handshaking on CLI Startup | PENDING |
+| 2026-08-29 | researcher | IDEA-497: Unified Event-Driven Hook Architecture with Async Lifecycle Middleware | PENDING |
+| 2026-08-29 | researcher | IDEA-498: Native VS Code & Cursor Extension Language Server Protocol (LSP) Bridge | PENDING |
+| 2026-08-29 | researcher | IDEA-499: Hierarchical Multi-Party Consensus & Quorum Approvals (`--quorum`) | PENDING |
+| 2026-08-29 | researcher | IDEA-500: Ephemeral Sandboxed Token Scoping with Dynamic Time-to-Live (`--token-ttl`) | PENDING |
+| 2026-08-29 | researcher | IDEA-501: Rich Markdown & ANSI Code Syntax Highlighting in Terminal Interactive Mode | PENDING |
+| 2026-08-29 | researcher | IDEA-502: Client-Side Streaming Response Aggregator & Token De-duplication Cache | PENDING |
+| 2026-08-29 | researcher | IDEA-503: Terraform & OpenTofu Provider Plugin for Infrastructure Approval Gates (`terraform-provider-hitl`) | PENDING |
+| 2026-08-29 | researcher | IDEA-504: Comprehensive Mock Relay Server & Deterministic Async Fixtures for Pytest | PENDING |
+| 2026-08-29 | researcher | IDEA-505: Voice-to-Text Audio Note Attachment Dispatch (`--audio-note`) | PENDING |
+| 2026-08-29 | researcher | IDEA-506: Cryptographic Audit Receipt Verification & Local Ledger Export (`hitl-cli receipt verify`) | PENDING |
+| 2026-08-29 | researcher | IDEA-507: Configurable Interactive Prompt Timeout Countdown & Audible Warning Chime | PENDING |
+| 2026-09-05 | researcher | IDEA-508: Interactive Terminal Multi-Select Checklist (`hitl-cli select --multi`) | PENDING |
+| 2026-09-05 | researcher | IDEA-509: Persistent HTTP Connection Pooling & Session Reuse in `ApiClient` | PENDING |
+| 2026-09-05 | researcher | IDEA-510: Structured Exception Hierarchy Decoupling from CLI Exit Codes in SDK | PENDING |
+| 2026-09-05 | researcher | IDEA-511: Official Google Antigravity Channel Plugin (`HitlChannelPlugin`) | PENDING |
+| 2026-09-05 | researcher | IDEA-512: Resilient Stop-Hook Review Preservation on Secondary Lint Failures | PENDING |
+| 2026-09-05 | researcher | IDEA-513: Real-Time ANSI Terminal Status Dashboard for Blocking Requests (`--watch`) | PENDING |
+| 2026-09-05 | researcher | IDEA-514: Client-Side Automated Secret & PII Masking Filter (`--sanitize`) | PENDING |
+| 2026-09-05 | researcher | IDEA-515: Multi-File Unified Context Diff Bundler with Syntactic Chunk Pruning (`--diff-context`) | PENDING |
+| 2026-09-05 | researcher | IDEA-516: Interactive Terminal Prompt Preview & Dry-Run Mode (`hitl-cli request --dry-run`) | PENDING |
+| 2026-09-05 | researcher | IDEA-517: Cryptographic Nonce & Anti-Replay Guard for Mobile E2EE Approvals | PENDING |
+| 2026-09-05 | researcher | IDEA-518: Centralized Auth Strategy Factory & Unified Dispatch Engine | PENDING |
+| 2026-09-05 | researcher | IDEA-519: Slack & Discord Webhook Escalation Gateway (`hitl-cli gateway`) | PENDING |
+| 2026-09-05 | researcher | IDEA-520: Adaptive Polling with Exponential Jitter & Long-Polling Relay Handshake | PENDING |
+| 2026-09-05 | researcher | IDEA-521: Fuzzy-Search Interactive Terminal History & Audit Log Browser (`hitl-cli history search`) | PENDING |
+| 2026-09-05 | researcher | IDEA-522: Air-Gapped Local Subnet Relay Daemon for Offline Enclaves (`hitl-cli daemon --offline`) | PENDING |
+| 2026-09-12 | researcher | IDEA-523: Visual Attachment Support for UI & Artifact Approval (`hitl-cli request --image`) | PENDING |
+| 2026-09-12 | researcher | IDEA-524: Directory-Scoped `.hitl.toml` Workspace Configuration Discovery | PENDING |
+| 2026-09-12 | researcher | IDEA-525: Native Headless CI Simulation & Auto-Mock Mode (`HITL_SIMULATION_MODE`) | PENDING |
+| 2026-09-12 | researcher | IDEA-526: Automated Terminal Shell Completion for Bash, Zsh, and Fish (`hitl-cli completion`) | PENDING |
+| 2026-09-12 | researcher | IDEA-527: Native Desktop & OSC 777/9 In-Terminal OS Notification Dispatch | PENDING |
+| 2026-09-12 | researcher | IDEA-528: Relay HTTP Transient Error Auto-Retry with Truncated Exponential Backoff | PENDING |
+| 2026-09-12 | researcher | IDEA-529: Automated Key Rotation and Rekeying Command (`hitl-cli key rotate`) | PENDING |
+| 2026-09-12 | researcher | IDEA-530: Subagent Lineage and Task Hierarchy Tracking in Prompts (`--parent-task-id`) | PENDING |
+| 2026-09-12 | researcher | IDEA-531: Rolling Hook Telemetry and Audit Log File (`~/.hitl/hooks.log`) | PENDING |
+| 2026-09-12 | researcher | IDEA-532: Zero-Leak Memory Scrubbing and Key Scrambling on Process Exit | PENDING |
+| 2026-09-12 | researcher | IDEA-533: Bidirectional WebSocket Streaming Transport for Real-Time Human Response | PENDING |
+| 2026-09-12 | researcher | IDEA-534: Exportable Audit Ledger and Compliance Log (`hitl-cli audit export`) | PENDING |
+| 2026-09-12 | researcher | IDEA-535: Dynamic Markdown & Syntax-Highlighted Terminal Confirmation Diff | PENDING |
+| 2026-09-12 | researcher | IDEA-536: Unified CLI Diagnostics and Environment Doctor (`hitl-cli doctor`) | PENDING |
+| 2026-09-12 | researcher | IDEA-537: Antigravity Background Task Readiness Guard in Stop Hook | PENDING |
+| 2026-09-19 | researcher | IDEA-538: Serverless Asynchronous Webhook Callback Dispatch (`hitl-cli request --callback-url`) | PENDING |
+| 2026-09-19 | researcher | IDEA-539: Live Session Token & Financial Spend Telemetry Card in Review Prompts (`--session-cost`) | PENDING |
+| 2026-09-19 | researcher | IDEA-540: Multi-Recipient Team Broadcast with First-Response Resolution (`--broadcast --team`) | PENDING |
+| 2026-09-19 | researcher | IDEA-541: Fast Unix Domain Socket (UDS) Transport for MCP Proxy Server (`hitl-cli proxy --socket`) | PENDING |
+| 2026-09-19 | researcher | IDEA-542: Interactive Multi-Field Form Schema Prompting (`hitl-cli request --form`) | PENDING |
+| 2026-09-19 | researcher | IDEA-543: Automated Cross-Platform Hook Installer and Diagnostic CLI (`hitl-cli hook install`) | PENDING |
+| 2026-09-19 | researcher | IDEA-544: Zero-Trust Ephemeral E2EE Sessions with Automatic Key Shredding (`--ephemeral-keypair`) | PENDING |
+| 2026-09-19 | researcher | IDEA-545: SDK Asynchronous Batch Notification Dispatcher (`HITL.notify_many`) | PENDING |
+| 2026-09-19 | researcher | IDEA-546: Machine-Readable Structured Output Formats across CLI Commands (`--format json|quiet`) | PENDING |
+| 2026-09-19 | researcher | IDEA-547: FastMCP Request Lifecycle Middleware Pipeline Architecture | PENDING |
+| 2026-09-19 | researcher | IDEA-548: Graceful Prompt Revocation on Agent Interruption & Signal Trapping (`--on-interrupt`) | PENDING |
+| 2026-09-19 | researcher | IDEA-549: Configurable Network Partition Fallback Policy (`--on-disconnect approve|reject|abort`) | PENDING |
+| 2026-09-19 | researcher | IDEA-550: Local Keychain Integration for Service Credentials (`hitl-cli secret store`) | PENDING |
+| 2026-09-19 | researcher | IDEA-551: Pytest Test Fixture & Mock Relay Harness (`pytest-hitl`) | PENDING |
+| 2026-09-19 | researcher | IDEA-552: Mobile Push Notification Priority & Custom Alert Sound Profiles (`--priority urgent|high|low`) | PENDING |
 
 ---
 
