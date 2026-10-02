@@ -563,6 +563,21 @@
 | 2026-09-26 | researcher | IDEA-565: Automated Network Proxy & SOCKS5 Tunnel Auto-Configuration (`hitl-cli request --proxy`) | PENDING |
 | 2026-09-26 | researcher | IDEA-566: Agent Action Budget Guardrails with Velocity Throttling (`hitl-cli request --max-prompts-per-minute`) | PENDING |
 | 2026-09-26 | researcher | IDEA-567: Automated Hook Self-Repair & Diagnostic Sync Command (`hitl-cli hook sync`) | PENDING |
+| 2026-10-02 | researcher | IDEA-568: Human-Delegated Subagent Handoff & Collaborative Session Escalation (`hitl-cli request --delegate-to-human`) | PENDING |
+| 2026-10-02 | researcher | IDEA-569: Rich Terminal Markdown Diff Viewer with Interactive Side-by-Side Split (`hitl-cli request --diff-view side-by-side`) | PENDING |
+| 2026-10-02 | researcher | IDEA-570: HTTP/2 Multiplexing & Connection Keep-Alive with Pipelined Polling in `ApiClient` | PENDING |
+| 2026-10-02 | researcher | IDEA-571: Automated Ephemeral Credential Redaction & In-Flight Payload Sanitization Filter (`hitl-cli --redact-sensitive`) | PENDING |
+| 2026-10-02 | researcher | IDEA-572: Unify Asynchronous Command Runner & Decouple CLI Typer Sync Bridges | PENDING |
+| 2026-10-02 | researcher | IDEA-573: Native OpenTelemetry Tracing & Distributed Context Propagation (`--otel-trace-parent`) | PENDING |
+| 2026-10-02 | researcher | IDEA-574: Multi-Tier Escalation Policy with Automatic Reviewer Reassignment (`hitl-cli request --escalate-after`) | PENDING |
+| 2026-10-02 | researcher | IDEA-575: Zero-Install Shell Wrapper & Portable Binary Distribution via PyInstaller/Shiv | PENDING |
+| 2026-10-02 | researcher | IDEA-576: Cryptographic Request Integrity Checksum & Tamper-Proof Payload Digest | PENDING |
+| 2026-10-02 | researcher | IDEA-577: Audio Voice-Prompt Synthesis & Speech-to-Text Transcription Bridge | PENDING |
+| 2026-10-02 | researcher | IDEA-578: Fast Memory-Mapped IPC Cache for Local Multi-Process Agent Worktrees | PENDING |
+| 2026-10-02 | researcher | IDEA-579: Comprehensive CLI Command Snapshot & Regression Testing Suite | PENDING |
+| 2026-10-02 | researcher | IDEA-580: Native JetBrains IDE & VS Code Extension Companion Protocol (`hitl-cli ide-bridge`) | PENDING |
+| 2026-10-02 | researcher | IDEA-581: Role-Based Access Control (RBAC) & Scoped API Token Delegation (`hitl-cli token mint --scope`) | PENDING |
+| 2026-10-02 | researcher | IDEA-582: Interactive Terminal Debug Replay & Mock Response Simulator (`hitl-cli replay`) | PENDING |
 
 ---
 
