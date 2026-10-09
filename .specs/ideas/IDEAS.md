@@ -578,6 +578,21 @@
 | 2026-10-02 | researcher | IDEA-580: Native JetBrains IDE & VS Code Extension Companion Protocol (`hitl-cli ide-bridge`) | PENDING |
 | 2026-10-02 | researcher | IDEA-581: Role-Based Access Control (RBAC) & Scoped API Token Delegation (`hitl-cli token mint --scope`) | PENDING |
 | 2026-10-02 | researcher | IDEA-582: Interactive Terminal Debug Replay & Mock Response Simulator (`hitl-cli replay`) | PENDING |
+| 2026-10-09 | researcher | IDEA-583: Multi-Turn Conversational Clarification Threads (`hitl-cli thread start`) | PENDING |
+| 2026-10-09 | researcher | IDEA-584: Interactive Terminal Multi-Prompt Queue Manager (`hitl-cli queue`) | PENDING |
+| 2026-10-09 | researcher | IDEA-585: Memory-Efficient Chunked Streaming Upload for Large File Attachments in `ApiClient` | PENDING |
+| 2026-10-09 | researcher | IDEA-586: Reviewer Response Digital Watermarking & Audit Proof Attestation (`hitl-cli verify-receipt`) | PENDING |
+| 2026-10-09 | researcher | IDEA-587: Abstract Cryptographic Provider Interface & Pure-Python Fallback (`CryptoBackend`) | PENDING |
+| 2026-10-09 | researcher | IDEA-588: Pre-Execution Tool Call Safety Gate Hook for Claude Code & OpenHands (`hitl-hook-tool-gate`) | PENDING |
+| 2026-10-09 | researcher | IDEA-589: Native GitHub PR & GitLab MR Review Comment Bi-Directional Synchronizer (`hitl-cli sync-pr`) | PENDING |
+| 2026-10-09 | researcher | IDEA-590: Pre-Execution Dry-Run Simulation & Impact Diff Preview (`hitl-cli request --preview-diff`) | PENDING |
+| 2026-10-09 | researcher | IDEA-591: Dynamic Shell Status Spinner & Elapsed Time Counter (`hitl-cli request --spinner`) | PENDING |
+| 2026-10-09 | researcher | IDEA-592: Unified Structured JSON Logging & Contextual Log Formatting (`hitl-cli --log-format json|text`) | PENDING |
+| 2026-10-09 | researcher | IDEA-593: Device Posture & Hardware Security Attestation Validation (`hitl-cli request --require-device-attestation`) | PENDING |
+| 2026-10-09 | researcher | IDEA-594: Smart Client-Side Notification Throttle & Alert Grouping (`hitl-cli notify --rate-limit`) | PENDING |
+| 2026-10-09 | researcher | IDEA-595: Local Response Cache with Content-Hash Addressing for Idempotent Prompts (`hitl-cli request --cache-ttl`) | PENDING |
+| 2026-10-09 | researcher | IDEA-596: Native Jira & Linear Ticket Workflow State Synchronizer (`hitl-cli sync-ticket`) | PENDING |
+| 2026-10-09 | researcher | IDEA-597: Interactive Terminal Prompt Template Generator & Scaffold Wizard (`hitl-cli scaffold`) | PENDING |
 
 ---
 
