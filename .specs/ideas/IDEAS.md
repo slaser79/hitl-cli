@@ -578,6 +578,36 @@
 | 2026-10-02 | researcher | IDEA-580: Native JetBrains IDE & VS Code Extension Companion Protocol (`hitl-cli ide-bridge`) | PENDING |
 | 2026-10-02 | researcher | IDEA-581: Role-Based Access Control (RBAC) & Scoped API Token Delegation (`hitl-cli token mint --scope`) | PENDING |
 | 2026-10-02 | researcher | IDEA-582: Interactive Terminal Debug Replay & Mock Response Simulator (`hitl-cli replay`) | PENDING |
+| 2026-10-09 | researcher | IDEA-583: Multi-Turn Conversational Clarification Threads (`hitl-cli thread start`) | PENDING |
+| 2026-10-09 | researcher | IDEA-584: Interactive Terminal Multi-Prompt Queue Manager (`hitl-cli queue`) | PENDING |
+| 2026-10-09 | researcher | IDEA-585: Memory-Efficient Chunked Streaming Upload for Large File Attachments in `ApiClient` | PENDING |
+| 2026-10-09 | researcher | IDEA-586: Reviewer Response Digital Watermarking & Audit Proof Attestation (`hitl-cli verify-receipt`) | PENDING |
+| 2026-10-09 | researcher | IDEA-587: Abstract Cryptographic Provider Interface & Pure-Python Fallback (`CryptoBackend`) | PENDING |
+| 2026-10-09 | researcher | IDEA-588: Pre-Execution Tool Call Safety Gate Hook for Claude Code & OpenHands (`hitl-hook-tool-gate`) | PENDING |
+| 2026-10-09 | researcher | IDEA-589: Native GitHub PR & GitLab MR Review Comment Bi-Directional Synchronizer (`hitl-cli sync-pr`) | PENDING |
+| 2026-10-09 | researcher | IDEA-590: Pre-Execution Dry-Run Simulation & Impact Diff Preview (`hitl-cli request --preview-diff`) | PENDING |
+| 2026-10-09 | researcher | IDEA-591: Dynamic Shell Status Spinner & Elapsed Time Counter (`hitl-cli request --spinner`) | PENDING |
+| 2026-10-09 | researcher | IDEA-592: Unified Structured JSON Logging & Contextual Log Formatting (`hitl-cli --log-format json|text`) | PENDING |
+| 2026-10-09 | researcher | IDEA-593: Device Posture & Hardware Security Attestation Validation (`hitl-cli request --require-device-attestation`) | PENDING |
+| 2026-10-09 | researcher | IDEA-594: Smart Client-Side Notification Throttle & Alert Grouping (`hitl-cli notify --rate-limit`) | PENDING |
+| 2026-10-09 | researcher | IDEA-595: Local Response Cache with Content-Hash Addressing for Idempotent Prompts (`hitl-cli request --cache-ttl`) | PENDING |
+| 2026-10-09 | researcher | IDEA-596: Native Jira & Linear Ticket Workflow State Synchronizer (`hitl-cli sync-ticket`) | PENDING |
+| 2026-10-09 | researcher | IDEA-597: Interactive Terminal Prompt Template Generator & Scaffold Wizard (`hitl-cli scaffold`) | PENDING |
+| 2026-10-16 | researcher | IDEA-598: Interactive Multi-Step Approval Workflows with Stage Dependencies (`hitl-cli workflow run`) | PENDING |
+| 2026-10-16 | researcher | IDEA-599: Terminal Window Title Bar & OSC Escape Live Countdown Indicator (`hitl-cli request --title-status`) | PENDING |
+| 2026-10-16 | researcher | IDEA-600: Adaptive Polling Schedule with Exponential Decay & Server-Sent Conditional State Checks (`ApiClient`) | PENDING |
+| 2026-10-16 | researcher | IDEA-601: Time-Locked One-Time Nonces and Replay Attack Prevention in MCP Proxy (`--replay-protection`) | PENDING |
+| 2026-10-16 | researcher | IDEA-602: Centralized Asynchronous Context Manager for Safe Resource Teardown & Graceful Signal Cleanup (`HitlContext`) | PENDING |
+| 2026-10-16 | researcher | IDEA-603: Temporal & AWS Step Functions Durable Activity Worker Bridge (`hitl-cli worker temporal`) | PENDING |
+| 2026-10-16 | researcher | IDEA-604: Ephemeral Sandboxed Dry-Run Execution with Worktree Snapshot Verification (`hitl-cli request --dry-run-snapshot`) | PENDING |
+| 2026-10-16 | researcher | IDEA-605: Interactive Prompt Composing in `$EDITOR` with Markdown Validation (`hitl-cli request --edit`) | PENDING |
+| 2026-10-16 | researcher | IDEA-606: In-Memory DNS Resolution Caching & Happy Eyeballs (RFC 8305) Dual-Stack Connection Pooling | PENDING |
+| 2026-10-16 | researcher | IDEA-607: Cryptographic Artifact Provenance & Release Integrity Attestation via Sigstore (`hitl-cli self-update --verify`) | PENDING |
+| 2026-10-16 | researcher | IDEA-608: Strict Type Checking Enforcement & Zero-Error Mypy Strict Configuration | PENDING |
+| 2026-10-16 | researcher | IDEA-609: Database Migration Safety Interceptor (`hitl-cli db-gate`) | PENDING |
+| 2026-10-16 | researcher | IDEA-610: Interactive Terminal Fuzzy Choice Selector with Search-as-You-Type (`hitl-cli request --fuzzy`) | PENDING |
+| 2026-10-16 | researcher | IDEA-611: High-Throughput Notification Micro-Batching with Client-Side Buffering in `hitl-cli notify` (`--flush-interval`) | PENDING |
+| 2026-10-16 | researcher | IDEA-612: GitHub Copilot CLI Pre-Execution Approval Hook (`hitl-hook-copilot`) | PENDING |
 
 ---
 
