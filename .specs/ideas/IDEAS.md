@@ -608,6 +608,21 @@
 | 2026-10-16 | researcher | IDEA-610: Interactive Terminal Fuzzy Choice Selector with Search-as-You-Type (`hitl-cli request --fuzzy`) | PENDING |
 | 2026-10-16 | researcher | IDEA-611: High-Throughput Notification Micro-Batching with Client-Side Buffering in `hitl-cli notify` (`--flush-interval`) | PENDING |
 | 2026-10-16 | researcher | IDEA-612: GitHub Copilot CLI Pre-Execution Approval Hook (`hitl-hook-copilot`) | PENDING |
+| 2026-10-23 | researcher | IDEA-613: Model Context Protocol (MCP) Dynamic Resources & Policy Discovery (`hitl://`) | PENDING |
+| 2026-10-23 | researcher | IDEA-614: Context Pruning & AST-Aware Log Distillation Engine (`hitl-cli request --prune-context`) | PENDING |
+| 2026-10-23 | researcher | IDEA-615: Detailed Interactive Event Timeline & Audit Inspector (`hitl-cli inspect <request-id>`) | PENDING |
+| 2026-10-23 | researcher | IDEA-616: Automated Ephemeral Git Workspace Rollback Guard on Human Rejection (`--rollback-on-reject`) | PENDING |
+| 2026-10-23 | researcher | IDEA-617: Machine-Readable POSIX Exit Code Taxonomy & Structured JSON Errors (`--json-errors`) | PENDING |
+| 2026-10-23 | researcher | IDEA-618: eBPF-Powered Linux System Call Safety Interceptor (`hitl-ebpf-guard`) | PENDING |
+| 2026-10-23 | researcher | IDEA-619: Native Ansible Playbook Human Approval Module (`hitl_approval`) | PENDING |
+| 2026-10-23 | researcher | IDEA-620: Zero-Copy Local IPC Transport via Linux Abstract Domain Sockets (`hitl-cli proxy --abstract-socket`) | PENDING |
+| 2026-10-23 | researcher | IDEA-621: Live Terminal Session Cast & VT100 Asciinema Stream Attachment (`hitl-cli request --stream-cast`) | PENDING |
+| 2026-10-23 | researcher | IDEA-622: Client-Side Prompt Injection & Malicious Instruction Quarantining Filter (`--guard-injection`) | PENDING |
+| 2026-10-23 | researcher | IDEA-623: Argo Workflows & Tekton Pipelines Step Approval Interceptor (`hitl-workflow-gate`) | PENDING |
+| 2026-10-23 | researcher | IDEA-624: Canary Prompt Routing & Reviewer Group A/B Testing (`hitl-cli request --canary`) | PENDING |
+| 2026-10-23 | researcher | IDEA-625: Interactive Terminal Conversational Clarification Loop (`hitl-cli converse <request-id>`) | PENDING |
+| 2026-10-23 | researcher | IDEA-626: Standalone In-Process Deterministic Mock Relay Server (`hitl-relay-mock`) | PENDING |
+| 2026-10-23 | researcher | IDEA-627: Slack & Discord Bi-Directional Team Approval Bridge Daemon (`hitl-cli bridge team`) | PENDING |
 
 ---
 
