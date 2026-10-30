@@ -623,6 +623,21 @@
 | 2026-10-23 | researcher | IDEA-625: Interactive Terminal Conversational Clarification Loop (`hitl-cli converse <request-id>`) | PENDING |
 | 2026-10-23 | researcher | IDEA-626: Standalone In-Process Deterministic Mock Relay Server (`hitl-relay-mock`) | PENDING |
 | 2026-10-23 | researcher | IDEA-627: Slack & Discord Bi-Directional Team Approval Bridge Daemon (`hitl-cli bridge team`) | PENDING |
+| 2026-10-30 | researcher | IDEA-628: Double Ratchet Session Cryptography for Ephemeral End-to-End Encryption (`--double-ratchet`) | PENDING |
+| 2026-10-30 | researcher | IDEA-629: Apache Airflow & Prefect Data Pipeline Human Approval Operators (`hitl-airflow` / `hitl-prefect`) | PENDING |
+| 2026-10-30 | researcher | IDEA-630: Kafka & NATS JetStream Event-Driven Agent Approval Worker Daemon (`hitl-cli worker event-stream`) | PENDING |
+| 2026-10-30 | researcher | IDEA-631: Zero-Retention Ephemeral In-Memory Prompts with Cryptographic Shredding (`hitl-cli request --ephemeral`) | PENDING |
+| 2026-10-30 | researcher | IDEA-632: Prometheus & OpenMetrics Operational Telemetry Exporter (`hitl-cli metrics-exporter`) | PENDING |
+| 2026-10-30 | researcher | IDEA-633: Re-entrant Async Execution Engine for Embedded Runtimes (`hitl_cli.runner.run_sync`) | PENDING |
+| 2026-10-30 | researcher | IDEA-634: Binary MessagePack & CBOR Payload Serialization for High-Bandwidth Transports (`--format msgpack`) | PENDING |
+| 2026-10-30 | researcher | IDEA-635: Terminal Unicode Flowchart & Architecture Diagram Renderer (`hitl-cli request --diagram`) | PENDING |
+| 2026-10-30 | researcher | IDEA-636: Non-Blocking Spooled Local Notification Daemon (`hitl-cli notify --spool`) | PENDING |
+| 2026-10-30 | researcher | IDEA-637: Verifiable Merkle Audit Trees with RFC 3161 Trusted Timestamps (`hitl-cli audit export --merkle`) | PENDING |
+| 2026-10-30 | researcher | IDEA-638: Mutation Testing Suite for Auth & Cryptographic Edge Cases (`mutmut`) | PENDING |
+| 2026-10-30 | researcher | IDEA-639: Inline Terminal Graphics Preview via Kitty & iTerm2 Image Protocols (`hitl-cli request --preview-image`) | PENDING |
+| 2026-10-30 | researcher | IDEA-640: Interactive Secret Injection & Memory-Zeroized One-Time Credentials (`hitl-cli request-secret --mask`) | PENDING |
+| 2026-10-30 | researcher | IDEA-641: Speculative Multi-Branch Execution Engine for Asynchronous SDK Tasks (`HITL.speculative_request()`) | PENDING |
+| 2026-10-30 | researcher | IDEA-642: Adaptive Terminal Color Theme & WCAG AAA High-Contrast Engine (`hitl-cli --theme`) | PENDING |
 
 ---
 
