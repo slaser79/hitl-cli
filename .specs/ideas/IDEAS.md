@@ -638,6 +638,21 @@
 | 2026-10-30 | researcher | IDEA-640: Interactive Secret Injection & Memory-Zeroized One-Time Credentials (`hitl-cli request-secret --mask`) | PENDING |
 | 2026-10-30 | researcher | IDEA-641: Speculative Multi-Branch Execution Engine for Asynchronous SDK Tasks (`HITL.speculative_request()`) | PENDING |
 | 2026-10-30 | researcher | IDEA-642: Adaptive Terminal Color Theme & WCAG AAA High-Contrast Engine (`hitl-cli --theme`) | PENDING |
+| 2026-11-06 | researcher | IDEA-643: Terraform & OpenTofu Infrastructure Plan Review and Apply Safety Gate (`hitl-tf-gate` / `hitl-cli tf-plan`) | PENDING |
+| 2026-11-06 | researcher | IDEA-644: Hardware Security Key (FIDO2 / WebAuthn) Step-Up Authentication for High-Risk Actions (`--require-webauthn`) | PENDING |
+| 2026-11-06 | researcher | IDEA-645: Interactive Terminal Context Selector & Git Diff Picker (`hitl-cli request --select-context`) | PENDING |
+| 2026-11-06 | researcher | IDEA-646: Kernel-Level Socket Pooling & Zero-Allocation HTTP/3 (QUIC) Transport in `ApiClient` (`--http3`) | PENDING |
+| 2026-11-06 | researcher | IDEA-647: Multi-Party Quorum & Dual-Control Approval Policies (`hitl-cli request --quorum N/M`) | PENDING |
+| 2026-11-06 | researcher | IDEA-648: Protocol Buffers Schema Generation & Contract Testing for Relay Transports | PENDING |
+| 2026-11-06 | researcher | IDEA-649: Kubernetes Validating Admission Controller & Helm Deployment Safety Gate (`hitl-k8s-gate`) | PENDING |
+| 2026-11-06 | researcher | IDEA-650: Local Terminal Voice Synthesis & Whisper Speech-to-Text Response Capture (`hitl-cli request --speak`) | PENDING |
+| 2026-11-06 | researcher | IDEA-651: Adaptive RFC 3229 Delta Compression for Multi-Step Agent Sessions (`--delta-compression`) | PENDING |
+| 2026-11-06 | researcher | IDEA-652: Post-Quantum Hybrid Key Exchange (ML-KEM-768 / Kyber + X25519) for E2EE (`--pqc-hybrid`) | PENDING |
+| 2026-11-06 | researcher | IDEA-653: Multi-Channel Fallback Cascade with Automated Voice Call & SMS Escalation (`--escalate-call`) | PENDING |
+| 2026-11-06 | researcher | IDEA-654: Modular Hook Middleware Pipeline & Decorator Architecture for CLI Extensibility | PENDING |
+| 2026-11-06 | researcher | IDEA-655: Official GitHub Actions & GitLab CI Native Step Approval Actions (`hitl-action`) | PENDING |
+| 2026-11-06 | researcher | IDEA-656: Local Real-Time Web Dashboard for Headless & Remote Dev Environments (`hitl-cli serve-web`) | PENDING |
+| 2026-11-06 | researcher | IDEA-657: Conditional Auto-Approval Rules Engine with Local Policy Evaluation (`hitl-cli policy evaluate`) | PENDING |
 
 ---
 
