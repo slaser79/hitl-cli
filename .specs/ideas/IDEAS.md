@@ -653,6 +653,21 @@
 | 2026-11-06 | researcher | IDEA-655: Official GitHub Actions & GitLab CI Native Step Approval Actions (`hitl-action`) | PENDING |
 | 2026-11-06 | researcher | IDEA-656: Local Real-Time Web Dashboard for Headless & Remote Dev Environments (`hitl-cli serve-web`) | PENDING |
 | 2026-11-06 | researcher | IDEA-657: Conditional Auto-Approval Rules Engine with Local Policy Evaluation (`hitl-cli policy evaluate`) | PENDING |
+| 2026-11-13 | researcher | IDEA-658: XDG Base Directory Compliance & Legacy `~/.hitl/` Path Unification (`hitl-cli config migrate`) | PENDING |
+| 2026-11-13 | researcher | IDEA-659: Optional `[legacy-jwt]` Extra & In-Process Hook Dispatch for Sub-50ms Cold Starts | PENDING |
+| 2026-11-13 | researcher | IDEA-660: Event-Driven Transcript Stabilization Watcher in `review_and_continue` Hook | PENDING |
+| 2026-11-13 | researcher | IDEA-661: Stdout Wire-Framing Shield for MCP Stdio Proxy (`sys.stdout` Isolation) | PENDING |
+| 2026-11-13 | researcher | IDEA-662: Native MCP `elicitation/create` Bridge in `hitl-cli proxy` | PENDING |
+| 2026-11-13 | researcher | IDEA-663: Out-of-Band E2EE Key Fingerprint & Short Authentication String (`hitl-cli key verify`) | PENDING |
+| 2026-11-13 | researcher | IDEA-664: MCP Streamable HTTP Sidecar Transport in `hitl-cli proxy` (`--transport streamable-http`) | PENDING |
+| 2026-11-13 | researcher | IDEA-665: Mid-Session OAuth 401 Silent Refresh & Persistent Session Reuse in `BackendMCPClient` | PENDING |
+| 2026-11-13 | researcher | IDEA-666: Synthetic Hook Payload Simulator & Dry-Run Verifier (`hitl-cli hook test`) | PENDING |
+| 2026-11-13 | researcher | IDEA-667: MCP `roots/list` Workspace & Git Branch Attribution Forwarding in Proxy Mode | PENDING |
+| 2026-11-13 | researcher | IDEA-668: Dead Code & Inline `MockResponse` Stub Removal in `api_client.py` | PENDING |
+| 2026-11-13 | researcher | IDEA-669: Git Commit & Markdown Release Checklist Gate (`hitl-cli request --from-commit`) | PENDING |
+| 2026-11-13 | researcher | IDEA-670: Markdown-Safe Transcript Budgeter & Code-Fence Preserving Truncation in Agent Hooks | PENDING |
+| 2026-11-13 | researcher | IDEA-671: Automated PyPI & Nix Flake Version/Dependency Parity Gate in CI | PENDING |
+| 2026-11-13 | researcher | IDEA-672: Multi-Repo `hitl-daily-report` Portfolio Aggregator with Stale-PR Alerts | PENDING |
 
 ---
 
