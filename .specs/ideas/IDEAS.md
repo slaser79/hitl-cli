@@ -668,6 +668,21 @@
 | 2026-11-13 | researcher | IDEA-670: Markdown-Safe Transcript Budgeter & Code-Fence Preserving Truncation in Agent Hooks | PENDING |
 | 2026-11-13 | researcher | IDEA-671: Automated PyPI & Nix Flake Version/Dependency Parity Gate in CI | PENDING |
 | 2026-11-13 | researcher | IDEA-672: Multi-Repo `hitl-daily-report` Portfolio Aggregator with Stale-PR Alerts | PENDING |
+| 2026-11-20 | researcher | IDEA-673: OAuth 2.1 Bearer & Auto-Refresh Support in `ApiClient` for REST and E2EE Commands | PENDING |
+| 2026-11-20 | researcher | IDEA-674: Hardened OAuth Callback Server with XSS Escaping, Socket Reuse, and Refresh-Grant Negotiation | PENDING |
+| 2026-11-20 | researcher | IDEA-675: Purge Tracked API Key & Consolidate Root Ad-Hoc Antigravity Hook Scripts | PENDING |
+| 2026-11-20 | researcher | IDEA-676: E2EE Proxy Parity for `notify_human_completion`, `placeholder_text`, and Closure-Safe Tool Forwarding | PENDING |
+| 2026-11-20 | researcher | IDEA-677: `O(1)` Reverse-Seek JSONL Tail Reader for Long-Session Agent Stop Hooks | PENDING |
+| 2026-11-20 | researcher | IDEA-678: Device Public-Key TTL Cache & Versioned Ciphertext Envelope in E2EE Mode | PENDING |
+| 2026-11-20 | researcher | IDEA-679: `HITL_API_KEY` Support in MCP Proxy Mode & README Quickstart Alignment | PENDING |
+| 2026-11-20 | researcher | IDEA-680: Atomic `0o600` Credential & Keypair Persistence (Eliminating Write-Then-Chmod TOCTOU) | PENDING |
+| 2026-11-20 | researcher | IDEA-681: Local Pre-Flight Argument & Byte-Budget Validation Before Encryption or Relay Dispatch | PENDING |
+| 2026-11-20 | researcher | IDEA-682: Persistent Default Agent Binding & Cleanup Subcommands (`hitl-cli agents set-default / prune`) | PENDING |
+| 2026-11-20 | researcher | IDEA-683: Live-Check CLI Documentation & Help-Flag Parity Test Suite | PENDING |
+| 2026-11-20 | researcher | IDEA-684: Zero-Touch IDE & Agent MCP Config Generator (`hitl-cli setup`) | PENDING |
+| 2026-11-20 | researcher | IDEA-685: Headless SSH / Container Login Detection & `--no-browser` Port-Forwarding Guide | PENDING |
+| 2026-11-20 | researcher | IDEA-686: MCP Progress Notification Heartbeats (`notifications/progress`) During Long Human Waits | PENDING |
+| 2026-11-20 | researcher | IDEA-687: Claude Code `Notification` & `PermissionRequest` Real-Time Hook Adapters | PENDING |
 
 ---
 
