@@ -168,14 +168,27 @@ def main():
     Main hook logic to intercept a Stop event, request human input with context,
     and either allow the stop or continue with new instructions.
     """
+    # Detect if we are in Antigravity scope
+    is_antigravity = ("--antigravity" in sys.argv) or (os.environ.get("IS_ANTIGRAVITY") == "1")
+
+    if os.environ.get("HITL_DAEMON_SESSION") == "1":
+        if os.environ.get("HITL_HOOK_DEBUG") == "1":
+            marker_path = os.environ.get("HITL_HOOK_DEBUG_FILE", "/tmp/hitl_hook_daemon_skip.log")
+            try:
+                with open(marker_path, "a", encoding="utf-8") as mf:
+                    mode = "antigravity" if is_antigravity else "claude"
+                    mf.write(f"daemon_session_skip hook=review_and_continue mode={mode}\n")
+            except OSError:
+                pass
+        if is_antigravity:
+            print(json.dumps({"decision": "allow", "reason": ""}, separators=(",", ":")))
+        sys.exit(0)
+
     try:
         input_data = json.load(sys.stdin)
     except json.JSONDecodeError as e:
         print(f"HITL Stop Hook: Failed to parse input: {e}", file=sys.stderr)
         sys.exit(1)
-
-    # Detect if we are in Antigravity scope
-    is_antigravity = ("--antigravity" in sys.argv) or (os.environ.get("IS_ANTIGRAVITY") == "1")
 
     # In Antigravity Stop hooks, 'fullyIdle' indicates whether background/async tasks are done
     if is_antigravity and not input_data.get("fullyIdle", False):
