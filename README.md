@@ -213,3 +213,11 @@ notify = ["hitl-codex-notify"]
 
 This is ideal for keeping track of Codex activity while you're away from your desk or working on other tasks.
 
+### F. Antigravity Stop Hook & `hitl-channel` Daemon Isolation
+
+`hitl-hook-review-and-continue` also supports Antigravity Stop hooks when invoked with `--antigravity` or `IS_ANTIGRAVITY=1` (as well as the standalone helpers `review_and_continue_antigravity.py` and `review_and_continue_wrapper.sh`). In Antigravity mode, the hook inspects `fullyIdle` on stdin and runs `hitl-cli notify-completion` with the latest assistant response when the turn finishes.
+
+When running Antigravity through [`hitl-channel` daemon mode](https://github.com/slaser79/hitl-channel#daemon-mode), the daemon spawns `agy acp` with `HITL_DAEMON_SESSION=1` so replies stay on the direct `hitl-channel` bridge without double-pinging the cloud relay:
+
+- **`HITL_DAEMON_SESSION=1`** — causes `hitl-hook-review-and-continue`, `review_and_continue_antigravity.py`, and `review_and_continue_wrapper.sh` to exit immediately without calling `hitl-cli notify-completion` (outputting `{"decision":"allow","reason":""}` in Antigravity mode).
+- **`HITL_HOOK_DEBUG=1`** — when combined with `HITL_DAEMON_SESSION=1`, appends a `daemon_session_skip` diagnostic line to `$HITL_HOOK_DEBUG_FILE` (default: `/tmp/hitl_hook_daemon_skip.log`).
