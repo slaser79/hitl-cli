@@ -13,6 +13,7 @@ or with full path:
 """
 
 import json
+import os
 import subprocess
 import sys
 
@@ -72,6 +73,16 @@ def main() -> int:
     Returns:
         0 on success, 1 on error
     """
+    if os.environ.get("HITL_DAEMON_SESSION") == "1":
+        if os.environ.get("HITL_HOOK_DEBUG") == "1":
+            marker_path = os.environ.get("HITL_HOOK_DEBUG_FILE", "/tmp/hitl_hook_daemon_skip.log")
+            try:
+                with open(marker_path, "a", encoding="utf-8") as mf:
+                    mf.write("daemon_session_skip hook=codex_notify\n")
+            except OSError:
+                pass
+        return 0
+
     try:
         # Validate arguments
         if len(sys.argv) != 2:

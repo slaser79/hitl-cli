@@ -219,5 +219,5 @@ This is ideal for keeping track of Codex activity while you're away from your de
 
 When running Antigravity through [`hitl-channel` daemon mode](https://github.com/slaser79/hitl-channel#daemon-mode), the daemon spawns `agy acp` with `HITL_DAEMON_SESSION=1` so replies stay on the direct `hitl-channel` bridge without double-pinging the cloud relay:
 
-- **`HITL_DAEMON_SESSION=1`** — causes `hitl-hook-review-and-continue`, `review_and_continue_antigravity.py`, and `review_and_continue_wrapper.sh` to exit immediately without calling `hitl-cli notify-completion` (outputting `{"decision":"allow","reason":""}` in Antigravity mode).
+- **`HITL_DAEMON_SESSION=1`** — causes `hitl-hook-review-and-continue`, `review_and_continue_antigravity.py`, `review_and_continue_wrapper.sh`, and `hitl-codex-notify` to exit immediately without calling `hitl-cli notify-completion` / `hitl-cli notify` (outputting `{"decision":"allow","reason":""}` in Antigravity mode).
 - **`HITL_HOOK_DEBUG=1`** — when combined with `HITL_DAEMON_SESSION=1`, appends a `daemon_session_skip` diagnostic line to `$HITL_HOOK_DEBUG_FILE` (default: `/tmp/hitl_hook_daemon_skip.log`).
