@@ -32,6 +32,17 @@ def get_last_assistant_message(transcript_path):
     return "Antigravity Task Completed (Stop Hook triggered)."
 
 def main():
+    if os.environ.get("HITL_DAEMON_SESSION") == "1":
+        if os.environ.get("HITL_HOOK_DEBUG") == "1":
+            marker_path = os.environ.get("HITL_HOOK_DEBUG_FILE", "/tmp/hitl_hook_daemon_skip.log")
+            try:
+                with open(marker_path, "a", encoding="utf-8") as mf:
+                    mf.write("daemon_session_skip hook=review_and_continue_antigravity\n")
+            except OSError:
+                pass
+        print(json.dumps({"decision": "allow", "reason": ""}, separators=(",", ":")))
+        sys.exit(0)
+
     try:
         input_data = json.load(sys.stdin)
     except Exception as e:

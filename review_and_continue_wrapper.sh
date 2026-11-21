@@ -1,4 +1,12 @@
 #!/bin/bash
+if [ "${HITL_DAEMON_SESSION:-}" = "1" ]; then
+  if [ "${HITL_HOOK_DEBUG:-}" = "1" ]; then
+    printf 'daemon_session_skip hook=review_and_continue_wrapper\n' >> "${HITL_HOOK_DEBUG_FILE:-/tmp/hitl_hook_daemon_skip.log}" 2>/dev/null || true
+  fi
+  printf '{"decision":"allow","reason":""}\n'
+  exit 0
+fi
+
 # Set HITL_API_KEY for correct agent attribution
 export HITL_API_KEY=mcp_pk_jf47fiJt6QknNHchh9xeLDHkfDx2q4p8ZNiqtbso5g0
 

@@ -1,6 +1,11 @@
 #!/usr/bin/env python3
 """Tests for the review_and_continue stop hook."""
+import io
 import json
+import os
+import subprocess
+import sys
+from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -365,3 +370,127 @@ def test_main_hook_prompts_when_fully_idle_under_antigravity(temp_transcript_sim
                     # Should call notify-completion (subprocess.run)
                     mock_run.assert_called_once()
                     mock_exit.assert_called_with(0)
+
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+
+
+def test_daemon_session_skips_in_antigravity_flag_mode(capsys):
+    """HITL_DAEMON_SESSION=1 with --antigravity prints allow JSON, exits 0, no network call."""
+    env = {
+        k: v
+        for k, v in os.environ.items()
+        if k not in ("IS_ANTIGRAVITY", "HITL_HOOK_DEBUG", "HITL_HOOK_DEBUG_FILE")
+    }
+    env["HITL_DAEMON_SESSION"] = "1"
+    with patch.dict(os.environ, env, clear=True):
+        with patch.object(sys, "argv", ["review_and_continue.py", "--antigravity"]):
+            with patch.object(sys, "stdin", io.StringIO("")):
+                with patch("hitl_cli.hooks.review_and_continue.subprocess.run") as mock_run:
+                    with pytest.raises(SystemExit) as exc_info:
+                        review_and_continue.main()
+                    assert exc_info.value.code == 0
+                    mock_run.assert_not_called()
+    captured = capsys.readouterr()
+    assert captured.out.strip() == '{"decision":"allow","reason":""}'
+
+
+def test_daemon_session_skips_in_is_antigravity_env_mode(capsys):
+    """HITL_DAEMON_SESSION=1 with IS_ANTIGRAVITY=1 prints allow JSON, exits 0, no network call."""
+    env = {
+        k: v
+        for k, v in os.environ.items()
+        if k not in ("HITL_HOOK_DEBUG", "HITL_HOOK_DEBUG_FILE")
+    }
+    env["HITL_DAEMON_SESSION"] = "1"
+    env["IS_ANTIGRAVITY"] = "1"
+    with patch.dict(os.environ, env, clear=True):
+        with patch.object(sys, "argv", ["review_and_continue.py"]):
+            with patch.object(sys, "stdin", io.StringIO("")):
+                with patch("hitl_cli.hooks.review_and_continue.subprocess.run") as mock_run:
+                    with pytest.raises(SystemExit) as exc_info:
+                        review_and_continue.main()
+                    assert exc_info.value.code == 0
+                    mock_run.assert_not_called()
+    captured = capsys.readouterr()
+    assert captured.out.strip() == '{"decision":"allow","reason":""}'
+
+
+def test_daemon_session_skips_in_claude_code_mode(capsys):
+    """HITL_DAEMON_SESSION=1 in Claude Code mode prints empty stdout, exits 0, no network call."""
+    env = {
+        k: v
+        for k, v in os.environ.items()
+        if k not in ("IS_ANTIGRAVITY", "HITL_HOOK_DEBUG", "HITL_HOOK_DEBUG_FILE")
+    }
+    env["HITL_DAEMON_SESSION"] = "1"
+    with patch.dict(os.environ, env, clear=True):
+        with patch.object(sys, "argv", ["review_and_continue.py"]):
+            with patch.object(sys, "stdin", io.StringIO("")):
+                with patch("hitl_cli.hooks.review_and_continue.subprocess.run") as mock_run:
+                    with pytest.raises(SystemExit) as exc_info:
+                        review_and_continue.main()
+                    assert exc_info.value.code == 0
+                    mock_run.assert_not_called()
+    captured = capsys.readouterr()
+    assert captured.out == ""
+
+
+def test_daemon_session_writes_debug_marker_when_enabled(tmp_path, capsys):
+    """HITL_DAEMON_SESSION=1 + HITL_HOOK_DEBUG=1 writes daemon_session_skip marker."""
+    marker_file = tmp_path / "hook_debug.log"
+    env = dict(os.environ)
+    env["HITL_DAEMON_SESSION"] = "1"
+    env["HITL_HOOK_DEBUG"] = "1"
+    env["HITL_HOOK_DEBUG_FILE"] = str(marker_file)
+    with patch.dict(os.environ, env, clear=True):
+        with patch.object(sys, "argv", ["review_and_continue.py", "--antigravity"]):
+            with patch.object(sys, "stdin", io.StringIO("")):
+                with patch("hitl_cli.hooks.review_and_continue.subprocess.run") as mock_run:
+                    with pytest.raises(SystemExit) as exc_info:
+                        review_and_continue.main()
+                    assert exc_info.value.code == 0
+                    mock_run.assert_not_called()
+    captured = capsys.readouterr()
+    assert captured.out.strip() == '{"decision":"allow","reason":""}'
+    assert "daemon_session_skip" in marker_file.read_text(encoding="utf-8")
+
+
+def test_daemon_session_antigravity_standalone_script_skips(tmp_path):
+    """review_and_continue_antigravity.py exits 0 with allow JSON & marker when HITL_DAEMON_SESSION=1."""
+    marker_file = tmp_path / "ag_debug.log"
+    env = dict(os.environ)
+    env["HITL_DAEMON_SESSION"] = "1"
+    env["HITL_HOOK_DEBUG"] = "1"
+    env["HITL_HOOK_DEBUG_FILE"] = str(marker_file)
+    proc = subprocess.run(
+        [sys.executable, str(REPO_ROOT / "review_and_continue_antigravity.py")],
+        input="",
+        text=True,
+        capture_output=True,
+        env=env,
+        timeout=10,
+    )
+    assert proc.returncode == 0
+    assert proc.stdout.strip() == '{"decision":"allow","reason":""}'
+    assert "daemon_session_skip" in marker_file.read_text(encoding="utf-8")
+
+
+def test_daemon_session_wrapper_script_skips(tmp_path):
+    """review_and_continue_wrapper.sh exits 0 with allow JSON & marker when HITL_DAEMON_SESSION=1."""
+    marker_file = tmp_path / "wrapper_debug.log"
+    env = dict(os.environ)
+    env["HITL_DAEMON_SESSION"] = "1"
+    env["HITL_HOOK_DEBUG"] = "1"
+    env["HITL_HOOK_DEBUG_FILE"] = str(marker_file)
+    proc = subprocess.run(
+        ["bash", str(REPO_ROOT / "review_and_continue_wrapper.sh")],
+        input='{"fullyIdle":true}',
+        text=True,
+        capture_output=True,
+        env=env,
+        timeout=10,
+    )
+    assert proc.returncode == 0
+    assert proc.stdout.strip() == '{"decision":"allow","reason":""}'
+    assert "daemon_session_skip" in marker_file.read_text(encoding="utf-8")
