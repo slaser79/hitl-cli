@@ -113,3 +113,52 @@ def test_codex_notify_handles_subprocess_failure(sample_codex_notification):
 
         # Should exit with error code but not crash
         assert exit_code == 1
+
+
+def test_codex_notify_skips_when_daemon_session_set(monkeypatch, sample_codex_notification):
+    """Test HITL_DAEMON_SESSION=1 skips relay notifications with or without JSON args."""
+    monkeypatch.setenv("HITL_DAEMON_SESSION", "1")
+    monkeypatch.delenv("HITL_HOOK_DEBUG", raising=False)
+
+    from hitl_cli.hooks import codex_notify
+
+    with patch("subprocess.run") as mock_run:
+        with patch("sys.argv", ["codex_notify.py"]):
+            assert codex_notify.main() == 0
+        with patch("sys.argv", ["codex_notify.py", json.dumps(sample_codex_notification)]):
+            assert codex_notify.main() == 0
+
+    mock_run.assert_not_called()
+
+
+def test_codex_notify_writes_debug_marker_when_daemon_debug_enabled(tmp_path, monkeypatch):
+    """Test HITL_HOOK_DEBUG=1 writes a daemon_session_skip marker for codex_notify."""
+    marker_file = tmp_path / "hook_debug.log"
+    monkeypatch.setenv("HITL_DAEMON_SESSION", "1")
+    monkeypatch.setenv("HITL_HOOK_DEBUG", "1")
+    monkeypatch.setenv("HITL_HOOK_DEBUG_FILE", str(marker_file))
+
+    from hitl_cli.hooks import codex_notify
+
+    with patch("subprocess.run") as mock_run:
+        with patch("sys.argv", ["codex_notify.py"]):
+            assert codex_notify.main() == 0
+
+    mock_run.assert_not_called()
+    assert marker_file.read_text(encoding="utf-8") == "daemon_session_skip hook=codex_notify\n"
+
+
+def test_codex_notify_runs_normally_when_daemon_session_unset_or_zero(
+    monkeypatch, sample_codex_notification
+):
+    """Test HITL_DAEMON_SESSION=0 allows normal Codex notify execution."""
+    monkeypatch.setenv("HITL_DAEMON_SESSION", "0")
+
+    from hitl_cli.hooks import codex_notify
+
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value = MagicMock(returncode=0, stdout="", stderr="")
+        with patch("sys.argv", ["codex_notify.py", json.dumps(sample_codex_notification)]):
+            assert codex_notify.main() == 0
+
+    mock_run.assert_called_once()
