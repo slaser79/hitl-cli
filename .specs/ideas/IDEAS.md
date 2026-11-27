@@ -683,6 +683,21 @@
 | 2026-11-20 | researcher | IDEA-685: Headless SSH / Container Login Detection & `--no-browser` Port-Forwarding Guide | PENDING |
 | 2026-11-20 | researcher | IDEA-686: MCP Progress Notification Heartbeats (`notifications/progress`) During Long Human Waits | PENDING |
 | 2026-11-20 | researcher | IDEA-687: Claude Code `Notification` & `PermissionRequest` Real-Time Hook Adapters | PENDING |
+| 2026-11-27 | researcher | IDEA-688: MCP `CallToolResult.isError` Propagation & FastMCP `TextContent` Decryption Normalization | PENDING |
+| 2026-11-27 | researcher | IDEA-689: Path-Filtered Multi-Request Loop in `OAuthCallbackHandler` (`favicon.ico` Resilience) | PENDING |
+| 2026-11-27 | researcher | IDEA-690: Server-Origin Scoping & Issuer Verification for Stored OAuth and Keypair Credentials | PENDING |
+| 2026-11-27 | researcher | IDEA-691: Agent Endpoint Schema Normalization (`id` vs `agent_id`) & OAuth `--agent-id` Honor | PENDING |
+| 2026-11-27 | researcher | IDEA-692: Encrypted Hook Mode (`HITL_E2EE=1` / `--e2ee`) for `review_and_continue` and `codex_notify` | PENDING |
+| 2026-11-27 | researcher | IDEA-693: String-Content Message Support & Antigravity JSON Exit Parity in `review_and_continue` | PENDING |
+| 2026-11-27 | researcher | IDEA-694: `HITL_API_KEY` Precedence & Cross-Account `agent_id` Contamination Guard | PENDING |
+| 2026-11-27 | researcher | IDEA-695: `HITL` Python SDK Parity for `timeout`, `agent_id`, `delete_agent`, and Config Injection | PENDING |
+| 2026-11-27 | researcher | IDEA-696: Async `admin register-client` with Timeout Guard & Automatic OAuth Token Refresh | PENDING |
+| 2026-11-27 | researcher | IDEA-697: Remote-First `daily-report` Commit Query Fallback & `--output` Markdown Export | PENDING |
+| 2026-11-27 | researcher | IDEA-698: Keypair-Aware `hitl-cli logout --purge-keys` & Malformed E2EE Envelope Guard in `ApiClient` | PENDING |
+| 2026-11-27 | researcher | IDEA-699: Shared `BearerAuth` & Pooled FastMCP Transport Factory across `mcp_client.py` and `proxy_handler_v2.py` | PENDING |
+| 2026-11-27 | researcher | IDEA-700: Portable `hitl-cli` Binary Discovery (`HITL_CLI_BIN` / `sys.executable`) in Agent Hooks | PENDING |
+| 2026-11-27 | researcher | IDEA-701: `hitl-cli --version` Flag & Relay Compatibility Check Command (`hitl-cli version`) | PENDING |
+| 2026-11-27 | researcher | IDEA-702: Shared `HITL_DAEMON_SESSION` Helper & Schema-Based Antigravity Auto-Detection in Hooks | PENDING |
 
 ---
 
